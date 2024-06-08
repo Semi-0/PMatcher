@@ -1,8 +1,8 @@
-import { MatcherBuilder } from './MatchBuilder';
+import { MatchBuilder } from './MatchBuilder';
 import type { MatchDict } from './MatchDict';
 
 // Create an instance of MatcherBuilder
-const matcher = new MatcherBuilder();
+const matcher = new MatchBuilder();
 
 // Setup the matcher with some patterns
 matcher.setConstant('Hello')

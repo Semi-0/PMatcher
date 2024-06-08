@@ -18,7 +18,7 @@ The `MatcherBuilder` class allows you to build and run custom pattern matchers. 
 
 ```typescript
 // Example usage of MatcherBuilder
-import { MatcherBuilder } from './MatchBuilder';
+import { MatchBuilder } from 'pmatcher/MatchBuilder';
 
 // Create a new instance of MatcherBuilder
 let matcher = new MatcherBuilder();

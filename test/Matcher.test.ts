@@ -8,7 +8,7 @@ import type { matcher_callback } from '../MatchCallback';
 import { match_list } from '../MatchCombinator';
 import { match_choose } from "../MatchCombinator";
 import { run_matcher } from '../MatchCombinator';
-import { MatcherBuilder } from "../MatchBuilder";
+import { MatchBuilder } from "../MatchBuilder";
 describe('MatchResult', () => {
     let dictionary: MatchDict;
     let matchResult: MatchResult;
@@ -246,7 +246,7 @@ describe('match_list with complex patterns', () => {
 describe('MatcherBuilder', () => {
     test('should correctly configure and run a matcher with constants, elements, and segments', () => {
         // Create a new MatcherBuilder instance
-        const builder = new MatcherBuilder();
+        const builder = new MatchBuilder();
 
         // Configure the builder with various matchers
         builder.setConstant("start");
@@ -268,7 +268,7 @@ describe('MatcherBuilder', () => {
 
     test('should return false for mismatched patterns', () => {
         // Create a new MatcherBuilder instance
-        const builder = new MatcherBuilder();
+        const builder = new MatchBuilder();
 
         // Configure the builder
         builder.setConstant("start");
@@ -289,7 +289,7 @@ describe('MatcherBuilder', () => {
 
     test('should handle element with restriction correctly', () => {
         // Create a new MatcherBuilder instance
-        const builder = new MatcherBuilder();
+        const builder = new MatchBuilder();
 
         // Configure the builder with an element that has a restriction
         builder.setElementWithRestriction("number", value => !isNaN(Number(value)));
