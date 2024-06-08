@@ -12,16 +12,16 @@ npm install pmatcher
 ```
 
 
-# Using MatcherBuilder
+# Using MatchBuilder
 
-The `MatcherBuilder` class allows you to build and run custom pattern matchers. Here's a basic example of how to use it:
+The `MatchBuilder` class allows you to build and run custom pattern matchers. Here's a basic example of how to use it:
 
 ```typescript
 // Example usage of MatcherBuilder
 import { MatchBuilder } from 'pmatcher/MatchBuilder';
 
 // Create a new instance of MatcherBuilder
-let matcher = new MatcherBuilder();
+let matcher = new MatchBuilder();
 
 // Define patterns using the builder methods
 matcher.setConstant("Hello")
