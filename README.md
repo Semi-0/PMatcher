@@ -1,5 +1,16 @@
 # pmatcher
 
+To install this library, run:
+```bash
+bun install pmatcher
+```
+
+or 
+```bash
+npm install pmatcher
+```
+
+
 To install dependencies:
 
 ```bash

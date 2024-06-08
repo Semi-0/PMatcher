@@ -24,3 +24,4 @@ export class MatchResult{
         return this.operation(callback)
     }
 }
+
