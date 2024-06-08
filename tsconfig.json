@@ -10,7 +10,6 @@
 
     // Bundler mode
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": false, // Change this to false to enable file output
     "outDir": "./lib", // Add this line to specify output directory
