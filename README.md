@@ -25,8 +25,8 @@ let matcher = new MatchBuilder();
 
 // Define patterns using the builder methods
 matcher.setConstant("Hello")
-      .setElement("name")
-      .setSegment("details");
+       .setElement("name")
+       .setSegment("details");
 
 // Example data array
 const data = ["Hello", "John", "age:30", "location:NY"];
