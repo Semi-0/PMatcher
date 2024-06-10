@@ -1,15 +1,15 @@
 import { MatchDict } from "./MatchDict";
-import { MatchConstant, MatchElement, MatchSegment } from "./MatchItem";
 
 export type matcher_callback =  (data: string[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any) => any
 // needs more precise error handler
 
-export function match_eqv(pattern_constant: MatchConstant): matcher_callback {
+export function match_eqv(pattern_constant: string): matcher_callback {
+
     return (data: string[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         if (data.length === 0) {
             return false;
         }
-        if (data[0] === pattern_constant.name) {
+        if (data[0] === pattern_constant) {
             return succeed(dictionary, 1);
         } else {
             return false;
@@ -18,19 +18,19 @@ export function match_eqv(pattern_constant: MatchConstant): matcher_callback {
 }
 
 
-export function match_element(variable: MatchElement, restriction: (value: string) => boolean = (value: string) => true): matcher_callback {
+export function match_element(variable: string, restriction: (value: string) => boolean = (value: string) => true): matcher_callback {
     return (data: string[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         if (data.length === 0) {
             return false;
         }
-        const binding_value = dictionary.get(variable.name);
+        const binding_value = dictionary.get(variable);
         
         if (!restriction(data[0])){
             return false
         }
 
         if (binding_value === undefined) {
-            const extendedDictionary = dictionary.extend(variable.name, data[0]);
+            const extendedDictionary = dictionary.extend(variable, data[0]);
             return succeed(extendedDictionary, 1);
         } else if (binding_value === data[0]) {
             return succeed(dictionary, 1);
@@ -40,12 +40,13 @@ export function match_element(variable: MatchElement, restriction: (value: strin
     };
 }
 
-export function match_segment(variable: MatchSegment): matcher_callback {
+export function match_segment(variable: string): matcher_callback {
+
     const loop = (index: number, data: string[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         if (index >= data.length) {
             return false;
         }
-        const result = succeed(dictionary.extend(variable.name, data.slice(0, index + 1)), index + 1);
+        const result = succeed(dictionary.extend(variable, data.slice(0, index + 1)), index + 1);
         return result !== false ? result : loop(index + 1, data, dictionary, succeed);
     };
 
@@ -63,7 +64,7 @@ export function match_segment(variable: MatchSegment): matcher_callback {
             return false;
         }
 
-        const binding = dictionary.get(variable.name);
+        const binding = dictionary.get(variable);
         if (binding === undefined) {
             return loop(0, data, dictionary, succeed);
         } else {

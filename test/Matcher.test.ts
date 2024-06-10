@@ -56,8 +56,7 @@ describe('MatchResult', () => {
 
 describe('match_eqv', () => {
     test('should call succeed with correct parameters when match is found', () => {
-        const pattern_constant = new MatchConstant("x");
-        const matcher = match_eqv(pattern_constant);
+        const matcher = match_eqv("x");
         const mockData = ["x"];
         const mockDictionary = new MatchDict(new Map());
         const mockSucceed = mock();
@@ -68,8 +67,7 @@ describe('match_eqv', () => {
     });
 
     test('should return false when no data is provided', () => {
-        const pattern_constant = new MatchConstant("x");
-        const matcher = match_eqv(pattern_constant);
+        const matcher = match_eqv("x");
         const mockData : string[] = [];
         const mockDictionary = new MatchDict(new Map());
         const mockSucceed = mock();
@@ -81,8 +79,7 @@ describe('match_eqv', () => {
     });
 
     test('should return false when the first element does not match', () => {
-        const pattern_constant = new MatchConstant("x");
-        const matcher = match_eqv(pattern_constant);
+        const matcher = match_eqv("x");
         const mockData = ["y"];
         const mockDictionary = new MatchDict(new Map());
         const mockSucceed = mock();
@@ -96,8 +93,7 @@ describe('match_eqv', () => {
 
 describe('match_element', () => {
     test('should handle variable binding correctly when unbound', () => {
-        const element = new MatchElement("x");
-        const matcher = match_element(element);
+        const matcher = match_element("x");
         const mockData = ["a"];
         const mockDictionary = new MatchDict(new Map());
         const mockSucceed = jest.fn();
@@ -109,8 +105,7 @@ describe('match_element', () => {
     });
 
     test('should handle variable binding correctly when already bound to the same value', () => {
-        const element = new MatchElement("x");
-        const matcher = match_element(element);
+        const matcher = match_element("x");
         const mockData = ["a"];
         const mockDictionary = new MatchDict(new Map([["x", "a"]]));
         const mockSucceed = jest.fn();
@@ -121,8 +116,7 @@ describe('match_element', () => {
     });
 
     test('should return false when already bound to a different value', () => {
-        const element = new MatchElement("x");
-        const matcher = match_element(element);
+        const matcher = match_element("x");
         const mockData = ["b"];
         const mockDictionary = new MatchDict(new Map([["x", "a"]]));
         const mockSucceed = jest.fn();
@@ -136,8 +130,7 @@ describe('match_element', () => {
 
 describe('match_segment', () => {
     test('should handle segment matching correctly when unbound', () => {
-        const segment = new MatchSegment("segment");
-        const matcher = match_segment(segment);
+        const matcher = match_segment("segment");
         const mockData = ["hello", "world"];
         const mockDictionary = new MatchDict(new Map());
         const mockSucceed = jest.fn((result: any) => {
@@ -153,8 +146,7 @@ describe('match_segment', () => {
     });
 
     test('should handle segment matching correctly when already bound to the same value', () => {
-        const segment = new MatchSegment("segment");
-        const matcher = match_segment(segment);
+        const matcher = match_segment("segment");
         const mockData = ["hello", "world"];
         const mockDictionary = new MatchDict(new Map([["segment", ["hello", "world"]]]));
         const mockSucceed = jest.fn();
@@ -165,8 +157,7 @@ describe('match_segment', () => {
     });
 
     test('should return false when already bound to a different value', () => {
-        const segment = new MatchSegment("segment");
-        const matcher = match_segment(segment);
+        const matcher = match_segment("segment");
         const mockData = ["different", "input"];
         const mockDictionary = new MatchDict(new Map([["segment", ["hello", "world"]]]));
         const mockSucceed = jest.fn();
@@ -181,9 +172,9 @@ describe('match_segment', () => {
 describe('match_list with complex patterns', () => {
     test('should handle patterns with constants and segments', () => {
         // Matchers for the first scenario
-        const matchX = match_eqv(new MatchConstant("x"));
-        const matchSegment = match_segment(new MatchSegment("segment"));
-        const matchY = match_eqv(new MatchConstant("y"));
+        const matchX = match_eqv("x");
+        const matchSegment = match_segment("segment");
+        const matchY = match_eqv("y");
 
         // Create the match_list for the first pattern [match_constant, match_segment]
         const pattern1 = match_list([matchX, matchSegment]);
@@ -220,9 +211,9 @@ describe('match_list with complex patterns', () => {
 
     test('should return false for mismatched patterns', () => {
         // Matchers setup
-        const matchX = match_eqv(new MatchConstant("x"));
-        const matchSegment = match_segment(new MatchSegment("segment"));
-        const matchY = match_eqv(new MatchConstant("y"));
+        const matchX = match_eqv("x");
+        const matchSegment = match_segment("segment");
+        const matchY = match_eqv("y");
 
         // Create the match_list for the pattern [match_constant, match_segment, match_constant]
         const pattern = match_list([matchX, matchSegment, matchY]);
