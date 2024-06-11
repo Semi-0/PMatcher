@@ -1,11 +1,15 @@
 import { MatchDict } from "./MatchDict";
 
-export type matcher_callback =  (data: string[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any) => any
+export type matcher_callback =  (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any) => any
 // needs more precise error handler
+// TODO: Support Any Type Done  
+// TODO: Composable Matcher Done
+// TODO: One Of
+// TODO: sep by 
 
 export function match_eqv(pattern_constant: string): matcher_callback {
 
-    return (data: string[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+    return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         if (data.length === 0) {
             return false;
         }
@@ -18,8 +22,8 @@ export function match_eqv(pattern_constant: string): matcher_callback {
 }
 
 
-export function match_element(variable: string, restriction: (value: string) => boolean = (value: string) => true): matcher_callback {
-    return (data: string[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+export function match_element(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {
+    return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         if (data.length === 0) {
             return false;
         }
@@ -40,26 +44,32 @@ export function match_element(variable: string, restriction: (value: string) => 
     };
 }
 
-export function match_segment(variable: string): matcher_callback {
+export function match_segment(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {
 
-    const loop = (index: number, data: string[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+    const loop = (index: number, data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         if (index >= data.length) {
             return false;
+        }
+        if (!restriction(data[index])){
+            return false
         }
         const result = succeed(dictionary.extend(variable, data.slice(0, index + 1)), index + 1);
         return result !== false ? result : loop(index + 1, data, dictionary, succeed);
     };
 
-    const match_segment_equal = (data: string[], value: string[], ok: (i: number) => any): any => {
+    const match_segment_equal = (data: any[], value: any[], ok: (i: number) => any): any => {
         for (let i = 0; i < data.length; i++) {
             if (data[i] !== value[i]) {
                 return false;
+            }
+            if (!restriction(data[i])){
+                return false
             }
         }
         return ok(data.length);
     };
 
-    return (data: string[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+    return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         if (data.length === 0) {
             return false;
         }

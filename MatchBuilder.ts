@@ -4,11 +4,13 @@ import { match_eqv, match_element, match_segment } from "./MatchCallback";
 import { run_matcher, match_choose } from "./MatchCombinator";
 import { emptyMatchDict } from "./MatchDict";
 
+//TODO: Support parsec like composable patterns 
+
 export class MatchBuilder{
     private patterns: matcher_callback[] = []
 
     private add(pattern: matcher_callback): MatchBuilder {
-        this.patterns.push(pattern)
+        this.patterns.push(pattern
         return this
     }
 
