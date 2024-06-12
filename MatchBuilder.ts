@@ -10,7 +10,7 @@ export class MatchBuilder{
     private patterns: matcher_callback[] = []
 
     private add(pattern: matcher_callback): MatchBuilder {
-        this.patterns.push(pattern
+        this.patterns.push(pattern)
         return this
     }
 
@@ -26,8 +26,8 @@ export class MatchBuilder{
         return this.add(match_element(name, restriction))
     }
 
-    public setSegment(name: string): MatchBuilder {
-        return this.add(match_segment(name))
+    public setSegment(name: string, restriction: (value: string) => boolean): MatchBuilder {
+        return this.add(match_segment(name, restriction))
     }
 
     public match(data: string[],  succeed: (dictionary: MatchDict, nEaten: number) => any): any {
