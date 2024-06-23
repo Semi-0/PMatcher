@@ -17,46 +17,57 @@ function isPurelyNestedArray(obj: any): boolean {
     return Array.isArray(obj) && obj.every(item => Array.isArray(item));
 }
 
+function isArray(obj: any): boolean {
+    return Array.isArray(obj);
+}
+
+function first(array: any[]): any {
+    return array[0]
+}
+
+function rest(array: any[]): any[] {
+    return array.slice(1)
+}
+
+function isPair(array: any[]): boolean {
+    return array.length !== 0 && array !== null && array !== undefined
+}
+
+function isEmpty(array: any[]): boolean {
+    return array.length === 0
+}
 
 
 
-
-export function match_compose(matchers: matcher_callback[]) : matcher_callback {
+export function match_compose(all_matchers: matcher_callback[]) : matcher_callback {
     return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        const loop = (data_index: number, matcher_index: number, dictionary: MatchDict): any => {
-            if (matcher_index < matchers.length){
-                const matcher = matchers[matcher_index];
-                const currentSlice = data.slice(data_index);
-
-                if (isPurelyNestedArray(currentSlice)){
-                    const result = matcher(currentSlice[0], dictionary, (new_dict, nEaten) => {
-                        return loop(data_index + nEaten, matcher_index + 1, new_dict);
-                    });
-                    return result;
-                }
-                else{
-                    const result = matcher(currentSlice, dictionary, (new_dict, nEaten) => {
-                        return loop(data_index + nEaten, matcher_index + 1, new_dict);
-                    });
-                    return result;
-                }
-            } else if (data_index < data.length){
-            // means data is not fully consumed
+        const loop = (data_list: any[], matchers: matcher_callback[], dictionary: MatchDict): any => {
+        
+                // const matcher = matchers[matcher_index];
+            if (isPair(matchers)){
+                const matcher = first(matchers)
+                const result = matcher(data_list, dictionary, (new_dict: MatchDict, nEaten: number) => {
+                    return loop(data_list.slice(nEaten), rest(matchers), new_dict);
+                });
+                return result;
+            }
+             else if (isPair(data_list)){
                return false  
             } 
-            else if (data_index >= data.length){
-                return succeed(dictionary, data_index)
+            else if (isEmpty(data_list)){
+                return succeed(dictionary, 1)
             }
-            else {
+            else{
                 return false
             }
+
         };
         
-        if  (data === undefined || data === null || data.length === 0) {
+        if  (!isPair(data)) {
             return false;
         }
         else{
-            return loop(0, 0, dictionary)
+            return loop(first(data), all_matchers, dictionary)
         }
     };
 }
@@ -93,20 +104,10 @@ const nested_matcher_test = match_compose([
 
 ])
 
-const result = nested_matcher_test(["a", "b", [["c", "d"]]], new MatchDict(new Map()), (dict, nEaten) => {
+const result = nested_matcher_test([["a", "b", [["c", "d"]]]], new MatchDict(new Map()), (dict, nEaten) => {
    return dict 
 })
 
 console.log(inspect(result))
 
 
-// const matcher_test = match_compose([
-//     match_constant("a"),
-// ]
-// )
-
-// const result2 = matcher_test(["a", "b"], new MatchDict(new Map()), (dict, nEaten) => {
-//     return nEaten
-// })
-
-// console.log(inspect(result2))
