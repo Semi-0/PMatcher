@@ -10,7 +10,7 @@ export type matcher_callback =  (data: any[], dictionary: MatchDict, succeed: (d
 
 export function match_constant(pattern_constant: string): matcher_callback {
     return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        if (data.length === 0) {
+        if (data === undefined || data === null || data.length === 0) {
             return false;
         }
         if (data[0] === pattern_constant) {
@@ -23,7 +23,7 @@ export function match_constant(pattern_constant: string): matcher_callback {
 
 export function match_element(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {
     return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        if (data.length === 0) {
+        if (data === undefined || data === null || data.length === 0) {
             return false;
         }
         const binding_value = dictionary.get(variable);
@@ -74,7 +74,7 @@ export function match_segment(variable: string, restriction: (value: any) => boo
     };
 
     return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        if (data.length === 0) {
+        if (data === undefined || data === null || data.length === 0) {
             return false;
         }
 
