@@ -1,6 +1,6 @@
 import type { matcher_callback } from "./MatchCallback";
 import { MatchDict } from "./MatchDict";
-import { match_eqv, match_element, match_segment } from "./MatchCallback";
+import { match_constant, match_element, match_segment } from "./MatchCallback";
 import { run_matcher, match_choose } from "./MatchCombinator";
 import { emptyMatchDict } from "./MatchDict";
 
@@ -15,7 +15,7 @@ export class MatchBuilder{
     }
 
     public setConstant(name: string): MatchBuilder {
-        return this.add(match_eqv(name))
+        return this.add(match_constant(name))
     }
 
     public setElement(name: string): MatchBuilder {
@@ -26,7 +26,7 @@ export class MatchBuilder{
         return this.add(match_element(name, restriction))
     }
 
-    public setSegment(name: string, restriction: (value: string) => boolean): MatchBuilder {
+    public setSegment(name: string, restriction: (value: string) => boolean = () => true): MatchBuilder {
         return this.add(match_segment(name, restriction))
     }
 
@@ -38,3 +38,14 @@ export class MatchBuilder{
         return this.add(match_choose(matchers))
     }
 }
+
+
+
+const test_p: MatchBuilder = new MatchBuilder()
+    .setSegment("a", (s) => true)
+    .setConstant("c")
+    .setSegment("b", (s) => true)
+
+test_p.match(["a1", "a2", "a3", "c", "b1", "b2", "b3"], (dict: MatchDict, nEaten: number) => {
+    console.log(dict, nEaten)
+})
