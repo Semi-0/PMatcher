@@ -6,7 +6,7 @@ import {  match_constant, match_element, match_segment } from '../MatchCallback'
 import type { matcher_callback } from '../MatchCallback';
 import { match_compose } from '../MatchCombinator';
 import { match_choose } from "../MatchCombinator";
-import { run_matcher } from '../MatchCombinator';
+import { run_matcher } from '../MatchBuilder';
 import { match_builder } from "../MatchBuilder";
 
 describe('MatchResult', () => {
@@ -289,24 +289,23 @@ describe('Nested Array Matching Tests', () => {
 
 });
 
-
-describe('match_builder', () => {
+describe('match_builder with run_matcher', () => {
   test('should handle constant patterns correctly', () => {
     const matcher = match_builder(["a", "b", "c"]);
     const data = ["a", "b", "c"];
     const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
-    matcher(data, succeed);
+    run_matcher(matcher, data, succeed);
 
     expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
   });
 
   test('should handle nested array patterns correctly', () => {
-    const matcher = match_builder([["a", "b"], "c"]);
-    const data = [["a", "b"], "c"];
+    const matcher = match_builder([[["a", "b"], "c"]]);
+    const data = [[["a", "b"], "c"]];
     const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
-    matcher(data, succeed);
+    run_matcher(matcher, data, succeed);
 
     expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
   });
@@ -316,7 +315,7 @@ describe('match_builder', () => {
     const data = [["value", "b"]];
     const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
-    matcher(data, succeed);
+    run_matcher(matcher, data, succeed);
 
     expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
     expect(succeed.mock.calls[0][0].get("x")).toEqual("value");
@@ -327,7 +326,7 @@ describe('match_builder', () => {
     const data = ["a", "c"];
     const succeed = jest.fn();
 
-    const result = matcher(data, succeed);
+    const result = run_matcher(matcher, data, succeed);
 
     expect(result).toBe(false);
     expect(succeed).not.toHaveBeenCalled();
@@ -338,112 +337,9 @@ describe('match_builder', () => {
     const data = [["a", "b", "d"], "c"];
     const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
-    matcher(data, succeed);
+    run_matcher(matcher, data, succeed);
 
     expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
     expect(succeed.mock.calls[0][0].get("seg")).toEqual(["b", "d"]);
   });
 });
-
-// describe('MatcherBuilder', () => {
-//     test('should correctly configure and run a matcher with constants, elements, and segments', () => {
-//         // Create a new MatcherBuilder instance
-//         const builder = new MatchBuilder();
-
-//         // Configure the builder with various matchers
-//         builder.setConstant("start");
-//         builder.setElement("middle");
-//         builder.setSegment("end");
-
-//         // Mock data and dictionary
-//         const testData = [["start", "anything", "end"]];
-//         const mockSucceed = jest.fn((dictionary, nEaten) => true);
-
-//         // Execute the matcher
-//         const result = builder.match(testData, mockSucceed);
-
-//         // Check if the succeed function was called correctly
-//         expect(mockSucceed).toHaveBeenCalled();
-//         expect(mockSucceed.mock.calls[0][1]).toBe(3); // nEaten should be 3
-//         expect(result).toBe(true);
-//     });
-
-//     test('should return false for mismatched patterns', () => {
-//         // Create a new MatcherBuilder instance
-//         const builder = new MatchBuilder();
-
-//         // Configure the builder
-//         builder.setConstant("start");
-//         builder.setElement("middle");
-//         builder.setSegment("end");
-
-//         // Mock data and dictionary
-//         const mismatchedData = ["wrong", "data", "here"];
-//         const mockSucceed = jest.fn((dictionary, nEaten) => true);
-
-//         // Execute the matcher
-//         const result = builder.match(mismatchedData, mockSucceed);
-
-//         // Check if the succeed function was not called due to mismatch
-//         expect(mockSucceed).not.toHaveBeenCalled();
-//         expect(result).toBe(false);
-//     });
-
-//     test('should handle element with restriction correctly', () => {
-//         // Create a new MatcherBuilder instance
-//         const builder = new MatchBuilder();
-
-//         // Configure the builder with an element that has a restriction
-//         builder.setElementWithRestriction("number", value => !isNaN(Number(value)));
-
-//         // Mock data and dictionary
-//         const validData = ["42"];
-//         const invalidData = ["not-a-number"];
-//         const mockSucceed = jest.fn((dictionary, nEaten) => true);
-
-//         // Execute the matcher with valid data
-//         builder.match(validData, mockSucceed);
-//         expect(mockSucceed).toHaveBeenCalled();
-//         expect(mockSucceed.mock.calls[0][1]).toBe(1); // nEaten should be 1
-
-//         // Reset mock and test with invalid data
-//         mockSucceed.mockClear();
-//         builder.match(invalidData, mockSucceed);
-//         expect(mockSucceed).not.toHaveBeenCalled();
-//     });
-// });
-
-// describe('match_choose', () => {
-//     const mockSucceed = jest.fn((dictionary: MatchDict, nEaten: number) => true);
-
-//     test('should select the correct matcher and apply it', () => {
-//         const matcher1: matcher_callback = jest.fn((data, dictionary, succeed) => false);
-//         const matcher2: matcher_callback = jest.fn((data, dictionary, succeed) => succeed(dictionary, data.length));
-//         const matchers = [matcher1, matcher2];
-//         const data = ["test"];
-//         const dictionary = new MatchDict(new Map());
-
-//         const chosen = match_choose(matchers);
-//         const result = chosen(data, dictionary, mockSucceed);
-
-//         expect(matcher1).toHaveBeenCalled();
-//         expect(matcher2).toHaveBeenCalled();
-//         expect(mockSucceed).toHaveBeenCalledWith(dictionary, data.length);
-//         expect(result).toBe(true);
-//     });
-
-//     test('should return false if no matchers succeed', () => {
-//         const matcher1: matcher_callback = jest.fn((data, dictionary, succeed) => false);
-//         const matcher2: matcher_callback = jest.fn((data, dictionary, succeed) => false);
-//         const matchers = [matcher1, matcher2];
-//         const data = ["test"];
-//         const dictionary = new MatchDict(new Map());
-
-//         const chosen = match_choose(matchers);
-//         const result = chosen(data, dictionary, mockSucceed);
-//         expect(matcher1).toHaveBeenCalled();
-//         expect(matcher2).toHaveBeenCalled();
-//         // expect(mockSucceed).not.toHaveBeenCalled(); i don't think this is very important since it returns the right value
-//         expect(result).toBe(false);
-//     });
-// });

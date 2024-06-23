@@ -56,27 +56,27 @@ export function match_choose(matchers: matcher_callback[]): matcher_callback {
 // .constant "("   (choose (. compose (.segment('symbol') .segment('whitespace'))  ))
 
 
-export function run_matcher(matchers: matcher_callback[], data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any {
-   const ml = match_compose(matchers)
-   return ml(data, dictionary, succeed)
-}
+// export function run_matcher(matchers: matcher_callback[], data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any {
+//    const ml = match_compose(matchers)
+//    return ml(data, dictionary, succeed)
+// }
 
-const nested_matcher_test = match_compose([
-    match_constant("a"),
-    match_constant("b"),
-    match_compose([
-       match_compose([
-        match_element("symbol"),
-        match_constant("d")
-       ])
-    ])
+// const nested_matcher_test = match_compose([
+//     match_constant("a"),
+//     match_constant("b"),
+//     match_compose([
+//        match_compose([
+//         match_element("symbol"),
+//         match_constant("d")
+//        ])
+//     ])
 
-])
+// ])
 
-const result = nested_matcher_test([["a", "b", [["c", "d"]]]], new MatchDict(new Map()), (dict, nEaten) => {
-   return dict 
-})
+// const result = nested_matcher_test([["a", "b", [["c", "d"]]]], new MatchDict(new Map()), (dict, nEaten) => {
+//    return dict 
+// })
 
-console.log(inspect(result))
+// console.log(inspect(result))
 
 
