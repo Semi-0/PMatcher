@@ -2,40 +2,9 @@ import { MatchDict, emptyMatchDict } from "./MatchDict";
 import { match_constant, match_element, match_segment } from "./MatchCallback";
 import type { matcher_callback } from "./MatchCallback";
 import { inspect } from "util";
-
+import { first, rest, isPair, isEmpty } from "./utility";
 
 // match_element match_segment match_compose(match_constant, match_segment))
-
-function isNestedArray(obj: any): boolean {
-    if (Array.isArray(obj)) {
-        return obj.some(item => Array.isArray(item));
-    }
-    return false;
-}
-
-function isPurelyNestedArray(obj: any): boolean {
-    return Array.isArray(obj) && obj.every(item => Array.isArray(item));
-}
-
-function isArray(obj: any): boolean {
-    return Array.isArray(obj);
-}
-
-function first(array: any[]): any {
-    return array[0]
-}
-
-function rest(array: any[]): any[] {
-    return array.slice(1)
-}
-
-function isPair(array: any[]): boolean {
-    return array.length !== 0 && array !== null && array !== undefined
-}
-
-function isEmpty(array: any[]): boolean {
-    return array.length === 0
-}
 
 
 

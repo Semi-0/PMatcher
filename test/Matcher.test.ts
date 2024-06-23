@@ -7,7 +7,8 @@ import type { matcher_callback } from '../MatchCallback';
 import { match_compose } from '../MatchCombinator';
 import { match_choose } from "../MatchCombinator";
 import { run_matcher } from '../MatchCombinator';
-import { MatchBuilder } from "../MatchBuilder";
+import { match_builder } from "../MatchBuilder";
+
 describe('MatchResult', () => {
     let dictionary: MatchDict;
     let matchResult: MatchResult;
@@ -286,6 +287,62 @@ describe('Nested Array Matching Tests', () => {
 
 });
 
+});
+
+
+describe('match_builder', () => {
+  test('should handle constant patterns correctly', () => {
+    const matcher = match_builder(["a", "b", "c"]);
+    const data = ["a", "b", "c"];
+    const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+    matcher(data, succeed);
+
+    expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+  });
+
+  test('should handle nested array patterns correctly', () => {
+    const matcher = match_builder([["a", "b"], "c"]);
+    const data = [["a", "b"], "c"];
+    const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+    matcher(data, succeed);
+
+    expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+  });
+
+  test('should handle element matchers correctly', () => {
+    const matcher = match_builder([[match_element("x"), "b"]]);
+    const data = [["value", "b"]];
+    const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+    matcher(data, succeed);
+
+    expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+    expect(succeed.mock.calls[0][0].get("x")).toEqual("value");
+  });
+
+  test('should return false when patterns do not match', () => {
+    const matcher = match_builder([["a", "b"]]);
+    const data = ["a", "c"];
+    const succeed = jest.fn();
+
+    const result = matcher(data, succeed);
+
+    expect(result).toBe(false);
+    expect(succeed).not.toHaveBeenCalled();
+  });
+
+  test('should handle complex nested patterns', () => {
+    const matcher = match_builder([["a", match_segment("seg")], "c"]);
+    const data = [["a", "b", "d"], "c"];
+    const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+    matcher(data, succeed);
+
+    expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+    expect(succeed.mock.calls[0][0].get("seg")).toEqual(["b", "d"]);
+  });
 });
 
 // describe('MatcherBuilder', () => {
