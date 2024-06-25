@@ -1,4 +1,6 @@
 import { MatchDict } from "./MatchDict";
+import { define_generic_procedure_handler } from "./GenericProcedure/GenericProcedure"
+import { toString } from "./utility"
 
 export class MatchResult{
     public readonly success: boolean;
@@ -25,3 +27,62 @@ export class MatchResult{
     }
 }
 
+export type MatchFailure = {
+    matcher: FailedMatcher;
+    reason: FailedReason; 
+    data: any;
+    position: number;
+    subFailure: MatchFailure[] | null;
+}
+
+
+export function registerPosition(position: number, matchFailure: MatchFailure) : MatchFailure{
+    return {matcher: matchFailure.matcher, reason: matchFailure.reason, data: matchFailure.data, position: position, subFailure: matchFailure.subFailure}
+}
+
+
+export function createMatchFailure(matcher: FailedMatcher, reason: FailedReason, data: any, position: number, subFailure: MatchFailure[] | null) : MatchFailure{
+    return {matcher, reason, data, position, subFailure}
+} 
+
+
+export function isMatchFailure(x: any) : x is MatchFailure{
+    return typeof x === "object" && x !== null && "reason" in x && "position" in x && "subFailure" in x
+}
+
+export function matchSuccess(x: any) : x is MatchFailure{
+    return !isMatchFailure(x)
+}
+
+
+export enum FailedMatcher{
+    Constant = "Constant",
+    Element = "Element",
+    Segment = "Segment",
+    Array = "Array",
+    Choice = "Choice"
+}
+
+export enum FailedReason{
+    UnexpectedEnd = "Unexpected end of input",
+    UnexpectedInput = "Unexpected input",
+    RestrictionUnmatched = "Restriction unmatched",
+    BindingValueUnmatched = "Binding value unmatched",
+    IndexOutOfBound = "Index out of bound",
+    UnConsumedInput = "Unconsumed input"
+}
+
+
+
+define_generic_procedure_handler(toString,
+    (x: any) => isMatchFailure(x),
+    (x: MatchFailure) => {
+
+        const subFailure = x.subFailure
+        if (subFailure) {
+            return `${x.reason} at position ${x.position}: ${toString(subFailure)}`
+        } else {
+            return `${x.reason} at position ${x.position}`
+        }
+    }
+)

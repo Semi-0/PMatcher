@@ -4,7 +4,7 @@ import { match_constant, match_element, match_segment } from "./MatchCallback";
 import {  match_choose } from "./MatchCombinator";
 import { emptyMatchDict } from "./MatchDict";
 import { first, rest, isPair, isEmpty, isArray, isString, isMatcher } from "./utility";
-import  { match_compose } from "./MatchCombinator";
+import  { match_array } from "./MatchCombinator";
 import { inspect } from "util";
 
 
@@ -15,7 +15,7 @@ export function match_builder(matchers: any[]): (data: any[], dict: MatchDict, s
     return (data: any[], dict: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any) => {
         const loop = (pattern: any): matcher_callback => {
             if (isArray(pattern)){
-                return match_compose((pattern as any[]).map((item: any) => loop(item)))
+                return match_array((pattern as any[]).map((item: any) => loop(item)))
             }
             else if (isString(pattern)){
                 console.log(`string: ${pattern}`)

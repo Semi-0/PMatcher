@@ -1,13 +1,16 @@
 import {test, expect, describe, beforeEach, mock, jest} from "bun:test";
 import { MatchDict } from '../MatchDict';
 import { MatchResult } from '../MatchResult';
+import type { MatchFailure } from "../MatchResult";
+import { FailedMatcher, FailedReason } from '../MatchResult';
 
 import {  match_constant, match_element, match_segment } from '../MatchCallback';
 import type { matcher_callback } from '../MatchCallback';
-import { match_compose } from '../MatchCombinator';
+import { match_array } from '../MatchCombinator';
 import { match_choose } from "../MatchCombinator";
 import { run_matcher } from '../MatchBuilder';
 import { match_builder } from "../MatchBuilder";
+import { createMatchFailure } from "../MatchResult";
 
 describe('MatchResult', () => {
     let dictionary: MatchDict;
@@ -66,7 +69,7 @@ describe('match_eqv', () => {
         expect(mockSucceed).toHaveBeenCalledWith(mockDictionary, 1);
     });
 
-    test('should return false when no data is provided', () => {
+    test('should return MatchFailure when no data is provided', () => {
         const matcher = match_constant("x");
         const mockData : string[] = [];
         const mockDictionary = new MatchDict(new Map());
@@ -74,11 +77,15 @@ describe('match_eqv', () => {
 
         const result = matcher(mockData, mockDictionary, mockSucceed);
 
-        expect(result).toBe(false);
+        expect(result).toEqual(expect.objectContaining({
+            matcher: FailedMatcher.Constant,
+            reason: FailedReason.UnexpectedEnd,
+            position: 0
+        }));
         expect(mockSucceed).not.toHaveBeenCalled();
     });
 
-    test('should return false when the first element does not match', () => {
+    test('should return MatchFailure when the first element does not match', () => {
         const matcher = match_constant("x");
         const mockData = ["y"];
         const mockDictionary = new MatchDict(new Map());
@@ -86,7 +93,11 @@ describe('match_eqv', () => {
 
         const result = matcher(mockData, mockDictionary, mockSucceed);
 
-        expect(result).toBe(false);
+        expect(result).toEqual(expect.objectContaining({
+            matcher: FailedMatcher.Constant,
+            reason: FailedReason.UnexpectedInput,
+            position: 0
+        }));
         expect(mockSucceed).not.toHaveBeenCalled();
     });
 });
@@ -115,7 +126,7 @@ describe('match_element', () => {
         expect(mockSucceed).toHaveBeenCalledWith(mockDictionary, 1);
     });
 
-    test('should return false when already bound to a different value', () => {
+    test('should return MatchFailure when already bound to a different value', () => {
         const matcher = match_element("x");
         const mockData = ["b"];
         const mockDictionary = new MatchDict(new Map([["x", "a"]]));
@@ -123,7 +134,11 @@ describe('match_element', () => {
 
         const result = matcher(mockData, mockDictionary, mockSucceed);
 
-        expect(result).toBe(false);
+        expect(result).toEqual(expect.objectContaining({
+            matcher: FailedMatcher.Element,
+            reason: FailedReason.BindingValueUnmatched,
+            position: 0
+        }));
         expect(mockSucceed).not.toHaveBeenCalled();
     });
 });
@@ -134,8 +149,7 @@ describe('match_segment', () => {
         const mockData = ["hello", "world"];
         const mockDictionary = new MatchDict(new Map());
         const mockSucceed = jest.fn((result: any) => {
-            console.log(result)
-            return false
+            return createMatchFailure(FailedMatcher.Segment, FailedReason.UnexpectedEnd, mockData, 0, null) 
         });
 
         matcher(mockData, mockDictionary, mockSucceed);
@@ -156,7 +170,7 @@ describe('match_segment', () => {
         expect(mockSucceed).toHaveBeenCalledWith(mockDictionary, 2);
     });
 
-    test('should return false when already bound to a different value', () => {
+    test('should return MatchFailure when already bound to a different value', () => {
         const matcher = match_segment("segment");
         const mockData = ["different", "input"];
         const mockDictionary = new MatchDict(new Map([["segment", ["hello", "world"]]]));
@@ -164,7 +178,11 @@ describe('match_segment', () => {
 
         const result = matcher(mockData, mockDictionary, mockSucceed);
 
-        expect(result).toBe(false);
+        expect(result).toEqual(expect.objectContaining({
+            matcher: FailedMatcher.Segment,
+            reason: FailedReason.BindingValueUnmatched,
+            position: 0
+        }));
         expect(mockSucceed).not.toHaveBeenCalled();
     });
 });
@@ -176,7 +194,7 @@ describe('match_list with complex patterns', () => {
         const matchSegment = match_segment("segment");
 
         // Create the match_list for the pattern [match_constant, match_segment]
-        const pattern = match_compose([matchX, matchSegment]);
+        const pattern = match_array([matchX, matchSegment]);
 
         // Define the test data and dictionary
         const testData = [["x", "hello", "world"]];
@@ -202,7 +220,7 @@ describe('match_list with complex patterns', () => {
         const matchY = match_constant("y");
 
         // Create the match_list for the pattern [match_constant, match_segment, match_constant]
-        const pattern = match_compose([matchX, matchSegment, matchY]);
+        const pattern = match_array([matchX, matchSegment, matchY]);
 
         // Define the test data and dictionary
         const testData = [["x", "hello", "world", "y"]];
@@ -220,14 +238,14 @@ describe('match_list with complex patterns', () => {
         expect(mockSucceed.mock.calls[0][0].get("segment")).toEqual(["hello", "world"]);
     });
 
-    test('should return false for mismatched patterns', () => {
+    test('should return MatchFailure for mismatched patterns', () => {
         // Matchers setup
         const matchX = match_constant("x");
         const matchSegment = match_segment("segment");
         const matchY = match_constant("y");
 
         // Create the match_list for the pattern [match_constant, match_segment, match_constant]
-        const pattern = match_compose([matchX, matchSegment, matchY]);
+        const pattern = match_array([matchX, matchSegment, matchY]);
 
         // Define test data that does not match the pattern
         const mismatchedData = [["x", "hello", "oops", "z"]];  // "z" should be "y"
@@ -240,7 +258,11 @@ describe('match_list with complex patterns', () => {
         const result = pattern(mismatchedData, dictionary, mockSucceed);
 
         // Check if the result is false and succeed function was not called
-        expect(result).toBe(false);
+        expect(result).toEqual(expect.objectContaining({
+            matcher: FailedMatcher.Array,
+            reason: FailedReason.UnexpectedInput,
+            position: 0
+        }));
         expect(mockSucceed).not.toHaveBeenCalled();
     });
 
@@ -248,11 +270,11 @@ describe('match_list with complex patterns', () => {
 
 describe('Nested Array Matching Tests', () => {
     test('matches simple nested array structure', () => {
-        const nested_matcher_test = match_compose([
+        const nested_matcher_test = match_array([
             match_constant("a"),
             match_constant("b"),
-            match_compose([
-                match_compose([
+            match_array([
+                match_array([
                     match_element("symbol"),
                     match_constant("d")
                 ])
@@ -267,10 +289,10 @@ describe('Nested Array Matching Tests', () => {
     });
 
     test('handles deeper nested arrays', () => {
-        const nested_matcher_test = match_compose([
+        const nested_matcher_test = match_array([
             match_constant("a"),
-            match_compose([
-                match_compose([
+            match_array([
+                match_array([
                     match_element("symbol"),
                     match_constant("d")
                 ])
@@ -321,14 +343,18 @@ describe('match_builder with run_matcher', () => {
     expect(succeed.mock.calls[0][0].get("x")).toEqual("value");
   });
 
-  test('should return false when patterns do not match', () => {
-    const matcher = match_builder([["a", "b"]]);
+  test('should return MatchFailure when patterns do not match', () => {
+    const matcher = match_builder(["a", "b"]);
     const data = ["a", "c"];
     const succeed = jest.fn();
 
     const result = run_matcher(matcher, data, succeed);
 
-    expect(result).toBe(false);
+    expect(result).toEqual(expect.objectContaining({
+        matcher: FailedMatcher.Array,
+        reason: FailedReason.UnexpectedInput,
+        position: 0 
+    }));
     expect(succeed).not.toHaveBeenCalled();
   });
 
