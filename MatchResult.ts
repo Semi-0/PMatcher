@@ -86,7 +86,8 @@ export enum FailedReason{
     RestrictionUnmatched = "Restriction unmatched",
     BindingValueUnmatched = "Binding value unmatched",
     IndexOutOfBound = "Index out of bound",
-    UnConsumedInput = "Unconsumed input"
+    UnConsumedInput = "Unconsumed input",
+    ToContinue = "To continue"
 }
 
 

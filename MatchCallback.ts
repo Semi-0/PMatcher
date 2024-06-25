@@ -58,11 +58,11 @@ export function match_element(variable: string, restriction: (value: any) => boo
     };
 }
 
-// export function match_wildcard(): matcher_callback {
-//     return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-//         return succeed(dictionary, 0);
-//     };
-// }
+export function match_all_other_element(): matcher_callback {
+    return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        return succeed(dictionary, 0);
+    };
+}
 
 export function match_segment(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {
 
@@ -119,6 +119,20 @@ export function match_segment(variable: string, restriction: (value: any) => boo
     };
 }
 
+
+export function match_segment_independently(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {
+    const match_segment_all_impl = match_segment(variable, restriction)
+    return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        return match_segment_all_impl(data, dictionary, (new_dict, nEaten) => {
+            if (nEaten == data.length) {
+                return succeed(new_dict, nEaten);
+            }
+            else{
+                return createMatchFailure(FailedMatcher.Segment, FailedReason.ToContinue, data, nEaten, null)
+            }
+        })
+    }
+}
 
 // let test_data = [1, 2, 3, 4, 5];
 // let test_dict = new MatchDict(new Map<string, any>());

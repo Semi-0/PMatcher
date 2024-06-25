@@ -1,10 +1,10 @@
 import {test, expect, describe, beforeEach, mock, jest} from "bun:test";
 import { MatchDict } from '../MatchDict';
-import { MatchResult } from '../MatchResult';
+import { MatchResult, isMatchFailure } from '../MatchResult';
 import type { MatchFailure } from "../MatchResult";
 import { FailedMatcher, FailedReason } from '../MatchResult';
 
-import {  match_constant, match_element, match_segment } from '../MatchCallback';
+import {  match_constant, match_element, match_segment, match_segment_independently } from '../MatchCallback';
 import type { matcher_callback } from '../MatchCallback';
 import { match_array } from '../MatchCombinator';
 import { match_choose } from "../MatchCombinator";
@@ -12,6 +12,7 @@ import { run_matcher } from '../MatchBuilder';
 import { match_builder } from "../MatchBuilder";
 import { createMatchFailure } from "../MatchResult";
 import { flattenNestedMatchFailure } from "../MatchResult";
+import { match_all_other_element } from "../MatchCallback";
 
 describe('MatchResult', () => {
     let dictionary: MatchDict;
@@ -371,4 +372,171 @@ describe('match_builder with run_matcher', () => {
     expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
     expect(succeed.mock.calls[0][0].get("seg")).toEqual(["b", "d"]);
   });
+});
+
+describe('match_segment_all', () => {
+    test('should succeed when the entire segment matches the restriction', () => {
+        const data = [1, 2, 3];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const matcher = match_segment_independently("segment", (value) => typeof value === 'number');
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), data.length);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should fail when the segment does not match the restriction', () => {
+        const data = [1, 2, 'a'];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn();
+
+        const matcher = match_segment_independently("segment", (value) => typeof value === 'number');
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(result).toEqual(createMatchFailure(FailedMatcher.Segment, FailedReason.RestrictionUnmatched, 'a', 2, null));
+    });
+
+
+});
+
+
+describe('Integration Tests for Matchers', () => {
+    test('should match a complex pattern with match_array and match_segment_all', () => {
+        const matcher = match_array([
+            match_constant("start"),
+            match_array([
+                match_segment_independently("numbers", (value) => typeof value === 'number'),
+            ]),
+            match_constant("end")
+        ]);
+
+        const data = [["start", [1, 2, 3], "end"]];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+        expect(succeed.mock.calls[0][0].get("numbers")).toEqual([1, 2, 3]);
+    });
+
+    test('should match a pattern with match_choose', () => {
+        const matcher = match_choose([
+            match_constant("a"),
+            match_constant("b"),
+            match_constant("c")
+        ]);
+
+        const data = ["b"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should handle nested match_array patterns', () => {
+        const matcher = match_array([
+            match_constant("a"),
+            match_array([
+                match_element("x"),
+                match_constant("b")
+            ]),
+            match_constant("c")
+        ]);
+
+        const data = [["a", ["value", "b"], "c"]];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+        expect(succeed.mock.calls[0][0].get("x")).toEqual("value");
+    });
+
+    test('should fail when pattern does not match', () => {
+        const matcher = match_array([
+            match_constant("a"),
+            match_array([
+                match_segment_independently("numbers", (value) => typeof value === 'number'),
+            ]),
+            match_constant("end")
+        ]);
+
+        const data = [["a", [1, "oops"], "end"]];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn();
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(isMatchFailure(result)).toBe(true);
+    });
+});
+
+
+describe('match_all_other_element', () => {
+    test('should succeed without consuming any input when constant in front matches', () => {
+        const data = ["constant", 1, 2, 3];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const matcher = match_constant("constant");
+        const result = matcher(data, dictionary, (new_dict, nEaten) => {
+            return match_all_other_element()(data.slice(nEaten), new_dict, succeed);
+        });
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 0);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should fail when the constant in front does not match', () => {
+        const data = ["wrong_constant", 1, 2, 3];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn();
+
+        const matcher = match_constant("constant");
+        const result = matcher(data, dictionary, (new_dict, nEaten) => {
+            return match_all_other_element()(data.slice(nEaten), new_dict, succeed);
+        });
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(result).toEqual(createMatchFailure(FailedMatcher.Constant, FailedReason.UnexpectedInput, "wrong_constant", 0, null));
+    });
+
+    test('should succeed with empty input when constant in front matches', () => {
+        const data = ["constant"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const matcher = match_constant("constant");
+        const result = matcher(data, dictionary, (new_dict, nEaten) => {
+            return match_all_other_element()(data.slice(nEaten), new_dict, succeed);
+        });
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 0);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should fail with empty input when constant in front does not match', () => {
+        const data = ["wrong_constant"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn();
+
+        const matcher = match_constant("constant");
+        const result = matcher(data, dictionary, (new_dict, nEaten) => {
+            return match_all_other_element()(data.slice(nEaten), new_dict, succeed);
+        });
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(result).toEqual(createMatchFailure(FailedMatcher.Constant, FailedReason.UnexpectedInput, "wrong_constant", 0, null));
+    });
 });
