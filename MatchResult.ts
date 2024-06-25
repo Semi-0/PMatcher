@@ -1,6 +1,7 @@
 import { MatchDict } from "./MatchDict";
 import { define_generic_procedure_handler } from "./GenericProcedure/GenericProcedure"
 import { toString } from "./utility"
+import { isElementAccessExpression } from "typescript";
 
 export class MatchResult{
     public readonly success: boolean;
@@ -32,16 +33,32 @@ export type MatchFailure = {
     reason: FailedReason; 
     data: any;
     position: number;
-    subFailure: MatchFailure[] | null;
+    subFailure: MatchFailure | null;
 }
 
+export function flattenNestedMatchFailure(matchFailure: MatchFailure) : MatchFailure[]{
+    const failures: MatchFailure[] = []
+
+    const traceFailures = (matchFailure: MatchFailure) => {
+        if (matchFailure.subFailure) {
+            failures.push(matchFailure)
+            traceFailures(matchFailure.subFailure)
+        }
+        else{
+            return  
+        }
+    }
+
+    traceFailures(matchFailure)
+    return failures
+}
 
 export function registerPosition(position: number, matchFailure: MatchFailure) : MatchFailure{
     return {matcher: matchFailure.matcher, reason: matchFailure.reason, data: matchFailure.data, position: position, subFailure: matchFailure.subFailure}
 }
 
 
-export function createMatchFailure(matcher: FailedMatcher, reason: FailedReason, data: any, position: number, subFailure: MatchFailure[] | null) : MatchFailure{
+export function createMatchFailure(matcher: FailedMatcher, reason: FailedReason, data: any, position: number, subFailure: MatchFailure | null) : MatchFailure{
     return {matcher, reason, data, position, subFailure}
 } 
 

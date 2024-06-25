@@ -6,6 +6,7 @@ import { emptyMatchDict } from "./MatchDict";
 import { first, rest, isPair, isEmpty, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
 import { inspect } from "util";
+import type { MatchFailure } from "./MatchResult";
 
 
 
@@ -40,7 +41,7 @@ export function match_builder(matchers: any[]): (data: any[], dict: MatchDict, s
     }
 }
 
-export function run_matcher(matcher: matcher_callback, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): MatchDict {
+export function run_matcher(matcher: matcher_callback, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): MatchDict | MatchFailure {
     return matcher([data], emptyMatchDict(), (dict, nEaten) => {
         return succeed(dict, nEaten)
     })

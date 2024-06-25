@@ -11,6 +11,7 @@ import { match_choose } from "../MatchCombinator";
 import { run_matcher } from '../MatchBuilder';
 import { match_builder } from "../MatchBuilder";
 import { createMatchFailure } from "../MatchResult";
+import { flattenNestedMatchFailure } from "../MatchResult";
 
 describe('MatchResult', () => {
     let dictionary: MatchDict;
@@ -348,12 +349,14 @@ describe('match_builder with run_matcher', () => {
     const data = ["a", "c"];
     const succeed = jest.fn();
 
-    const result = run_matcher(matcher, data, succeed);
+    const result : MatchFailure | MatchDict = run_matcher(matcher, data, succeed);
 
-    expect(result).toEqual(expect.objectContaining({
+    const failures = flattenNestedMatchFailure(result as MatchFailure)
+
+    expect(failures[1]).toEqual(expect.objectContaining({
         matcher: FailedMatcher.Array,
         reason: FailedReason.UnexpectedInput,
-        position: 0 
+        position: 1
     }));
     expect(succeed).not.toHaveBeenCalled();
   });

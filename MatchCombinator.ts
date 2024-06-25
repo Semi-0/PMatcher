@@ -15,7 +15,7 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
         const detailizeInfoWhenError = (result: any, position: number) => {
             // LIMITIONS: WOULD BACKTRACK ALL ERRORS WHEN ERROR OCCURS TODO: IMPROVE IT
             if (isMatchFailure(result)) {
-                return createMatchFailure(FailedMatcher.Array, FailedReason.UnexpectedInput, data, position, [result])
+                return createMatchFailure(FailedMatcher.Array, FailedReason.UnexpectedInput, data, position, result)
             }
             else{
                 return result
