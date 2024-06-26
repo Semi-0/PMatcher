@@ -485,16 +485,16 @@ describe('Integration Tests for Matchers', () => {
 
 describe('match_all_other_element', () => {
     test('should succeed without consuming any input when constant in front matches', () => {
-        const data = ["constant", 1, 2, 3];
+        const data = [["constant", 1, 2, 3]];
         const dictionary = new MatchDict(new Map<string, any>());
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
-        const matcher = match_constant("constant");
-        const result = matcher(data, dictionary, (new_dict, nEaten) => {
-            return match_all_other_element()(data.slice(nEaten), new_dict, succeed);
-        });
-
-        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 0);
+        const matcher = match_array([
+            match_constant("constant"),
+            match_all_other_element()
+        ]);
+        const result = matcher(data, dictionary, succeed);
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
         expect(result).toEqual(succeed.mock.results[0].value);
     });
 
@@ -513,16 +513,16 @@ describe('match_all_other_element', () => {
     });
 
     test('should succeed with empty input when constant in front matches', () => {
-        const data = ["constant"];
+        const data = [["constant"]];
         const dictionary = new MatchDict(new Map<string, any>());
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
-        const matcher = match_constant("constant");
-        const result = matcher(data, dictionary, (new_dict, nEaten) => {
-            return match_all_other_element()(data.slice(nEaten), new_dict, succeed);
-        });
-
-        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 0);
+        const matcher = match_array([
+            match_constant("constant"),
+            match_all_other_element()
+        ]);
+        const result = matcher(data, dictionary, succeed);
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
         expect(result).toEqual(succeed.mock.results[0].value);
     });
 
@@ -538,5 +538,90 @@ describe('match_all_other_element', () => {
 
         expect(succeed).not.toHaveBeenCalled();
         expect(result).toEqual(createMatchFailure(FailedMatcher.Constant, FailedReason.UnexpectedInput, "wrong_constant", 0, null));
+    });
+});
+
+
+describe('match_all_other_element', () => {
+    test('should succeed without consuming any input when constant in front matches', () => {
+        const data = [["constant", 1, 2, 3]];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const matcher = match_array([
+            match_constant("constant"),
+            match_all_other_element()
+        ]);
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should succeed with pattern ["start", match_all_other_element(), "end"]', () => {
+        const data = [["start", 1, 2, 3, "end"]];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const matcher = match_array([
+            match_constant("start"),
+            match_all_other_element(),
+            match_constant("end"),
+        ]);
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should fail with pattern ["start", match_all_other_element(), "end"] when "start" does not match', () => {
+        const data = [["wrong_start", 1, 2, 3, "end"]];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn();
+
+        const matcher = match_constant("start");
+        const result = matcher(data, dictionary, (new_dict, nEaten) => {
+            return match_all_other_element()(data.slice(nEaten), new_dict, (newer_dict, nEaten2) => {
+                return match_constant("end")(data.slice(nEaten + nEaten2), newer_dict, succeed);
+            });
+        });
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(isMatchFailure(result)).toBe(true);
+    });
+
+    test('should fail with pattern ["start", match_all_other_element(), "end"] when "end" does not match', () => {
+        const data = ["start", 1, 2, 3, "wrong_end"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn();
+
+        const matcher = match_constant("start");
+        const result = matcher(data, dictionary, (new_dict, nEaten) => {
+            return match_all_other_element()(data.slice(nEaten), new_dict, (newer_dict, nEaten2) => {
+                return match_constant("end")(data.slice(nEaten + nEaten2), newer_dict, succeed);
+            });
+        });
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(isMatchFailure(result)).toBe(true);
+    });
+});
+
+
+describe('match_all_other_element integrate with matchBuilder', () => {
+    test('should match a pattern with match_all_other_element', () => {
+        const matcher = match_builder([
+            "start", "...", "end"
+        ]);
+
+        const data = ["start", "a", "b", "c", "end"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result: MatchDict | MatchFailure = run_matcher(matcher, data, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
     });
 });

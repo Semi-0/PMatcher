@@ -7,8 +7,11 @@ import { first, rest, isPair, isEmpty, isArray, isString, isMatcher } from "./ut
 import  { match_array } from "./MatchCombinator";
 import { inspect } from "util";
 import type { MatchFailure } from "./MatchResult";
+import { match_all_other_element } from "./MatchCallback";
 
-
+function is_all_other_element(pattern: any): boolean {
+    return isString(pattern) && pattern === "..."
+}
 
 // expected an array of compose matcher [[a, b, c]] at least 2nd dimension array, because the first array would always be considered as compose matcher
 // and the second array sturcture matches that as ["a", "b", "c"]
@@ -17,6 +20,9 @@ export function match_builder(matchers: any[]): (data: any[], dict: MatchDict, s
         const loop = (pattern: any): matcher_callback => {
             if (isArray(pattern)){
                 return match_array((pattern as any[]).map((item: any) => loop(item)))
+            }
+            else if (is_all_other_element(pattern)){
+                return match_all_other_element()
             }
             else if (isString(pattern)){
                 console.log(`string: ${pattern}`)

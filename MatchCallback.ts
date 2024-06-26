@@ -58,12 +58,6 @@ export function match_element(variable: string, restriction: (value: any) => boo
     };
 }
 
-export function match_all_other_element(): matcher_callback {
-    return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        return succeed(dictionary, 0);
-    };
-}
-
 export function match_segment(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {
 
     const loop = (index: number, data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
@@ -133,6 +127,32 @@ export function match_segment_independently(variable: string, restriction: (valu
         })
     }
 }
+export function match_all_other_element(): matcher_callback {
+  
+    return (data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {  
+        const loop = (index: number, data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+            if (index >= data.length) {
+                return succeed(dictionary, 0);
+            }
+            
+            if (data === undefined || data === null || data.length === 0) {
+                return succeed(dictionary, 0);
+            }
+
+            const result = succeed(dictionary, index + 1);
+
+            if (matchSuccess(result)) {
+                return result;
+            }
+            else{
+                return loop(index + 1, data, dictionary, succeed);
+            }
+        
+        };
+        return loop(0, data, dictionary, succeed);
+    }
+}
+
 
 // let test_data = [1, 2, 3, 4, 5];
 // let test_dict = new MatchDict(new Map<string, any>());
