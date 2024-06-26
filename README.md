@@ -22,11 +22,13 @@ import { MatchDict } from 'pmatcher/MatchDict';
 const matcher = match_builder(["Hello", ["John", match_segment("details"), "Unrelated"]]);
 // Example data array
 const data = ["Hello", ["John", "age:30", "location:NY", "Unrelated"]];
+
 // Define a success callback
 function onSuccess(matchDict: MatchDict, nEaten: number) {
-console.log(Matched Dictionary:, matchDict);
-console.log(Number of elements processed:, nEaten);
+   console.log(Matched Dictionary:, matchDict);
+   console.log(Number of elements processed:, nEaten);
 }
+
 // Run the matcher on the data
 const result = run_matcher(matcher, data, onSuccess);
 console.log(result);
@@ -54,14 +56,16 @@ import { MatchDict } from 'pmatcher/MatchDict';
 const matcher = match_builder(["start","...", match_element("e")]);
 // Example data array
 const data = ["start", 1, 2, 3, "end"];
+
 // Define a success callback
 function onSuccess(matchDict: MatchDict, nEaten: number) {
-console.log(Matched Dictionary:, matchDict);
-console.log(Number of elements processed:, nEaten);
+   console.log(Matched Dictionary:, matchDict);
+   console.log(Number of elements processed:, nEaten);
 }
+
 // Run the matcher on the data
-const result = run_matcher(matcher, data, onSuccess);
-console.log(result);
+run_matcher(matcher, data, onSuccess);
+
 ```
 output:
 ```
@@ -81,14 +85,16 @@ import { MatchDict } from 'pmatcher/MatchDict';
 const nestedMatcherWithElement = match_builder(["start", [ "subStart", match_element("key")], "subEnd"], "end"]);
 // Example data array
 const nestedDataWithElement = ["start", ["subStart", "actualValue", "subEnd"], "end"];
+
 // Define a success callback
 function onNestedSuccessWithElement(matchDict: MatchDict, nEaten: number) {
   console.log('Matched Dictionary:', matchDict);
   console.log('Number of elements processed:', nEaten);
 }
+
 // Run the matcher on the data
-const nestedResultWithElement = run_matcher(nestedMatcherWithElement, nestedDataWithElement, onNestedSuccessWithElement);
-console.log(nestedResultWithElement);
+run_matcher(nestedMatcherWithElement, nestedDataWithElement, onNestedSuccessWithElement);
+
 ```
 output:
 ```
@@ -115,14 +121,16 @@ const matcher = match_builder(["m:letrec",
   match_reference("a")])
 // Example data array
 const data = [["1", ["2", ["1", ["2", []]]]]];
+
 // Define a success callback
 function onSuccess(environment: MatchEnvironment, nEaten: number) {
-console.log("Matched Environment:", environment);
-console.log("Number of elements processed:", nEaten);
+  console.log("Matched Environment:", environment);
+  console.log("Number of elements processed:", nEaten);
 }
+
 // Run the matcher on the data
-const result = run_matcher(matcher, data, onSuccess);
-console.log(result);
+run_matcher(matcher, data, onSuccess);
+
 ```
 
 
