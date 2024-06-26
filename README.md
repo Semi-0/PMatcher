@@ -10,7 +10,7 @@ or
 ```bash
 npm install pmatcher
 ```
-# Using MatchBuilder
+ # Using MatchBuilder
 
 The `match_builder` function allows you to build and run custom pattern matchers. Here's a basic example of how to use it:
 
@@ -35,6 +35,15 @@ const result = run_matcher(matcher, data, onSuccess);
 console.log(result);
 ```
 
+output:
+```
+Matched Dictionary: {
+  "Hello": "Hello",
+  "details": ["John", "age:30", "location:NY"]
+}
+Number of elements processed: 2
+```
+
 
 This example demonstrates how to use the `match_builder` and `run_matcher` functions to create a matcher that matches a constant string "Hello" followed by a segment containing details. The `onSuccess` callback is called when the matcher successfully matches the data, and it logs the matched dictionary and the number of elements processed.
 
@@ -57,6 +66,14 @@ console.log(Number of elements processed:, nEaten);
 // Run the matcher on the data
 const result = run_matcher(matcher, data, onSuccess);
 console.log(result);
+```
+output:
+```
+Matched Dictionary: {
+  "start": "start",
+  "...": [1, 2, 3]
+}
+Number of elements processed: 5
 ```
 
 
@@ -83,12 +100,19 @@ function onNestedSuccessWithElement(matchDict: MatchDict, nEaten: number) {
 const nestedResultWithElement = run_matcher(nestedMatcherWithElement, nestedDataWithElement, onNestedSuccessWithElement);
 console.log(nestedResultWithElement);
 ```
+output:
+```
+Matched Dictionary: {
+  "start": "start",
+  "...": [["subStart", "actualValue", "subEnd"]]
+}
+Number of elements processed: 3
+```
 
 
+## Detailed Explanation for MatchCallback.ts and MatchCombinator.ts in MatchBuilder.ts
 
-// Detailed Explanation for MatchCallback.ts and MatchCombinator.ts in MatchBuilder.ts
 
-/*
 In MatchBuilder.ts, we utilize functions from MatchCallback.ts and MatchCombinator.ts to construct complex pattern matchers.
 
 1. MatchCallback.ts:
