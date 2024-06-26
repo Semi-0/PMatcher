@@ -25,11 +25,13 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
         
         
         const loop = (data_list: any[], matchers: matcher_callback[], dictionary: MatchEnvironment): any => {
-        
                 // const matcher = matchers[matcher_index];
             if (isPair(matchers)){
                 const matcher = first(matchers)
                 const result = matcher(data_list, dictionary, (new_dict: MatchEnvironment, nEaten: number) => {
+                    console.log("nEaten", nEaten)
+                    console.log("data_list", data_list)
+                    console.log("sliced", data_list.slice(nEaten))
                     return loop(data_list.slice(nEaten), rest(matchers), new_dict);
                 });
                 // console.log("success matcher:" + matcher.toString())
@@ -59,6 +61,7 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
             return succeed(dictionary, 0)
         }
         else{
+            console.log("loop", first(data), all_matchers, dictionary)
             return loop(first(data), all_matchers, dictionary)
         }
     };
@@ -69,6 +72,7 @@ export function match_choose(matchers: matcher_callback[]): matcher_callback {
     return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
         for (const matcher of matchers) {
             const result = matcher(data, dictionary, succeed)
+            // console.log("choose matcher", matcher.toString(), "result", result)
             if (matchSuccess(result)) {
                 return result
             }
@@ -88,8 +92,9 @@ export function match_reference(reference_symbol: string): matcher_callback{
             return createMatchFailure(FailedMatcher.Reference, FailedReason.UnexpectedEnd, data, 0, null)
         }
         else if (matcher) {
+            // console.log("reference matcher", matcher.toString())
             const result = matcher(data, dictionary, succeed)
-
+            // console.log("reference success", result)
             if (matchSuccess(result)) {
                 return result
             }
@@ -115,3 +120,12 @@ export function match_letrec(bindings: {[key: string]: matcher_callback}, body: 
     }
 }
 
+export function match_new_var(name: string[], body: matcher_callback): matcher_callback {
+    return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
+    
+        const new_dict = name.reduce((acc, n) => acc.extend(n, undefined), dictionary.spawnChild())
+        // console.log("new dict", new_dict)
+        // console.log("body", body)
+        return body(data, new_dict, succeed)
+    }
+}

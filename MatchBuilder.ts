@@ -1,7 +1,7 @@
 import type { matcher_callback } from "./MatchCallback";
 import { MatchDict } from "./MatchDict";
 import { match_constant, match_element, match_segment } from "./MatchCallback";
-import {  match_choose, match_letrec, match_reference } from "./MatchCombinator";
+import {  match_choose, match_letrec, match_reference, match_new_var } from "./MatchCombinator";
 import { emptyMatchDict } from "./MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
@@ -21,6 +21,10 @@ function is_Letrec(pattern: any): boolean {
 
 function is_select(pattern: any): boolean {
     return isPair(pattern) && isString(first(pattern)) && first(pattern) === "m:choose" 
+}
+
+function is_new_var(pattern: any): boolean {
+    return isPair(pattern) && isString(first(pattern)) && first(pattern) === "m:new" 
 }
 
 // expected an array of compose matcher [[a, b, c]] at least 2nd dimension array, because the first array would always be considered as compose matcher
@@ -43,6 +47,13 @@ export function match_builder(matchers: any[]): (data: any[], environment: Match
                 }
                 return match_letrec(pattern_to_binding(pattern[1]), loop(pattern[2]))
             }
+            else if (is_new_var(pattern)){
+                if (pattern.length <= 2){
+                    throw new Error(`Invalid new pattern: ${pattern}`)
+                }
+                return match_new_var(pattern[1], loop(pattern[2]))
+            }
+
             else if (is_select(pattern)){
                 if (pattern.length < 2){
                     throw new Error(`Invalid choose pattern: ${pattern}`)
@@ -86,10 +97,13 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (en
 
 
 const match_builder_test = match_builder(["m:letrec",
-                                         [["a", [match_constant("b"), match_segment("segment")]]], 
-                                         ["d", match_reference("a")]])
+                                         [["palindrome", ["m:new", ["x"] ,
+                                                        ["m:choose", [], [match_element("x"), 
+                                                                          match_reference("palindrome"),
+                                                                          match_element("x")]]]]], 
+                                         [match_reference("palindrome")]])
 
-const result = run_matcher(match_builder_test, ["d", ["b", "c", "e"]], (environment, nEaten) => {
+const result = run_matcher(match_builder_test, [["a", ["b", [] , "b"], "a"]], (environment, nEaten) => {
     console.log(`environment: ${inspect(environment)}`)
     console.log(`nEaten: ${nEaten}`)
 })
