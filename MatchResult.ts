@@ -63,8 +63,13 @@ export function createMatchFailure(matcher: FailedMatcher, reason: FailedReason,
 } 
 
 
-export function isMatchFailure(x: any) : x is MatchFailure{
-    return typeof x === "object" && x !== null && "reason" in x && "position" in x && "subFailure" in x
+export function isMatchFailure(x: any): x is MatchFailure {
+    return typeof x === "object" && x !== null &&
+           "matcher" in x && typeof x.matcher === "string" &&
+           "reason" in x && typeof x.reason === "string" &&
+           "data" in x &&
+           "position" in x && typeof x.position === "number" &&
+           "subFailure" in x && (x.subFailure === null || isMatchFailure(x.subFailure));
 }
 
 export function matchSuccess(x: any) : x is MatchFailure{
@@ -77,7 +82,8 @@ export enum FailedMatcher{
     Element = "Element",
     Segment = "Segment",
     Array = "Array",
-    Choice = "Choice"
+    Choice = "Choice",
+    Reference = "Reference"
 }
 
 export enum FailedReason{
@@ -87,7 +93,8 @@ export enum FailedReason{
     BindingValueUnmatched = "Binding value unmatched",
     IndexOutOfBound = "Index out of bound",
     UnConsumedInput = "Unconsumed input",
-    ToContinue = "To continue"
+    ToContinue = "To continue",
+    ReferenceNotFound = "Reference not found"
 }
 
 

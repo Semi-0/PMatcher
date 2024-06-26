@@ -1,5 +1,5 @@
 import {test, expect, describe, beforeEach, mock, jest} from "bun:test";
-import { MatchDict } from '../MatchDict';
+import { MatchDict, emptyMatchDict } from '../MatchDict';
 import { MatchResult, isMatchFailure } from '../MatchResult';
 import type { MatchFailure } from "../MatchResult";
 import { FailedMatcher, FailedReason } from '../MatchResult';
@@ -7,7 +7,7 @@ import { FailedMatcher, FailedReason } from '../MatchResult';
 import {  match_constant, match_element, match_segment, match_segment_independently } from '../MatchCallback';
 import type { matcher_callback } from '../MatchCallback';
 import { match_array } from '../MatchCombinator';
-import { match_choose } from "../MatchCombinator";
+import { match_choose, match_letrec, match_reference } from "../MatchCombinator";
 import { run_matcher } from '../MatchBuilder';
 import { match_builder } from "../MatchBuilder";
 import { createMatchFailure } from "../MatchResult";
@@ -190,6 +190,17 @@ describe('match_segment', () => {
 });
 
 describe('match_list with complex patterns', () => {
+    test("should success when matching empty array", () => {
+        const matcher = match_array([]);
+        const data: any[] = [];
+        const dictionary = new MatchDict(new Map());
+        const succeed = jest.fn();
+
+        matcher(data, dictionary, succeed);
+        expect(succeed).toHaveBeenCalledWith(dictionary, 0);
+    })
+
+
     test('should handle pattern with constants and a segment', () => {
         // Matchers for the scenario
         const matchX = match_constant("x");
@@ -623,5 +634,281 @@ describe('match_all_other_element integrate with matchBuilder', () => {
 
         expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
         expect(result).toEqual(succeed.mock.results[0].value);
+    });
+});
+
+
+describe('match_choose', () => {
+    test('should succeed with the first matching constant pattern', () => {
+        const matcher = match_choose([
+            match_constant("a"),
+            match_constant("b"),
+            match_constant("c")
+        ]);
+
+        const data = ["a"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should succeed with the second matching constant pattern', () => {
+        const matcher = match_choose([
+            match_constant("a"),
+            match_constant("b"),
+            match_constant("c")
+        ]);
+
+        const data = ["b"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should fail when no constant patterns match', () => {
+        const matcher = match_choose([
+            match_constant("a"),
+            match_constant("b"),
+            match_constant("c")
+        ]);
+
+        const data = ["d"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn();
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(result).toEqual(createMatchFailure(FailedMatcher.Choice, FailedReason.UnexpectedEnd, data, 3, null));
+    });
+
+    test('should succeed with a more complex pattern', () => {
+        const matcher = match_choose([
+            match_array([match_constant("a"), match_constant("b")]),
+            match_array([match_constant("c"), match_constant("d")])
+        ]);
+
+        const data = [["c", "d"]];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should fail when nested patterns do not match', () => {
+        const matcher = match_choose([
+            match_array([match_constant("a"), match_constant("b")]),
+            match_array([match_constant("c"), match_constant("d")])
+        ]);
+
+        const data = [["a", "d"]];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn();
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(result).toEqual(createMatchFailure(FailedMatcher.Choice, FailedReason.UnexpectedEnd, data, 2, null));
+    });
+
+    test('should succeed with a pattern that includes an element matcher', () => {
+        const matcher = match_choose([
+            match_constant("a"),
+            match_element("x")
+        ]);
+
+        const data = ["value"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+        expect(succeed.mock.calls[0][0].get("x")).toEqual("value");
+    });
+
+    test('should succeed with a pattern that includes a segment matcher', () => {
+        const matcher = match_choose([
+            match_constant("a"),
+            match_segment_independently("segment")
+        ]);
+
+        const data = ["value1", "value2"];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 2);
+        expect(result).toEqual(succeed.mock.results[0].value);
+        expect(succeed.mock.calls[0][0].get("segment")).toEqual(["value1", "value2"]);
+    });
+
+    test('should succeed with a pattern that combines element and segment matchers', () => {
+        const matcher = match_choose([
+            match_constant("a"),
+            match_array([match_element("x"), match_segment("segment")])
+        ]);
+
+        const data = [["value", "value1", "value2"]];
+        const dictionary = new MatchDict(new Map<string, any>());
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+        expect(succeed.mock.calls[0][0].get("x")).toEqual("value");
+        expect(succeed.mock.calls[0][0].get("segment")).toEqual(["value1", "value2"]);
+    });
+});
+
+
+describe('match_reference', () => {
+    test('should resolve and match reference correctly', () => {
+        const dictionary = new MatchDict(new Map<string, any>([
+            ["ref", match_constant("value")]
+        ]));
+        const matcher = match_reference("ref");
+
+        const data = ["value"];
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should fail when reference is not found', () => {
+        const dictionary = new MatchDict(new Map<string, any>());
+        const matcher = match_reference("ref");
+
+        const data = ["value"];
+        const succeed = jest.fn();
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(result).toEqual(createMatchFailure(FailedMatcher.Reference, FailedReason.ReferenceNotFound, data, 0, null));
+    });
+});
+
+describe('match_letrec', () => {
+    test('should handle simple recursive patterns correctly', () => {
+        const matcher = match_letrec({
+            "a": match_constant("1")
+        }, match_reference("a"));
+
+        const data = ["1"];
+        const dictionary = emptyMatchDict();
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should fail when simple recursive patterns do not match', () => {
+        const matcher = match_letrec({
+            "a": match_constant("1")
+        }, match_reference("a"));
+
+        const data = ["2"];
+        const dictionary = emptyMatchDict();
+        const succeed = jest.fn();
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).not.toHaveBeenCalled();
+        expect(isMatchFailure(result)).toBe(true);
+    });
+});
+
+describe('match_letrec with tail recursion', () => {
+    test('should handle tail recursive patterns correctly', () => {
+        const matcher = match_letrec({
+            "a": match_choose([match_array([]), match_array([match_constant("1"), match_reference("b")])]),
+            "b": match_choose([match_array([]), match_array([match_constant("2"), match_reference("a")])])
+        }, match_reference("a"));
+
+        const data = [["1", ["2", ["1", ["2", []]]]]];
+        const dictionary = emptyMatchDict();
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should fail when tail recursive patterns do not match', () => {
+        const matcher = match_letrec({
+            "a": match_choose([match_array([]), match_array([match_constant("1"), match_reference("b")])]),
+            "b": match_choose([match_array([]), match_array([match_constant("2"), match_reference("a")])])
+        }, match_reference("a"));
+
+        const data = ["1", ["2", ["1", ["3", []]]]]; // "3" should be "2"
+        const dictionary = emptyMatchDict();
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = matcher(data, dictionary, succeed);
+        // console.log("result", result)
+        // expect(succeed).not.toHaveBeenCalled();
+        expect(isMatchFailure(result)).toBe(true);
+    });
+});
+
+
+describe("match_builder", () => {
+    test("should match letrec pattern correctly", () => {
+        const match_builder_test = match_builder(["m:letrec",
+                                                 [["a", [match_constant("b"), match_segment("segment")]]], 
+                                                 ["d", match_reference("a")]]);
+
+        const result = run_matcher(match_builder_test, ["d", ["b", "c", "e"]], (dict, nEaten) => {
+            return { dict, nEaten };
+        });
+
+        console.log(result);
+
+        // Add assertions to verify the result
+        expect(result).toBeDefined();
+        expect(result).toHaveProperty("dict");
+        expect(result).toHaveProperty("nEaten");
+        expect(result.dict).toBeInstanceOf(MatchDict);
+        expect(result.nEaten).toBe(1);
+    });
+
+
+    test("should match m:choose pattern correctly", () => {
+        const match_builder_test = match_builder(["m:choose", ["a"], ["b"]]);
+
+        const result = run_matcher(match_builder_test, ["a"], (dict, nEaten) => {
+            return { dict, nEaten };
+        });
+
+        
+        console.log("result", result);
+
+        // Add assertions to verify the result
+        expect(result).toBeDefined();
+        expect(result).toHaveProperty("dict");
+        expect(result).toHaveProperty("nEaten");
+        expect(result.dict).toBeInstanceOf(MatchDict);
+        expect(result.nEaten).toBe(1);
     });
 });

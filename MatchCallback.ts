@@ -153,8 +153,3 @@ export function match_all_other_element(): matcher_callback {
     }
 }
 
-
-// let test_data = [1, 2, 3, 4, 5];
-// let test_dict = new MatchDict(new Map<string, any>());
-
-// console.log(match_segment("a")(test_data, test_dict, (d, n) => {console.log(d, n); return false }));
