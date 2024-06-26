@@ -4,6 +4,10 @@ export class MatchDict{
         this.dict = _dict;
     }
 
+    public has(key: string): boolean {
+        return this.dict.has(key);
+    }
+
     public extend(key: string, value: any): MatchDict {
         const new_dict = new Map(this.dict);
         new_dict.set(key, value);

@@ -8,6 +8,8 @@ import  { match_array } from "./MatchCombinator";
 import { inspect } from "util";
 import type { MatchFailure } from "./MatchResult";
 import { match_all_other_element } from "./MatchCallback";
+import { emptyEnvironment } from "./MatchEnvironment";
+import type { MatchEnvironment } from "./MatchEnvironment";
 
 function is_all_other_element(pattern: any): boolean {
     return isString(pattern) && pattern === "..."
@@ -23,8 +25,8 @@ function is_select(pattern: any): boolean {
 
 // expected an array of compose matcher [[a, b, c]] at least 2nd dimension array, because the first array would always be considered as compose matcher
 // and the second array sturcture matches that as ["a", "b", "c"]
-export function match_builder(matchers: any[]): (data: any[], dict: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any) => any {
-    return (data: any[], dict: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any) => {
+export function match_builder(matchers: any[]): (data: any[], environment: MatchEnvironment, succeed: (environment: MatchEnvironment, nEaten: number) => any) => any {
+    return (data: any[], environment: MatchEnvironment, succeed: (environment: MatchEnvironment, nEaten: number) => any) => {
 
         const pattern_to_binding = (pattern: any[]): {[key: string]: any} => {
             const bindings: {[key: string]: any} = {}
@@ -66,8 +68,8 @@ export function match_builder(matchers: any[]): (data: any[], dict: MatchDict, s
         }
         const registed_matchers = loop(matchers)
         try {
-            return registed_matchers(data, dict, (dict, nEaten) => {
-                return succeed(dict, nEaten)
+            return registed_matchers(data, environment, (environment, nEaten) => {
+                return succeed(environment, nEaten)
             })
         } catch (error) {
             console.error("Error during matching:", error);
@@ -76,9 +78,9 @@ export function match_builder(matchers: any[]): (data: any[], dict: MatchDict, s
     }
 }
 
-export function run_matcher(matcher: matcher_callback, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): MatchDict | MatchFailure {
-    return matcher([data], emptyMatchDict(), (dict, nEaten) => {
-        return succeed(dict, nEaten)
+export function run_matcher(matcher: matcher_callback, data: any[], succeed: (environment: MatchEnvironment, nEaten: number) => any): MatchEnvironment | MatchFailure {
+    return matcher([data], emptyEnvironment(), (environment, nEaten) => {
+        return succeed(environment, nEaten)
     })
 }
 
@@ -87,8 +89,8 @@ const match_builder_test = match_builder(["m:letrec",
                                          [["a", [match_constant("b"), match_segment("segment")]]], 
                                          ["d", match_reference("a")]])
 
-const result = run_matcher(match_builder_test, ["d", ["b", "c", "e"]], (dict, nEaten) => {
-    console.log(`dict: ${inspect(dict)}`)
+const result = run_matcher(match_builder_test, ["d", ["b", "c", "e"]], (environment, nEaten) => {
+    console.log(`environment: ${inspect(environment)}`)
     console.log(`nEaten: ${nEaten}`)
 })
 
