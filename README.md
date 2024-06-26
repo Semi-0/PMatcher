@@ -14,7 +14,7 @@ npm install pmatcher
 
 The `match_builder` function allows you to build and run custom pattern matchers. Here's a basic example of how to use it:
 
-```
+```typescript
 // Example usage of match_builder
 import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
@@ -41,7 +41,7 @@ This example demonstrates how to use the `match_builder` and `run_matcher` funct
 ## Using "..." Pattern
 
 The `"..."` pattern is used to match any remaining elements in the data array. Here's an example:
-```
+```typescript
 // Example usage of "..." pattern
 import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
@@ -61,7 +61,7 @@ console.log(result);
 
 
 ## Matching Nested Array
-```
+```typescript
 // Example usage of matching nested arrays with match element
 import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
