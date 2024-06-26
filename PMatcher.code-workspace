@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "PMatcher",
+			"path": "."
+		},
+		{
+			"name": "GenericProcedure",
+			"path": "../PScheme/tools/GenericProcedure"
+		}
+	],
+	"settings": {}
+}
