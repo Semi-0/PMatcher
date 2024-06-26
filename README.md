@@ -133,7 +133,7 @@ const result = run_matcher(matcher, data, onSuccess);
 console.log(result);
 ```
 
-```
+
 output:
 ```
 Matched Environment: MatchEnvironment { ... }
