@@ -59,6 +59,33 @@ const result = run_matcher(matcher, data, onSuccess);
 console.log(result);
 ```
 
+
+## Matching Nested Array
+```
+// Example usage of matching nested arrays with match element
+import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
+import { MatchDict } from 'pmatcher/MatchDict';
+// Define patterns using the builder function
+const nestedMatcherWithElement = match_builder([
+  ["start", [
+    ["subStart", match_element("key")],
+    "subEnd"
+  ], "end"]
+]);
+// Example data array
+const nestedDataWithElement = ["start", ["subStart", "actualValue", "subEnd"], "end"];
+// Define a success callback
+function onNestedSuccessWithElement(matchDict: MatchDict, nEaten: number) {
+  console.log('Matched Dictionary:', matchDict);
+  console.log('Number of elements processed:', nEaten);
+}
+// Run the matcher on the data
+const nestedResultWithElement = run_matcher(nestedMatcherWithElement, nestedDataWithElement, onNestedSuccessWithElement);
+console.log(nestedResultWithElement);
+```
+
+
+
 // Detailed Explanation for MatchCallback.ts and MatchCombinator.ts in MatchBuilder.ts
 
 /*
