@@ -117,11 +117,6 @@ The `match_letrec` function allows you to define recursive patterns. Here's an e
 import { match_letrec, match_choose, match_array, match_constant, match_reference, run_matcher } from 'pmatcher/MatchBuilder';
 import { emptyEnvironment, MatchEnvironment } from 'pmatcher/MatchEnvironment';
 // Define recursive patterns using match_letrec
-const matcher = match_letrec({
-"a": match_choose([match_array([]), match_array([match_constant("1"), match_reference("b")])]),
-"b": match_choose([match_array([]), match_array([match_constant("2"), match_reference("a")])])
-}, match_reference("a"));
-
 const matcher = match_builder(["m:letrec",
   [["a", ["m:choose", [], [ "1", match_reference("b")]]],
   ["b", ["m:choose", [], [ "2", match_reference("a")]]]]
