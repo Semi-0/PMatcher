@@ -19,10 +19,7 @@ The `match_builder` function allows you to build and run custom pattern matchers
 import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
 // Define patterns using the builder function
-const matcher = match_builder([
-"Hello",
-["John", match_segment("details"), "Unrelated"]
-]);
+const matcher = match_builder(["Hello", ["John", match_segment("details"), "Unrelated"]]);
 // Example data array
 const data = ["Hello", ["John", "age:30", "location:NY", "Unrelated"]];
 // Define a success callback
@@ -81,12 +78,7 @@ Number of elements processed: 5
 import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
 // Define patterns using the builder function
-const nestedMatcherWithElement = match_builder([
-  ["start", [
-    ["subStart", match_element("key")],
-    "subEnd"
-  ], "end"]
-]);
+const nestedMatcherWithElement = match_builder(["start", [ "subStart", match_element("key")], "subEnd"], "end"]);
 // Example data array
 const nestedDataWithElement = ["start", ["subStart", "actualValue", "subEnd"], "end"];
 // Define a success callback
@@ -120,7 +112,7 @@ import { emptyEnvironment, MatchEnvironment } from 'pmatcher/MatchEnvironment';
 const matcher = match_builder(["m:letrec",
   [["a", ["m:choose", [], [ "1", match_reference("b")]]],
   ["b", ["m:choose", [], [ "2", match_reference("a")]]]]
-  [match_reference("a")]])
+  match_reference("a")])
 // Example data array
 const data = [["1", ["2", ["1", ["2", []]]]]];
 // Define a success callback
