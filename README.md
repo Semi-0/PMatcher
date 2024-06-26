@@ -21,10 +21,10 @@ import { MatchDict } from 'pmatcher/MatchDict';
 // Define patterns using the builder function
 const matcher = match_builder([
 "Hello",
-["name", match_segment("details")]
+["John", match_segment("details"), "Unrelated"]
 ]);
 // Example data array
-const data = ["Hello", ["John", "age:30", "location:NY"]];
+const data = ["Hello", ["John", "age:30", "location:NY", "Unrelated"]];
 // Define a success callback
 function onSuccess(matchDict: MatchDict, nEaten: number) {
 console.log(Matched Dictionary:, matchDict);
@@ -106,6 +106,41 @@ Matched Dictionary: {
 Number of elements processed: 3
 ```
 
+
+
+## Tail Recursion with match_letrec
+
+The `match_letrec` function allows you to define recursive patterns. Here's an example demonstrating how to handle tail recursive patterns:
+
+```typescript
+// Example usage of match_letrec with tail recursion
+import { match_letrec, match_choose, match_array, match_constant, match_reference, run_matcher } from 'pmatcher/MatchBuilder';
+import { emptyEnvironment, MatchEnvironment } from 'pmatcher/MatchEnvironment';
+// Define recursive patterns using match_letrec
+const matcher = match_letrec({
+"a": match_choose([match_array([]), match_array([match_constant("1"), match_reference("b")])]),
+"b": match_choose([match_array([]), match_array([match_constant("2"), match_reference("a")])])
+}, match_reference("a"));
+// Example data array
+const data = [["1", ["2", ["1", ["2", []]]]]];
+// Define a success callback
+function onSuccess(environment: MatchEnvironment, nEaten: number) {
+console.log("Matched Environment:", environment);
+console.log("Number of elements processed:", nEaten);
+}
+// Run the matcher on the data
+const result = run_matcher(matcher, data, onSuccess);
+console.log(result);
+```
+
+```
+output:
+```
+Matched Environment: MatchEnvironment { ... }
+Number of elements processed: 1
+```
+
+i also tried to implemented an lexical scoping environment for match_letrec but it was not working as expected.
 
 ## Detailed Explanation for MatchCallback.ts and MatchCombinator.ts in MatchBuilder.ts
 
