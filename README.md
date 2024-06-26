@@ -38,8 +38,7 @@ console.log(result);
 output:
 ```
 Matched Dictionary: {
-  "Hello": "Hello",
-  "details": ["John", "age:30", "location:NY"]
+  "details": ["age:30", "location:NY"]
 }
 Number of elements processed: 2
 ```
@@ -55,7 +54,7 @@ The `"..."` pattern is used to match any remaining elements in the data array. H
 import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
 // Define patterns using the builder function
-const matcher = match_builder(["start","...","end"]);
+const matcher = match_builder(["start","...", match_element("e")]);
 // Example data array
 const data = ["start", 1, 2, 3, "end"];
 // Define a success callback
@@ -70,8 +69,7 @@ console.log(result);
 output:
 ```
 Matched Dictionary: {
-  "start": "start",
-  "...": [1, 2, 3]
+  "e": "end" 
 }
 Number of elements processed: 5
 ```
@@ -103,8 +101,7 @@ console.log(nestedResultWithElement);
 output:
 ```
 Matched Dictionary: {
-  "start": "start",
-  "...": [["subStart", "actualValue", "subEnd"]]
+  "key": "actualValue"
 }
 Number of elements processed: 3
 ```
