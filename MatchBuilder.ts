@@ -1,7 +1,7 @@
 import type { matcher_callback } from "./MatchCallback";
 import { MatchDict } from "./MatchDict";
 import { match_constant, match_element, match_segment } from "./MatchCallback";
-import {  match_choose, match_letrec, match_reference, match_new_var } from "./MatchCombinator";
+import {  match_choose, match_letrec, match_reference, match_new_var, match_repeated_patterns } from "./MatchCombinator";
 import { emptyMatchDict } from "./MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
@@ -29,7 +29,8 @@ export const enum P { // Stands for Pattern
     element = "$.element.$",
     segment = "$.segment.$",
     ref = "$.ref.$",
-    constant = "$.constant.$"
+    constant = "$.constant.$",
+    repeated = "$.repeated.$"
 }
 
 
@@ -48,7 +49,6 @@ function is_all_other_element(pattern: any): boolean {
 define_generic_procedure_handler(build, 
     (pattern: any[]) => is_all_other_element(pattern),
     (pattern: any[]) => {
-        console.log("success")
         return match_all_other_element()
     }
 )
@@ -103,7 +103,6 @@ function is_match_element(pattern: any): boolean {
 define_generic_procedure_handler(build, 
     (pattern: any[]) => is_match_element(pattern),
     (pattern: any[]) => {
-        console.log("element matched")
         return match_element(pattern[1], pattern[2])
     }
 )
@@ -132,6 +131,20 @@ define_generic_procedure_handler(build,
     }
 )
 
+function is_match_repeated_pattern(pattern: any): boolean {
+    return first_equal_with(pattern, P.repeated)
+}
+
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => is_match_repeated_pattern(pattern),
+    (pattern: any[]) => {
+        if (pattern.length !== 2) {
+            throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
+        }
+        return match_repeated_patterns(pattern[1])
+    }
+)
+
 
 function is_match_constant(pattern: any): boolean {
     return first_equal_with(pattern, P.constant) || isString(pattern)
@@ -140,14 +153,10 @@ function is_match_constant(pattern: any): boolean {
 define_generic_procedure_handler(build,
     (pattern: any) => is_match_constant(pattern),
     (pattern: any) => {
-        console.log("constant matched" + pattern)
         if ((isPair(pattern)) && (pattern.length == 2)){
-            console.log("A" + pattern)
-            console.log(pattern.length)
             return match_constant(pattern[1])
         }
         else if (isString(pattern)){
-            console.log("B" + pattern)
             return match_constant(pattern)
         }
         else{
@@ -175,9 +184,6 @@ const match_builder_test = build(["new", [P.element, "x"], "...", "sep", [P.segm
 
 
 const result = run_matcher(match_builder_test, ["new", "c", "a", "b", "sep", "segabcdefg"], (environment, nEaten) => {
-    console.log(`environment: ${inspect(environment)}`)
-    console.log(`nEaten: ${nEaten}`)
 })
 
-console.log(result)
 

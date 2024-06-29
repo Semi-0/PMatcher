@@ -5,7 +5,8 @@ import { inspect } from "util";
 import { first, rest, isPair, isEmptyArray } from "./utility";
 import { createMatchFailure, FailedMatcher, FailedReason } from "./MatchResult";
 import { matchSuccess, isMatchFailure } from "./MatchResult";
-import type { MatchEnvironment } from "./MatchEnvironment";
+import { emptyEnvironment, type MatchEnvironment } from "./MatchEnvironment";
+import type { MatchFailure } from "./MatchResult";
 
 // match_element match_segment match_compose(match_constant, match_segment))
 
@@ -122,3 +123,33 @@ export function match_new_var(name: string[], body: matcher_callback): matcher_c
         return body(data, new_dict, succeed)
     }
 }
+
+
+export function match_repeated_patterns(pattern: matcher_callback): matcher_callback {
+    return (data: any[], environment: MatchEnvironment, succeed: (environment: MatchEnvironment, nEaten: number) => any): any => {
+        const loop = (data: any[], environment: MatchEnvironment, succeed: (dictenvironmentionary: MatchEnvironment, nEaten: number) => any): any => {
+            const notConsumed = isPair(data)
+            if (notConsumed){
+                const result = pattern(data, emptyEnvironment(), (new_dict: MatchEnvironment, nEaten: number) => {
+                    return loop(data.slice(nEaten), new_dict.merge_environment(environment), succeed)
+                })
+              
+                return result
+            }
+            else{
+                return succeed(environment, 1)
+            }
+        }
+
+        return loop(data, environment, succeed)
+    }
+}
+
+
+const matcher = match_repeated_patterns(match_array([match_element("a"), match_element("b")]))
+
+const result = matcher([["1", "2"], ["2", "3"], ["2", "3"], ["2", "3"], ["2", "3"]], emptyEnvironment(), (dict, n) => {
+    return {new_dict: dict, nEaten: n}
+})
+
+console.log(result)

@@ -7,7 +7,7 @@ import { FailedMatcher, FailedReason } from '../MatchResult';
 import {  match_constant, match_element, match_segment, match_segment_independently } from '../MatchCallback';
 import type { matcher_callback } from '../MatchCallback';
 import { match_array } from '../MatchCombinator';
-import { match_choose, match_letrec, match_reference } from "../MatchCombinator";
+import { match_choose, match_letrec, match_reference, match_repeated_patterns } from "../MatchCombinator";
 import { run_matcher, P } from '../MatchBuilder';
 import { build } from "../MatchBuilder";
 import { createMatchFailure } from "../MatchResult";
@@ -872,5 +872,47 @@ describe("match_builder", () => {
         expect(result.environment).toBeInstanceOf(MatchEnvironment);
 
         expect(result.nEaten).toBe(1);
+    });
+});
+
+describe('match_repeated_patterns with match_array and match_element', () => {
+    const mockSucceed = jest.fn((environment, nEaten) => {return {dict: environment, nEaten: nEaten }});
+
+    beforeEach(() => {
+        mockSucceed.mockClear();
+    });
+
+    test('should correctly apply the pattern multiple times', () => {
+        // Define the pattern using match_array and match_element
+        const pattern = match_array([match_element("a"), match_element("b")]);
+
+        // Create the matcher using match_repeated_patterns
+        const matcher = match_repeated_patterns(pattern);
+
+        // Define the test data
+        const data = [["1", "2"], ["2", "3"], ["2", "3"], ["2", "3"], ["2", "3"]];
+        const environment = emptyEnvironment();
+
+        // Execute the matcher
+        const result = matcher(data, environment, mockSucceed);
+        console.log(result)
+        // Check if the succeed function was called correctly
+        expect(mockSucceed).toHaveBeenCalledTimes(1); // Assuming each pair is consumed correctly
+        expect(mockSucceed).toHaveBeenCalledWith(expect.any(MatchEnvironment), 1); // Each call consumes 2 elements
+        expect(result.dict.get("a")).toEqual(["1", "2", "2", "2", "2"]);
+        expect(result.dict.get("b")).toEqual(["2", "3", "3", "3", "3"]);
+    });
+
+    test('should handle non-matching data correctly when data structure is incorrect', () => {
+        const pattern = match_array([match_element("a"), match_element("b")]);
+        const matcher = match_repeated_patterns(pattern);
+        const data = [["1", "2"], ["1", "2", "3"]]; // Second array has an unexpected number of elements
+        const environment = emptyEnvironment();
+
+        const result = matcher(data, environment, mockSucceed);
+
+        // expect(mockSucceed).toHaveBeenCalledTimes(0); // Should succeed for the first pair
+        // expect(mockSucceed).toHaveBeenCalledWith(expect.any(MatchEnvironment), 2); // Consumes two elements from the first pair
+        expect(isMatchFailure(result)).toBe(true);
     });
 });

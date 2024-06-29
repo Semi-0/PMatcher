@@ -24,7 +24,34 @@ export class MatchEnvironment{
     public extend(key: string, value: any): MatchEnvironment{
         return new MatchEnvironment(this.parentEnvironment, this.currentDict.extend(key, value), []);
 
-    } 
+    }
+
+    public set(key: string, value: any): MatchEnvironment{
+        this.currentDict.set(key, value);
+        return this;
+    }
+    
+    public merge(key: string, value: any): MatchEnvironment{
+        if (this.currentDict.has(key)){
+            const v = this.currentDict.get(key);
+            if (Array.isArray(v)){
+                v.push(value);
+                this.set(key, v);
+                return this;
+            }
+            else{
+                this.set(key, [v, value]);
+                return this;
+            }
+        }
+        else{
+            return this.extend(key, value);
+        }
+    }
+
+    public merge_environment(env: MatchEnvironment): MatchEnvironment{
+        return new MatchEnvironment(this.parentEnvironment, this.currentDict.merge(env.currentDict), [...this.childEnvironments, ...env.childEnvironments]);
+    }
 
     public spawnChild(): MatchEnvironment{
         const childEnv = new MatchEnvironment(this, new MatchDict(new Map()), []);
