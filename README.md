@@ -22,6 +22,7 @@ import { MatchDict } from 'pmatcher/MatchDict';
 const matcher = match_builder(["Hello", ["John",[P.segment, "details"], "Unrelated"]]);
 // Example data array
 const data = ["Hello", ["John", "age:30", "location:NY", "Unrelated"]];
+
 // Define a success callback
 
 // Run the matcher on the data
@@ -53,6 +54,7 @@ import { MatchDict } from 'pmatcher/MatchDict';
 const matcher = build(["start","...", [P.element, "e"]]);
 // Example data array
 const data = ["start", 1, 2, 3, "end"];
+
 // Define a success callback
 
 // Run the matcher on the data
@@ -79,6 +81,7 @@ import { MatchDict } from 'pmatcher/MatchDict';
 const nestedMatcherWithElement = build(["start", [ "subStart", [P.element, "key"]], "subEnd"], "end"]);
 // Example data array
 const nestedDataWithElement = ["start", ["subStart", "actualValue", "subEnd"], "end"];
+
 // Define a success callback
 // Run the matcher on the data
 const nestedResultWithElement = run_matcher(nestedMatcherWithElement, nestedDataWithElement, {result: (matchDict, nEaten) => {
@@ -111,14 +114,16 @@ const matcher = build([P.letrec,
   [P.ref, "a"]])
 // Example data array
 const data = [["1", ["2", ["1", ["2", []]]]]];
+
 // Define a success callback
 function onSuccess(environment: MatchEnvironment, nEaten: number) {
-console.log("Matched Environment:", environment);
-console.log("Number of elements processed:", nEaten);
+  console.log("Matched Environment:", environment);
+  console.log("Number of elements processed:", nEaten);
 }
+
 // Run the matcher on the data
-const result = run_matcher(matcher, data, onSuccess);
-console.log(result);
+run_matcher(matcher, data, onSuccess);
+
 ```
 
 
@@ -129,6 +134,10 @@ Number of elements processed: 1
 ```
 
 i also tried to implemented an lexical scoping environment for match_letrec but it was not working as expected.
+btw, although the definition of environment do look like some sort of lexical scoping,
+it has some werid bug made it actually scoped dynamically,
+but who the hell needs a lexical scoped pattern matcher anyway.
+
 
 ## Detailed Explanation for MatchCallback.ts and MatchCombinator.ts in MatchBuilder.ts
 
