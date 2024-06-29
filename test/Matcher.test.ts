@@ -915,4 +915,13 @@ describe('match_repeated_patterns with match_array and match_element', () => {
         // expect(mockSucceed).toHaveBeenCalledWith(expect.any(MatchEnvironment), 2); // Consumes two elements from the first pair
         expect(isMatchFailure(result)).toBe(true);
     });
+
+    test("should handler integration with matchBuiilder", () => {
+        const match_builder_test = build([P.repeated, [[P.element, "b"], [P.element, "a"]]]);
+        const result = run_matcher(match_builder_test, [["1", "2"], ["1", "2"], ["1", "2"]], (environment, nEaten) => {
+            return { environment, nEaten };
+        });
+
+        console.log(result)
+    });
 });
