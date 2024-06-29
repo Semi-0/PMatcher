@@ -11,83 +11,158 @@ import { match_all_other_element } from "./MatchCallback";
 import { emptyEnvironment } from "./MatchEnvironment";
 import type { MatchEnvironment } from "./MatchEnvironment";
 
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+
+import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+
+
+export const build = construct_simple_generic_procedure("build", 1,
+    (matchers: any[]) => {
+        throw Error(`unrecognized pattern in the build procedure: ${inspect(matchers)}`)
+    }
+)
+
+export const enum P { // Stands for Pattern
+    letrec = "$.letrec.$", 
+    choose = "$.choose.$", 
+    new = "$.new.$", 
+    element = "$.element.$",
+    segment = "$.segment.$",
+    ref = "$.ref.$",
+    constant = "$.constant.$"
+}
+
+
+
+
+function first_equal_with(pattern: any, value: any): boolean {
+    return isPair(pattern) && isString(first(pattern)) && first(pattern) === value
+}
+
+
+
 function is_all_other_element(pattern: any): boolean {
     return isString(pattern) && pattern === "..."
 }
 
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => is_all_other_element(pattern),
+    (pattern: any[]) => {
+        console.log("success")
+        return match_all_other_element()
+    }
+)
+
+
 function is_Letrec(pattern: any): boolean {
-    return isPair(pattern) && isString(first(pattern)) && first(pattern) === "m:letrec" 
+    return first_equal_with(pattern, P.letrec)
 }
+
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => is_Letrec(pattern),
+    (pattern: any[]) => {
+        if (pattern.length !== 3) {
+            throw Error(`unrecognized pattern in the letrec procedure: ${inspect(pattern)}`)
+        }
+
+        const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: build(item[1]) }));
+
+        return match_letrec(bindings, build(pattern[2]))
+    }
+)
+
 
 function is_select(pattern: any): boolean {
-    return isPair(pattern) && isString(first(pattern)) && first(pattern) === "m:choose" 
+    return first_equal_with(pattern, P.choose)
 }
+
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => is_select(pattern),
+    (pattern: any[]) => {
+        return match_choose(pattern.slice(1).map((item: any) => build(item)))
+    }
+)
+
 
 function is_new_var(pattern: any): boolean {
-    return isPair(pattern) && isString(first(pattern)) && first(pattern) === "m:new" 
+    return first_equal_with(pattern, P.new)
 }
 
-// expected an array of compose matcher [[a, b, c]] at least 2nd dimension array, because the first array would always be considered as compose matcher
-// and the second array sturcture matches that as ["a", "b", "c"]
-export function match_builder(matchers: any[]): (data: any[], environment: MatchEnvironment, succeed: (environment: MatchEnvironment, nEaten: number) => any) => any {
-    return (data: any[], environment: MatchEnvironment, succeed: (environment: MatchEnvironment, nEaten: number) => any) => {
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => is_new_var(pattern),
+    (pattern: any[]) => {
+        return match_new_var(pattern[1], build(pattern[2]))
+    }
+)
 
-        const pattern_to_binding = (pattern: any[]): {[key: string]: any} => {
-            const bindings: {[key: string]: any} = {}
-            for (const item of pattern){
-                bindings[item[0]] = loop(item[1])
-            }
-            return bindings
+
+function is_match_element(pattern: any): boolean {
+   return first_equal_with(pattern, P.element)
+}
+
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => is_match_element(pattern),
+    (pattern: any[]) => {
+        console.log("element matched")
+        return match_element(pattern[1], pattern[2])
+    }
+)
+
+
+function is_match_segment(pattern: any): boolean {
+    return first_equal_with(pattern, P.segment)
+}
+
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => is_match_segment(pattern),
+    (pattern: any[]) => {
+        return match_segment(pattern[1], pattern[2])
+    }
+)
+
+
+function is_match_reference(pattern: any): boolean {
+    return first_equal_with(pattern, P.ref)
+}
+
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => is_match_reference(pattern),
+    (pattern: any[]) => {
+        return match_reference(pattern[1])
+    }
+)
+
+
+function is_match_constant(pattern: any): boolean {
+    return first_equal_with(pattern, P.constant) || isString(pattern)
+}
+
+define_generic_procedure_handler(build,
+    (pattern: any) => is_match_constant(pattern),
+    (pattern: any) => {
+        console.log("constant matched" + pattern)
+        if ((isPair(pattern)) && (pattern.length == 2)){
+            console.log("A" + pattern)
+            console.log(pattern.length)
+            return match_constant(pattern[1])
         }
-
-        const loop = (pattern: any): matcher_callback => {
-            if (is_Letrec(pattern)){
-                if (pattern.length !== 3){
-                    throw new Error(`Invalid letrec pattern: ${pattern}`)
-                }
-                return match_letrec(pattern_to_binding(pattern[1]), loop(pattern[2]))
-            }
-            else if (is_new_var(pattern)){
-                if (pattern.length <= 2){
-                    throw new Error(`Invalid new pattern: ${pattern}`)
-                }
-                return match_new_var(pattern[1], loop(pattern[2]))
-            }
-
-            else if (is_select(pattern)){
-                if (pattern.length < 2){
-                    throw new Error(`Invalid choose pattern: ${pattern}`)
-                }
-                return match_choose(pattern.slice(1).map((item: any) => loop(item)))
-            }
-            else if (isArray(pattern)){
-                return match_array((pattern as any[]).map((item: any) => loop(item)))
-            }
-            else if (is_all_other_element(pattern)){
-                return match_all_other_element()
-            }
-            else if (isString(pattern)){
-                console.log(`string: ${pattern}`)
-                return match_constant(pattern)
-            }
-            else if (isMatcher(pattern)){
-                return pattern
-            }
-            else {
-                throw new Error(`Invalid pattern: ${pattern}`)
-            }
+        else if (isString(pattern)){
+            console.log("B" + pattern)
+            return match_constant(pattern)
         }
-        const registed_matchers = loop(matchers)
-        try {
-            return registed_matchers(data, environment, (environment, nEaten) => {
-                return succeed(environment, nEaten)
-            })
-        } catch (error) {
-            console.error("Error during matching:", error);
-            return false; // Improved error handling
+        else{
+            throw Error(`unrecognized constant pattern in the build procedure: ${inspect(pattern)}`)
         }
     }
-}
+)
+
+
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => isArray(pattern),
+    (pattern: any[]) => {
+        return match_array(pattern.map((item: any) => build(item)))
+    }
+)
 
 export function run_matcher(matcher: matcher_callback, data: any[], succeed: (environment: MatchEnvironment, nEaten: number) => any): MatchEnvironment | MatchFailure {
     return matcher([data], emptyEnvironment(), (environment, nEaten) => {
@@ -95,17 +170,14 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (en
     })
 }
 
+const match_builder_test = build(["new", [P.element, "x"], "...", "sep", [P.segment, "seg"]]) 
+                                        
 
-const match_builder_test = match_builder(["m:letrec",
-                                         [["palindrome", ["m:new", ["x"] ,
-                                                        ["m:choose", [], [match_element("x"), 
-                                                                          match_reference("palindrome"),
-                                                                          match_element("x")]]]]], 
-                                         [match_reference("palindrome")]])
 
-const result = run_matcher(match_builder_test, [["a", ["b", [] , "b"], "a"]], (environment, nEaten) => {
+const result = run_matcher(match_builder_test, ["new", "c", "a", "b", "sep", "segabcdefg"], (environment, nEaten) => {
     console.log(`environment: ${inspect(environment)}`)
     console.log(`nEaten: ${nEaten}`)
 })
 
 console.log(result)
+

@@ -8,5 +8,8 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "generic-handler": "^0.0.1"
+  }
 }

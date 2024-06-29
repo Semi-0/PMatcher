@@ -8,54 +8,15 @@ import {  match_constant, match_element, match_segment, match_segment_independen
 import type { matcher_callback } from '../MatchCallback';
 import { match_array } from '../MatchCombinator';
 import { match_choose, match_letrec, match_reference } from "../MatchCombinator";
-import { run_matcher } from '../MatchBuilder';
-import { match_builder } from "../MatchBuilder";
+import { run_matcher, P } from '../MatchBuilder';
+import { build } from "../MatchBuilder";
 import { createMatchFailure } from "../MatchResult";
 import { flattenNestedMatchFailure } from "../MatchResult";
 import { match_all_other_element } from "../MatchCallback";
 import { MatchEnvironment, createEnvironment, emptyEnvironment } from "../MatchEnvironment";
+import { inspect } from "util";
 
-// describe('MatchResult', () => {
-//     let dictionary: MatchDict;
-//     let matchResult: MatchResult;
 
-//     beforeEach(() => {
-//         // Create a new dictionary and MatchResult before each test
-//         dictionary = createEnvironment("key1", 10).currentDict;
-//         matchResult = new MatchResult(true, dictionary, 2);
-//     });
-
-//     test('do function should apply a callback to the dictionary values', () => {
-//         // Define a callback that sums numbers
-//         const sumCallback = (...numbers: number[]) => numbers.reduce((a, b) => a + b, 0);
-
-//         // Use the `do` function with the sumCallback
-//         const result = matchResult.do(sumCallback);
-
-//         // Expect the result to be the sum of the values in the dictionary
-//         expect(result).toBe(30); // 10 + 20
-//     });
-
-//     test('do function should handle callbacks that concatenate strings', () => {
-//         // Adjust the dictionary for string testing
-
-//         const testMatchResult = new MatchResult(true, new MatchDict(new Map([
-//             ['first', 'Hello, '],
-//             ['second', 'World!']
-//         ])), 2);
-
-   
-
-//         // Define a callback that concatenates strings
-//         const concatCallback = (...strings: string[]) => strings.join('');
-
-//         // Use the `do` function with the concatCallback
-//         const result = testMatchResult.do(concatCallback);
-
-//         // Expect the result to be a concatenation of the values
-//         expect(result).toBe('Hello, World!');
-//     });
-// });
 
 describe('match_eqv', () => {
     test('should call succeed with correct parameters when match is found', () => {
@@ -325,7 +286,7 @@ describe('Nested Array Matching Tests', () => {
 
 describe('match_builder with run_matcher', () => {
   test('should handle constant patterns correctly', () => {
-    const matcher = match_builder(["a", "b", "c"]);
+    const matcher = build(["a", "b", "c"]);
     const data = ["a", "b", "c"];
     const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
@@ -335,7 +296,7 @@ describe('match_builder with run_matcher', () => {
   });
 
   test('should handle nested array patterns correctly', () => {
-    const matcher = match_builder([[["a", "b"], "c"]]);
+    const matcher = build([[["a", "b"], "c"]]);
     const data = [[["a", "b"], "c"]];
     const succeed = jest.fn((environment, nEaten) => ({ environment, nEaten }));
 
@@ -345,7 +306,7 @@ describe('match_builder with run_matcher', () => {
   });
 
   test('should handle element matchers correctly', () => {
-    const matcher = match_builder([[match_element("x"), "b"]]);
+    const matcher = build([[[P.element, "x"], "b"]]);
     const data = [["value", "b"]];
     const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
@@ -356,7 +317,7 @@ describe('match_builder with run_matcher', () => {
   });
 
   test('should return MatchFailure when patterns do not match', () => {
-    const matcher = match_builder(["a", "b"]);
+    const matcher = build(["a", "b"]);
     const data = ["a", "c"];
     const succeed = jest.fn();
 
@@ -373,7 +334,7 @@ describe('match_builder with run_matcher', () => {
   });
 
   test('should handle complex nested patterns', () => {
-    const matcher = match_builder([["a", match_segment("seg")], "c"]);
+    const matcher = build([["a", [P.segment, "seg"]], "c"]);
     const data = [["a", "b", "d"], "c"];
     const succeed = jest.fn((environment, nEaten) => ({ environment, nEaten }));
 
@@ -520,7 +481,8 @@ describe('match_all_other_element', () => {
         });
 
         expect(succeed).not.toHaveBeenCalled();
-        expect(result).toEqual(createMatchFailure(FailedMatcher.Constant, FailedReason.UnexpectedInput, "wrong_constant", 0, null));
+        expect(result).toEqual(createMatchFailure(FailedMatcher.Constant, FailedReason.UnexpectedInput,["wrong_constant", "constant"], 0, null));
+
     });
 
     test('should succeed with empty input when constant in front matches', () => {
@@ -549,7 +511,7 @@ describe('match_all_other_element', () => {
         });
 
         expect(succeed).not.toHaveBeenCalled();
-        expect(result).toEqual(createMatchFailure(FailedMatcher.Constant, FailedReason.UnexpectedInput, "wrong_constant", 0, null));
+        expect(result).toEqual(createMatchFailure(FailedMatcher.Constant, FailedReason.UnexpectedInput, ["wrong_constant", "constant"], 0, null));
     });
 });
 
@@ -623,16 +585,18 @@ describe('match_all_other_element', () => {
 
 describe('match_all_other_element integrate with matchBuilder', () => {
     test('should match a pattern with match_all_other_element', () => {
-        const matcher = match_builder([
+        const matcher = build([
             "start", "...", "end"
         ]);
+
+        console.log("matcher: ", inspect(matcher, {showHidden: true}))
 
         const data = ["start", "a", "b", "c", "end"];
         const dictionary = new MatchDict(new Map<string, any>());
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
         const result: MatchEnvironment | MatchFailure = run_matcher(matcher, data, succeed);
-
+        console.log(result)
         expect(succeed).toHaveBeenCalledWith(expect.any(MatchEnvironment), 1);
         expect(result).toEqual(succeed.mock.results[0].value);
     });
@@ -805,9 +769,9 @@ describe('match_reference', () => {
 
 describe('match_letrec', () => {
     test('should handle simple recursive patterns correctly', () => {
-        const matcher = match_letrec({
-            "a": match_constant("1")
-        }, match_reference("a"));
+        const matcher = match_letrec([
+            {key: "a", value: match_constant("1")}
+        ], match_reference("a"));
 
         const data = ["1"];
         const dictionary = emptyMatchDict();
@@ -820,9 +784,9 @@ describe('match_letrec', () => {
     });
 
     test('should fail when simple recursive patterns do not match', () => {
-        const matcher = match_letrec({
-            "a": match_constant("1")
-        }, match_reference("a"));
+        const matcher = match_letrec([
+            {key: "a", value: match_constant("1")}
+        ], match_reference("a"));
 
         const data = ["2"];
         const dictionary = emptyMatchDict();
@@ -837,10 +801,10 @@ describe('match_letrec', () => {
 
 describe('match_letrec with tail recursion', () => {
     test('should handle tail recursive patterns correctly', () => {
-        const matcher = match_letrec({
-            "a": match_choose([match_array([]), match_array([match_constant("1"), match_reference("b")])]),
-            "b": match_choose([match_array([]), match_array([match_constant("2"), match_reference("a")])])
-        }, match_reference("a"));
+        const matcher = match_letrec([
+            {key: "a", value: match_choose([match_array([]), match_array([match_constant("1"), match_reference("b")])])},
+            {key: "b", value: match_choose([match_array([]), match_array([match_constant("2"), match_reference("a")])])}
+        ], match_reference("a"));
 
         const data = [["1", ["2", ["1", ["2", []]]]]];
         const environment = emptyEnvironment();
@@ -853,10 +817,10 @@ describe('match_letrec with tail recursion', () => {
     });
 
     test('should fail when tail recursive patterns do not match', () => {
-        const matcher = match_letrec({
-            "a": match_choose([match_array([]), match_array([match_constant("1"), match_reference("b")])]),
-            "b": match_choose([match_array([]), match_array([match_constant("2"), match_reference("a")])])
-        }, match_reference("a"));
+        const matcher = match_letrec([  
+            {key: "a", value: match_choose([match_array([]),  match_array([match_constant("1"), match_reference("b")])])},
+            {key: "b", value: match_choose([match_array([]),  match_array([match_constant("2"), match_reference("a")])])}
+        ], match_reference("a"));
 
         const data = ["1", ["2", ["1", ["3", []]]]]; // "3" should be "2"
         const environment = emptyEnvironment();
@@ -872,9 +836,9 @@ describe('match_letrec with tail recursion', () => {
 
 describe("match_builder", () => {
     test("should match letrec pattern correctly", () => {
-        const match_builder_test = match_builder(["m:letrec",
-                                                 [["a", [match_constant("b"), match_segment("segment")]]], 
-                                                 ["d", match_reference("a")]]);
+        const match_builder_test = build([P.letrec,
+                                                 [["a", [[P.constant, "b"], [P.segment, "segment"]]]], 
+                                                 ["d", [P.ref, "a"]]]);
 
         const result = run_matcher(match_builder_test, ["d", ["b", "c", "e"]], (environment, nEaten) => {
             return { environment, nEaten };
@@ -892,7 +856,7 @@ describe("match_builder", () => {
 
 
     test("should match m:choose pattern correctly", () => {
-        const match_builder_test = match_builder(["m:choose", ["a"], ["b"]]);
+        const match_builder_test = build([P.choose, ["a"], ["b"]]);
 
         const result = run_matcher(match_builder_test, ["a"], (environment, nEaten) => {
             return { environment, nEaten };

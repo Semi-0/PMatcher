@@ -26,7 +26,7 @@ export function match_constant(pattern_constant: string): matcher_callback {
         } else {
             return createMatchFailure(FailedMatcher.Constant, 
                                       FailedReason.UnexpectedInput, 
-                                      data[0], 0, null);
+                                      [data[0], pattern_constant], 0, null);
         }
     };
 }
@@ -39,7 +39,6 @@ export function match_element(variable: string, restriction: (value: any) => boo
                                       data, 0, null);
         }
         const binding_value = environment.get(variable);
-        console.log("match_element", variable, restriction, data[0], binding_value)
         if (!restriction(data[0])){
             return createMatchFailure(FailedMatcher.Element, 
                                       FailedReason.RestrictionUnmatched, 
@@ -47,14 +46,11 @@ export function match_element(variable: string, restriction: (value: any) => boo
         }
 
         if (binding_value === undefined || binding_value === null) {
-            console.log("match_element_success_extend", variable, restriction, data[0], binding_value)
             const extendedEnvironment = environment.extend(variable, data[0]);
             return succeed(extendedEnvironment, 1);
         } else if (binding_value === data[0]) {
-            console.log("match_element_success_no_extend", variable, restriction, data[0], binding_value)
             return succeed(environment, 1);
         } else {
-            console.log("match_element_failed", variable, restriction, data[0], binding_value)
             return createMatchFailure(FailedMatcher.Element,
                                       FailedReason.BindingValueUnmatched, 
                                       data[0], 0, null);

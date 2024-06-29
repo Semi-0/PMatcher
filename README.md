@@ -16,19 +16,18 @@ The `match_builder` function allows you to build and run custom pattern matchers
 
 ```typescript
 // Example usage of match_builder
-import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
+import { build , P, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
 // Define patterns using the builder function
-const matcher = match_builder(["Hello", ["John", match_segment("details"), "Unrelated"]]);
+const matcher = match_builder(["Hello", ["John",[P.segment, "details"], "Unrelated"]]);
 // Example data array
 const data = ["Hello", ["John", "age:30", "location:NY", "Unrelated"]];
 // Define a success callback
-function onSuccess(matchDict: MatchDict, nEaten: number) {
-console.log(Matched Dictionary:, matchDict);
-console.log(Number of elements processed:, nEaten);
-}
+
 // Run the matcher on the data
-const result = run_matcher(matcher, data, onSuccess);
+const result = run_matcher(matcher, data, {result: (matchDict, nEaten) => {
+  return {matchDict, nEaten}
+}});
 console.log(result);
 ```
 
@@ -48,19 +47,18 @@ This example demonstrates how to use the `match_builder` and `run_matcher` funct
 The `"..."` pattern is used to match any remaining elements in the data array. Here's an example:
 ```typescript
 // Example usage of "..." pattern
-import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
+import { build, P, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
 // Define patterns using the builder function
-const matcher = match_builder(["start","...", match_element("e")]);
+const matcher = build(["start","...", [P.element, "e"]]);
 // Example data array
 const data = ["start", 1, 2, 3, "end"];
 // Define a success callback
-function onSuccess(matchDict: MatchDict, nEaten: number) {
-console.log(Matched Dictionary:, matchDict);
-console.log(Number of elements processed:, nEaten);
-}
+
 // Run the matcher on the data
-const result = run_matcher(matcher, data, onSuccess);
+const result = run_matcher(matcher, data, {result: (matchDict, nEaten) => {
+  return {matchDict, nEaten}
+}});
 console.log(result);
 ```
 output:
@@ -75,19 +73,17 @@ Number of elements processed: 5
 ## Matching Nested Array
 ```typescript
 // Example usage of matching nested arrays with match element
-import { match_builder, run_matcher } from 'pmatcher/MatchBuilder';
+import { build, P, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
 // Define patterns using the builder function
-const nestedMatcherWithElement = match_builder(["start", [ "subStart", match_element("key")], "subEnd"], "end"]);
+const nestedMatcherWithElement = build(["start", [ "subStart", [P.element, "key"]], "subEnd"], "end"]);
 // Example data array
 const nestedDataWithElement = ["start", ["subStart", "actualValue", "subEnd"], "end"];
 // Define a success callback
-function onNestedSuccessWithElement(matchDict: MatchDict, nEaten: number) {
-  console.log('Matched Dictionary:', matchDict);
-  console.log('Number of elements processed:', nEaten);
-}
 // Run the matcher on the data
-const nestedResultWithElement = run_matcher(nestedMatcherWithElement, nestedDataWithElement, onNestedSuccessWithElement);
+const nestedResultWithElement = run_matcher(nestedMatcherWithElement, nestedDataWithElement, {result: (matchDict, nEaten) => {
+  return {matchDict, nEaten}
+}});
 console.log(nestedResultWithElement);
 ```
 output:
@@ -106,13 +102,13 @@ The `match_letrec` function allows you to define recursive patterns. Here's an e
 
 ```typescript
 // Example usage of match_letrec with tail recursion
-import { match_letrec, match_choose, match_array, match_constant, match_reference, run_matcher } from 'pmatcher/MatchBuilder';
+import { build, P, run_matcher } from 'pmatcher/MatchBuilder';
 import { emptyEnvironment, MatchEnvironment } from 'pmatcher/MatchEnvironment';
 // Define recursive patterns using match_letrec
-const matcher = match_builder(["m:letrec",
-  [["a", ["m:choose", [], [ "1", match_reference("b")]]],
-  ["b", ["m:choose", [], [ "2", match_reference("a")]]]]
-  match_reference("a")])
+const matcher = build([P.letrec,
+  [["a", [P.choose, [], [ "1", [P.ref, "b"]]]],
+  ["b", [P.choose, [], [ "2", [P.ref, "a"]]]]]
+  [P.ref, "a"]])
 // Example data array
 const data = [["1", ["2", ["1", ["2", []]]]]];
 // Define a success callback

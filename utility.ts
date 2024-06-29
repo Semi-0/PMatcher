@@ -1,5 +1,5 @@
-import { construct_simple_generic_procedure } from "./GenericProcedure/GenericProcedure"
-import { define_generic_procedure_handler } from "./GenericProcedure/GenericProcedure"
+import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import type { MatchFailure } from "./MatchResult"
 import { isMatchFailure } from "./MatchResult"
 
@@ -16,7 +16,7 @@ export function construct(item: any, ...rest: any[]): any {
 }
 
 export function isPair(array: any[]): boolean {
-    return array.length !== 0 && array !== null && array !== undefined
+    return isArray(array) && array.length !== 0 && array !== null && array !== undefined
 }
 
 export function isEmptyArray(array: any[]): boolean {
