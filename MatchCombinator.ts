@@ -127,21 +127,27 @@ export function match_new_var(name: string[], body: matcher_callback): matcher_c
 
 export function match_repeated_patterns(pattern: matcher_callback): matcher_callback {
     return (data: any[], environment: MatchEnvironment, succeed: (environment: MatchEnvironment, nEaten: number) => any): any => {
-        const loop = (data: any[], environment: MatchEnvironment, succeed: (dictenvironmentionary: MatchEnvironment, nEaten: number) => any): any => {
+        const loop = (data: any[], environment: MatchEnvironment, succeed: (dictenvironmentionary: MatchEnvironment, nEaten: number) => any, eaten: number): any =>   {
+            console.log(data)
             const notConsumed = isPair(data)
             if (notConsumed){
                 const result = pattern(data, emptyEnvironment(), (new_dict: MatchEnvironment, nEaten: number) => {
-                    return loop(data.slice(nEaten), new_dict.merge_environment(environment), succeed)
+                    return loop(data.slice(nEaten), new_dict.merge_environment(environment), succeed, eaten + 1)
                 })
               
-                return result
+                if (matchSuccess(result)) {
+                    return result
+                }
+                else{
+                    return createMatchFailure(FailedMatcher.Repeated, FailedReason.UnexpectedEnd, data, 0, result)
+                }
             }
             else{
-                return succeed(environment, 1)
+                return succeed(environment, eaten)
             }
         }
 
-        return loop(data, environment, succeed)
+        return loop(data, environment, succeed, 0)
     }
 }
 

@@ -83,7 +83,8 @@ export enum FailedMatcher{
     Segment = "Segment",
     Array = "Array",
     Choice = "Choice",
-    Reference = "Reference"
+    Reference = "Reference",
+    Repeated = "Repeated"
 }
 
 export enum FailedReason{

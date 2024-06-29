@@ -897,8 +897,7 @@ describe('match_repeated_patterns with match_array and match_element', () => {
         const result = matcher(data, environment, mockSucceed);
         console.log(result)
         // Check if the succeed function was called correctly
-        expect(mockSucceed).toHaveBeenCalledTimes(1); // Assuming each pair is consumed correctly
-        expect(mockSucceed).toHaveBeenCalledWith(expect.any(MatchEnvironment), 1); // Each call consumes 2 elements
+       
         expect(result.dict.get("a")).toEqual(["1", "2", "2", "2", "2"]);
         expect(result.dict.get("b")).toEqual(["2", "3", "3", "3", "3"]);
     });
@@ -917,11 +916,37 @@ describe('match_repeated_patterns with match_array and match_element', () => {
     });
 
     test("should handler integration with matchBuiilder", () => {
-        const match_builder_test = build([P.repeated, [[P.element, "b"], [P.element, "a"]]]);
+        const match_builder_test = build([[P.repeated, [[P.element, "a"], [P.element, "b"]]]]);
         const result = run_matcher(match_builder_test, [["1", "2"], ["1", "2"], ["1", "2"]], (environment, nEaten) => {
-            return { environment, nEaten };
+            return { dict: environment, nEaten: nEaten };
         });
 
-        console.log(result)
+        expect(result.dict.get("a")).toEqual(["1", "1", "1"]);
+        expect(result.dict.get("b")).toEqual(["2", "2", "2"]);
+        
     });
+
+    test("should handler integration with matchBuiilder with different pattern", () => {
+        const match_builder_test = build([[P.repeated, [[P.constant, "c"], [P.element, "b"]]]]);
+        const result = run_matcher(match_builder_test, [["c", "2"], ["c", "2"], ["c", "2"]], (environment, nEaten) => {
+            return { dict: environment, nEaten: nEaten };
+        });
+
+        expect(result.dict.get("b")).toEqual(["2", "2", "2"]);
+        
+    });
+
+    test("should handler integration with matchBuiilder with different pattern", () => {
+        const match_builder_test = build([[P.repeated, [[P.constant, "c"], [P.segment, "seg"], [P.element, "b"]]]]);
+        const result = run_matcher(match_builder_test, [["c", "seg1", "seg2", "2"], ["c", "seg1", "seg2", "2"], ["c", "seg1", "seg2", "2"]], (environment, nEaten) => {
+            return { dict: environment, nEaten: nEaten };
+        });
+
+        console.log(result.dict)
+
+        expect(result.dict.get("seg")).toEqual([ "seg1", "seg2", "seg1", "seg2", "seg1", "seg2" ]);
+        expect(result.dict.get("b")).toEqual(["2", "2", "2"]);
+        
+    });
+
 });

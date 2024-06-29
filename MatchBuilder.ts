@@ -138,10 +138,13 @@ function is_match_repeated_pattern(pattern: any): boolean {
 define_generic_procedure_handler(build, 
     (pattern: any[]) => is_match_repeated_pattern(pattern),
     (pattern: any[]) => {
+        console.log("matched")
         if (pattern.length !== 2) {
             throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
         }
-        return match_repeated_patterns(pattern[1])
+        const built_pattern = build(pattern[1])
+        console.log("build(pattern[1])", built_pattern.toString() )
+        return match_repeated_patterns(built_pattern)
     }
 )
 
