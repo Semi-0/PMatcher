@@ -78,7 +78,7 @@ function is_match_constant(pattern: any): boolean {
 
 
 
-function first_equal_with(pattern: any, value: any): boolean {
+export function first_equal_with(pattern: any, value: any): boolean {
     return isPair(pattern) && isString(first(pattern)) && first(pattern) === value
 }
 
@@ -96,7 +96,7 @@ define_generic_procedure_handler(build,
 )
 
 
-function is_Letrec(pattern: any): boolean {
+export function is_Letrec(pattern: any): boolean {
     return first_equal_with(pattern, P.letrec)
 }
 
@@ -114,7 +114,7 @@ define_generic_procedure_handler(build,
 )
 
 
-function is_select(pattern: any): boolean {
+export function is_select(pattern: any): boolean {
     return first_equal_with(pattern, P.choose)
 }
 
@@ -126,7 +126,7 @@ define_generic_procedure_handler(build,
 )
 
 
-function is_new_var(pattern: any): boolean {
+export function is_new_var(pattern: any): boolean {
     return first_equal_with(pattern, P.new)
 }
 
@@ -162,7 +162,8 @@ define_generic_procedure_handler(build,
 )
 
 
-function is_match_reference(pattern: any): boolean {
+export function is_match_reference(pattern: any): boolean {
+
     return first_equal_with(pattern, P.ref)
 }
 

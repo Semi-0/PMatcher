@@ -43,7 +43,7 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
                                          data_list, 0, null)  
             } 
             else if (isEmptyArray(data_list)){
-                // console.log("success empty")
+                console.log("success empty")
                 return succeed(dictionary, 1)
             }
             else{
@@ -93,9 +93,9 @@ export function match_reference(reference_symbol: string): matcher_callback{
         }
         else if (matcher) {
             const result = matcher(data, dictionary, succeed)
-            // console.log("reference success", result)
+            console.log("reference success", result)
             if (matchSuccess(result)) {
-                return result
+                return succeed(dictionary, 1) 
             }
             else{
                 return createMatchFailure(FailedMatcher.Reference, FailedReason.UnexpectedEnd, data, 0, result)

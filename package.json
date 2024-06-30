@@ -10,6 +10,8 @@
   },
   "type": "module",
   "dependencies": {
-    "generic-handler": "^0.0.2"
+    "@types/uuid": "^10.0.0",
+    "generic-handler": "^0.0.2",
+    "uuid": "^10.0.0"
   }
 }
