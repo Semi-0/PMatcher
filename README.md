@@ -78,7 +78,7 @@ Number of elements processed: 5
 import { build, P, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
 // Define patterns using the builder function
-const nestedMatcherWithElement = build(["start", [ "subStart", [P.element, "key"]], "subEnd"], "end"]);
+const nestedMatcherWithElement = build(["start", [ "subStart", [P.element, "key"], "subEnd"], "end"]);
 // Example data array
 const nestedDataWithElement = ["start", ["subStart", "actualValue", "subEnd"], "end"];
 
@@ -135,7 +135,7 @@ Number of elements processed: 1
 
 i also tried to implemented an lexical scoping environment for match_letrec but it was not working as expected.
 btw, although the definition of environment do look like some sort of lexical scoping,
-it has some werid bug made it actually scoped dynamically,
+it has some weird bug made it actually scoped dynamically,
 but who the hell needs a lexical scoped pattern matcher anyway.
 
 
