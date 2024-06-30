@@ -135,7 +135,7 @@ Number of elements processed: 1
 
 i also tried to implemented an lexical scoping environment for match_letrec but it was not working as expected.
 btw, although the definition of environment do look like some sort of lexical scoping,
-it has some werid bug made it actually scoped dynamically,
+it has some weird bug made it actually scoped dynamically,
 but who the hell needs a lexical scoped pattern matcher anyway.
 
 
