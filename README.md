@@ -78,7 +78,7 @@ Number of elements processed: 5
 import { build, P, run_matcher } from 'pmatcher/MatchBuilder';
 import { MatchDict } from 'pmatcher/MatchDict';
 // Define patterns using the builder function
-const nestedMatcherWithElement = build(["start", [ "subStart", [P.element, "key"]], "subEnd"], "end"]);
+const nestedMatcherWithElement = build(["start", [ "subStart", [P.element, "key"], "subEnd"], "end"]);
 // Example data array
 const nestedDataWithElement = ["start", ["subStart", "actualValue", "subEnd"], "end"];
 
