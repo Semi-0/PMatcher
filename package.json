@@ -1,16 +1,15 @@
 {
   "name": "pmatcher",
-  "version": "0.1.0",
-
+  "version": "0.1.1",
   "module": "index.ts",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.4.5"
   },
   "type": "module",
   "dependencies": {
-    "generic-handler": "^0.0.1"
+    "generic-handler": "^0.0.2"
   }
 }

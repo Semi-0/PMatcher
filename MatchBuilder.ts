@@ -35,6 +35,48 @@ export const enum P { // Stands for Pattern
 
 
 
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => isArray(pattern),
+    (pattern: any[]) => {
+        return match_array(pattern.map((item: any) => build(item)))
+    }
+)
+
+
+define_generic_procedure_handler(build,
+    (pattern: any) => is_match_constant(pattern),
+    (pattern: any) => {
+        if ((isPair(pattern)) && (pattern.length == 2)){
+            return match_constant(pattern[1])
+        }
+        else if (isString(pattern)){
+            return match_constant(pattern)
+        }
+        else{
+            throw Error(`unrecognized constant pattern in the build procedure: ${inspect(pattern)}`)
+        }
+    }
+)
+
+define_generic_procedure_handler(build, 
+    (pattern: any[]) => is_match_repeated_pattern(pattern),
+    (pattern: any[]) => {
+        console.log("matched")
+        if (pattern.length !== 2) {
+            throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
+        }
+        const built_pattern = build(pattern[1])
+        console.log("build(pattern[1])", built_pattern.toString() )
+        return match_repeated_patterns(built_pattern)
+    }
+)
+
+
+function is_match_constant(pattern: any): boolean {
+    return first_equal_with(pattern, P.constant) || isString(pattern)
+}
+
+
 
 function first_equal_with(pattern: any, value: any): boolean {
     return isPair(pattern) && isString(first(pattern)) && first(pattern) === value
@@ -135,46 +177,7 @@ function is_match_repeated_pattern(pattern: any): boolean {
     return first_equal_with(pattern, P.repeated)
 }
 
-define_generic_procedure_handler(build, 
-    (pattern: any[]) => is_match_repeated_pattern(pattern),
-    (pattern: any[]) => {
-        console.log("matched")
-        if (pattern.length !== 2) {
-            throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
-        }
-        const built_pattern = build(pattern[1])
-        console.log("build(pattern[1])", built_pattern.toString() )
-        return match_repeated_patterns(built_pattern)
-    }
-)
 
-
-function is_match_constant(pattern: any): boolean {
-    return first_equal_with(pattern, P.constant) || isString(pattern)
-}
-
-define_generic_procedure_handler(build,
-    (pattern: any) => is_match_constant(pattern),
-    (pattern: any) => {
-        if ((isPair(pattern)) && (pattern.length == 2)){
-            return match_constant(pattern[1])
-        }
-        else if (isString(pattern)){
-            return match_constant(pattern)
-        }
-        else{
-            throw Error(`unrecognized constant pattern in the build procedure: ${inspect(pattern)}`)
-        }
-    }
-)
-
-
-define_generic_procedure_handler(build, 
-    (pattern: any[]) => isArray(pattern),
-    (pattern: any[]) => {
-        return match_array(pattern.map((item: any) => build(item)))
-    }
-)
 
 export function run_matcher(matcher: matcher_callback, data: any[], succeed: (environment: MatchEnvironment, nEaten: number) => any): MatchEnvironment | MatchFailure {
     return matcher([data], emptyEnvironment(), (environment, nEaten) => {
