@@ -22,6 +22,7 @@ export function match_constant(pattern_constant: string): matcher_callback {
                                       data, 0, null);
         }
         if (data[0] === pattern_constant) {
+            console.log("match_constant", pattern_constant, data[0], dictionary.to_String())
             return succeed(dictionary, 1);
         } else {
             return createMatchFailure(FailedMatcher.Constant, 
@@ -39,6 +40,7 @@ export function match_element(variable: string, restriction: (value: any) => boo
                                       data, 0, null);
         }
         const binding_value = environment.get(variable);
+        console.log("match_element", variable, data[0], "binding_value", binding_value, environment)
         if (!restriction(data[0])){
             return createMatchFailure(FailedMatcher.Element, 
                                       FailedReason.RestrictionUnmatched, 

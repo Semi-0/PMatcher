@@ -8,6 +8,9 @@ export class MatchDict{
         return this.dict.has(key);
     }
 
+    public toString(): string{
+        return `MatchDict(${Array.from(this.dict).map(([key, value]) => `${key}: ${value}`).join(", ")})`;
+    }
     public extend(key: string, value: any): MatchDict {
         const new_dict = new Map(this.dict);
         new_dict.set(key, value);

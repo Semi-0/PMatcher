@@ -72,7 +72,7 @@ define_generic_procedure_handler(build,
 )
 
 
-function is_match_constant(pattern: any): boolean {
+export function is_match_constant(pattern: any): boolean {
     return first_equal_with(pattern, P.constant) || isString(pattern)
 }
 
@@ -186,11 +186,30 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (en
     })
 }
 
-const match_builder_test = build(["new", [P.element, "x"], "...", "sep", [P.segment, "seg"]]) 
+// const match_builder_test = build(["new", [P.element, "x"], "...", "sep", [P.segment, "seg"]]) 
                                         
 
 
-const result = run_matcher(match_builder_test, ["new", "c", "a", "b", "sep", "segabcdefg"], (environment, nEaten) => {
-})
+// const result = run_matcher(match_builder_test, ["new", "c", "a", "b", "sep", "segabcdefg"], (environment, nEaten) => {
+// })
 
 
+// const test_matcher = build([
+//     [P.letrec,
+//         [["palindrome",
+//         [P.new, ["x"],
+//             [P.choose, 
+//                 [],
+//                 [[P.element, "x"],
+//                 [P.ref, "palindrome"],
+//                 [P.element, "x"]]
+//             ]]]],
+//         [P.ref, "palindrome"]
+//     ]])
+
+
+// const result = run_matcher(test_matcher, [["a", ["b", ["c" , [], "c" ], "b"], "a"]], (env, nEaten) => {
+//     return {env, nEaten}
+// })
+
+// console.log(result)

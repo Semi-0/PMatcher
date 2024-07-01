@@ -31,7 +31,9 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
 
                 const matcher = first(matchers)
                 const result = matcher(data_list, dictionary, (new_dict: MatchEnvironment, nEaten: number) => {
-                    // console.log("matcher", matcher.toString())
+                    console.log("dictionary_array", dictionary.to_String())
+                    console.log("new_dict", new_dict.to_String())
+                    // console.log("dict:", dictionary)
                     return loop(data_list.slice(nEaten), rest(matchers), new_dict);
                 });
                 // console.log("success matcher:" + matcher.toString())
@@ -112,7 +114,7 @@ export function match_letrec(bindings: {key: string, value: matcher_callback}[],
         const extended_dict = bindings.reduce((acc, binding) => {
             return acc.extend(binding.key, binding.value)
         }, dictionary.spawnChild())
-
+        console.log("extended_dict", extended_dict)
         return body(data, extended_dict, succeed)
     }
 }
@@ -120,6 +122,7 @@ export function match_letrec(bindings: {key: string, value: matcher_callback}[],
 export function match_new_var(name: string[], body: matcher_callback): matcher_callback {
     return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
         const new_dict = name.reduce((acc, n) => acc.extend(n, undefined), dictionary.spawnChild())
+        console.log("new_dict", new_dict)
         return body(data, new_dict, succeed)
     }
 }

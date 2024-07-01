@@ -5,15 +5,16 @@ import { MatchDict } from "./MatchDict";
 export class MatchEnvironment{
     public readonly parentEnvironment: MatchEnvironment | null;
     public readonly currentDict: MatchDict;
-    public readonly childEnvironments: MatchEnvironment[] ;
+    // public readonly childEnvironments: MatchEnvironment[] ;
 
     constructor(parentEnvironment: MatchEnvironment | null, currentDict: MatchDict, childEnvironments: MatchEnvironment[] = []){
         this.parentEnvironment = parentEnvironment;
         this.currentDict = currentDict;
-        this.childEnvironments = childEnvironments;
+        // this.childEnvironments = childEnvironments;
     }
 
     public get(key: string): any{
+        console.log("get", key, this.to_String())
         if(this.currentDict.has(key)){
             const result = this.currentDict.get(key);
             return result;
@@ -50,18 +51,23 @@ export class MatchEnvironment{
     }
 
     public merge_environment(env: MatchEnvironment): MatchEnvironment{
-        return new MatchEnvironment(this.parentEnvironment, this.currentDict.merge(env.currentDict), [...this.childEnvironments, ...env.childEnvironments]);
+        return new MatchEnvironment(this.parentEnvironment, this.currentDict.merge(env.currentDict));
+    }
+
+    public to_String(): string{
+        return `MatchEnvironment(${this.currentDict.toString()})`;
     }
 
     public spawnChild(): MatchEnvironment{
         const childEnv = new MatchEnvironment(this, new MatchDict(new Map()), []);
-        this.childEnvironments.push(childEnv);
+        console.log("childEnv_spawned", childEnv.to_String())
+        // this.childEnvironments.push(childEnv);
         return childEnv;
     }
 
     public extendsToNewChild(key: string, value: any): MatchEnvironment{
         const childEnv = new MatchEnvironment(this, new MatchDict(new Map([[key, value]])));
-        this.childEnvironments.push(childEnv);
+        // this.childEnvironments.push(childEnv);
         return childEnv;
     }
 }
