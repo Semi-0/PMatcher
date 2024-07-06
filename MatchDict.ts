@@ -1,27 +1,27 @@
 import { guard } from "./utility";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { inspect } from "bun";
 
+export type ScopeReference = Number;
 
-type ScopeReference = Number;
-
-function is_scope_reference(ref: any): boolean{
+export function is_scope_reference(ref: any): boolean{
     return typeof ref === "number"
 }
 
-const get_value = construct_simple_generic_procedure("get_value", 2, 
+export const get_value = construct_simple_generic_procedure("get_value", 2, 
     (referece: any, source: any) => {
-        throw Error("args not matched for get_value")
+        throw Error("args not matched for get_value, ref: "  + inspect(referece) + " source: " + inspect(source))
     }
 )
 
-const extend = construct_simple_generic_procedure("extend", 2,
+export const extend = construct_simple_generic_procedure("extend", 2,
     (item: any, to: any) => {
-        throw Error("args not matched for extend")
+        throw Error("args not matched for extend, item: " + inspect(item)+ " to: " + inspect(to))
     }
 )
 
 
-class DictValue{
+export class DictValue{
     referenced_definition: Map<ScopeReference, any>
 
     constructor(){
@@ -99,7 +99,7 @@ define_generic_procedure_handler(extend,
 
 
 /// expected: Tuple (value: any, scopeRef: scopleReference)
-type NestedValue = {
+export type NestedValue = {
     value: any,
     scopeRef: ScopeReference
 }
@@ -126,7 +126,7 @@ define_generic_procedure_handler(extend,
 
 
 
-class MatchDict {
+export class MatchDict {
     dict: Map<string, DictValue>
 
     constructor(){
@@ -134,35 +134,34 @@ class MatchDict {
     }
 }
 
-function is_match_key(a: any): boolean{
+export function is_match_key(a: any): boolean{
     return typeof a === "string"
 }
 
-function is_match_dict(a: any): boolean{
+export function is_match_dict(a: any): boolean{
     return a instanceof MatchDict
 }
 
-function has_key(key: string, match_dict: MatchDict): boolean{
+export function has_key(key: string, match_dict: MatchDict): boolean{
     return match_dict.dict.has(key);
 }
 
 
-type DictItem = {
+export type DictItem = {
     key: string,
     value: DictValue | any
 }
 
 
-function format_match_dict_item(A: any) : boolean{
+export function format_match_dict_item(A: any) : boolean{
     return typeof A === "object"
         && A !== null
         && 'key' in A 
         && 'value' in A  
 }
 
-function is_dict_item(A: any) : boolean{
+export function is_dict_item(A: any) : boolean{
     return format_match_dict_item(A) 
-        && is_dict_value(A.value)
 }
 
 
@@ -178,7 +177,7 @@ define_generic_procedure_handler(extend,
             return match_dict
         }
         else if ((A !== null) && (A !== undefined)){
-            const new_value = construct_dict_value(0, A)
+            const new_value = construct_dict_value(0, A.value)
             match_dict.dict.set(A.key, new_value)
             return match_dict
         }
@@ -189,7 +188,7 @@ define_generic_procedure_handler(extend,
 )
 
 
-function is_dict_key(A: any): boolean{
+export function is_dict_key(A: any): boolean{
     return typeof A === "string"
 }
 
@@ -211,12 +210,12 @@ define_generic_procedure_handler(get_value,
 )
 
 
-type KeyAndScopedRef = {
+export type KeyAndScopedRef = {
     key: string,
     scopeRef: number
 }
 
-function is_key_and_scoped_ref(A: any){
+export function is_key_and_scoped_ref(A: any){
     return typeof A === 'object'
         && A !== null 
         && 'key' in A 
@@ -226,7 +225,7 @@ function is_key_and_scoped_ref(A: any){
 
 define_generic_procedure_handler(get_value,
     (A: any, B: any) => {
-        return is_key_and_scoped_ref(A) && is_match_dict(A)
+        return is_key_and_scoped_ref(A) && is_match_dict(B)
     }, 
     (kas: KeyAndScopedRef, mdict: MatchDict) => {
         const item = mdict.dict.get(kas.key)
@@ -236,3 +235,4 @@ define_generic_procedure_handler(get_value,
 )
 
 
+// TODO: ADD UNIT TEST
