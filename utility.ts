@@ -3,6 +3,12 @@ import { define_generic_procedure_handler } from "generic-handler/GenericProcedu
 import type { MatchFailure } from "./MatchResult"
 import { isMatchFailure } from "./MatchResult"
 
+export function guard(predicate: () => boolean, failure: () => any): void {
+    if (!predicate()) {
+        throw failure();
+    }
+}
+
 export function first(array: any[]): any {
     return array[0]
 }
