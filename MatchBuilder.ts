@@ -1,19 +1,18 @@
 import type { matcher_callback } from "./MatchCallback";
-import { MatchDict } from "./MatchDict";
+import { MatchDict } from "./MatchDict/MatchDict";
 import { match_constant, match_element, match_segment } from "./MatchCallback";
-import {  match_choose, match_letrec, match_reference, match_new_var, match_repeated_patterns } from "./MatchCombinator";
-import { emptyMatchDict } from "./MatchDict";
+import {  match_choose, match_letrec, match_reference, match_new_var } from "./MatchCombinator";
+import { empty_match_dict } from "./MatchDict/MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
 import { inspect } from "util";
 import type { MatchFailure } from "./MatchResult";
 import { match_all_other_element } from "./MatchCallback";
-import { emptyEnvironment } from "./MatchEnvironment";
-import type { MatchEnvironment } from "./MatchEnvironment";
 
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+import { default_match_env } from "./MatchEnvironment";
 
 
 export const build = construct_simple_generic_procedure("build", 1,
@@ -58,27 +57,27 @@ define_generic_procedure_handler(build,
     }
 )
 
-define_generic_procedure_handler(build, 
-    (pattern: any[]) => is_match_repeated_pattern(pattern),
-    (pattern: any[]) => {
-        console.log("matched")
-        if (pattern.length !== 2) {
-            throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
-        }
-        const built_pattern = build(pattern[1])
-        console.log("build(pattern[1])", built_pattern.toString() )
-        return match_repeated_patterns(built_pattern)
-    }
-)
+// define_generic_procedure_handler(build, 
+//     (pattern: any[]) => is_match_repeated_pattern(pattern),
+//     (pattern: any[]) => {
+//         console.log("matched")
+//         if (pattern.length !== 2) {
+//             throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
+//         }
+//         const built_pattern = build(pattern[1])
+//         console.log("build(pattern[1])", built_pattern.toString() )
+//         return match_repeated_patterns(built_pattern)
+//     }
+// )
 
 
-function is_match_constant(pattern: any): boolean {
+export function is_match_constant(pattern: any): boolean {
     return first_equal_with(pattern, P.constant) || isString(pattern)
 }
 
 
 
-function first_equal_with(pattern: any, value: any): boolean {
+export function first_equal_with(pattern: any, value: any): boolean {
     return isPair(pattern) && isString(first(pattern)) && first(pattern) === value
 }
 
@@ -96,7 +95,7 @@ define_generic_procedure_handler(build,
 )
 
 
-function is_Letrec(pattern: any): boolean {
+export function is_Letrec(pattern: any): boolean {
     return first_equal_with(pattern, P.letrec)
 }
 
@@ -114,7 +113,7 @@ define_generic_procedure_handler(build,
 )
 
 
-function is_select(pattern: any): boolean {
+export function is_select(pattern: any): boolean {
     return first_equal_with(pattern, P.choose)
 }
 
@@ -126,7 +125,7 @@ define_generic_procedure_handler(build,
 )
 
 
-function is_new_var(pattern: any): boolean {
+export function is_new_var(pattern: any): boolean {
     return first_equal_with(pattern, P.new)
 }
 
@@ -162,7 +161,8 @@ define_generic_procedure_handler(build,
 )
 
 
-function is_match_reference(pattern: any): boolean {
+export function is_match_reference(pattern: any): boolean {
+
     return first_equal_with(pattern, P.ref)
 }
 
@@ -179,17 +179,52 @@ function is_match_repeated_pattern(pattern: any): boolean {
 
 
 
-export function run_matcher(matcher: matcher_callback, data: any[], succeed: (environment: MatchEnvironment, nEaten: number) => any): MatchEnvironment | MatchFailure {
-    return matcher([data], emptyEnvironment(), (environment, nEaten) => {
-        return succeed(environment, nEaten)
+export function run_matcher(matcher: matcher_callback, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): MatchDict | MatchFailure {
+
+    return matcher([data], empty_match_dict(), default_match_env(), (dict, nEaten) => {
+        return succeed(dict, nEaten)
     })
 }
 
-const match_builder_test = build(["new", [P.element, "x"], "...", "sep", [P.segment, "seg"]]) 
+// const match_builder_test = build(["new", [P.element, "x"], "...", "sep", [P.segment, "seg"]]) 
                                         
 
 
-const result = run_matcher(match_builder_test, ["new", "c", "a", "b", "sep", "segabcdefg"], (environment, nEaten) => {
-})
+// const result = run_matcher(match_builder_test, ["new", "c", "a", "b", "sep", "segabcdefg"], (environment, nEaten) => {
+// })
 
 
+// const test_matcher = build([P.letrec,
+//     [["a", [P.choose, [], [ "1", [P.ref, "b"]]]],
+//     ["b", [P.choose, [], [ "2", [P.ref, "a"]]]]],
+//     [P.ref, "a"]]
+// )
+//   // Example data array
+
+//   const data = ["1", ["2", ["1", ["2", []]]]];
+  
+//   const result = run_matcher(test_matcher, data, (dict, nEaten) => {
+//     return {dict, nEaten}
+//   })
+
+//   console.log(inspect(result, {showHidden: true, depth: 10}))
+
+// const test_matcher = build([
+//     [P.letrec,
+//         [["palindrome",
+//         [P.new, ["x"],
+//             [P.choose, 
+//                 [],
+//                 [[P.element, "x"],
+//                 [P.ref, "palindrome"],
+//                 [P.element, "x"]]
+//             ]]]],
+//         [P.ref, "palindrome"]
+//     ]])
+
+
+// const result = run_matcher(test_matcher, [["a", ["b", ["c" , [], "c" ], "b"], "a"]], (env, nEaten) => {
+//     return {env, nEaten}
+// })
+
+// console.log(inspect(result, {showHidden: true, depth: 10}))

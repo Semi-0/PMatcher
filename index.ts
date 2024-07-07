@@ -1,5 +1,5 @@
 import { MatchBuilder } from './MatchBuilder';
-import type { MatchDict } from './MatchDict';
+import type { MatchDict } from './MatchDict/MatchDict';
 
 // Create an instance of MatcherBuilder
 const matcher = new MatchBuilder();

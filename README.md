@@ -110,33 +110,90 @@ import { emptyEnvironment, MatchEnvironment } from 'pmatcher/MatchEnvironment';
 // Define recursive patterns using match_letrec
 const matcher = build([P.letrec,
   [["a", [P.choose, [], [ "1", [P.ref, "b"]]]],
-  ["b", [P.choose, [], [ "2", [P.ref, "a"]]]]]
+  ["b", [P.choose, [], [ "2", [P.ref, "a"]]]]],
   [P.ref, "a"]])
 // Example data array
-const data = [["1", ["2", ["1", ["2", []]]]]];
+const data = ["1", ["2", ["1", ["2", []]]]];
 
-// Define a success callback
-function onSuccess(environment: MatchEnvironment, nEaten: number) {
-  console.log("Matched Environment:", environment);
-  console.log("Number of elements processed:", nEaten);
-}
 
-// Run the matcher on the data
-run_matcher(matcher, data, onSuccess);
+const result = run_matcher(test_matcher, data, (dict, nEaten) => {
+  return {dict, nEaten}
+})
+
+console.log(inspect(result, {showHidden: true, depth: 10}))
 
 ```
 
+
+```
+output:
+{
+  dict: MatchDict {
+    dict: Map(2) {
+      'a' => DictValue {
+        referenced_definition: Map(1) {
+          1 => [Function (anonymous)] { [length]: 4, [name]: '' }
+        }
+      },
+      'b' => DictValue {
+        referenced_definition: Map(1) {
+          1 => [Function (anonymous)] { [length]: 4, [name]: '' }
+        }
+      }
+    }
+  },
+  nEaten: 1
+}
+
+```
+
+## The Power Of Lexical Scoping
+The variable assignment in 'match_letrec' function is lexical scoped, Here is an example 
+demonstrate how to use tail recursion to match complex recursive pattern such as palindrome
+
+
+
+```typescript
+const test_matcher = build([
+    [P.letrec,
+        [["palindrome",
+        [P.new, ["x"],
+            [P.choose, 
+                [],
+                [[P.element, "x"],
+                [P.ref, "palindrome"],
+                [P.element, "x"]]
+            ]]]],
+        [P.ref, "palindrome"]
+    ]])
+
+
+const result = run_matcher(test_matcher, [["a", ["b", ["c" , [], "c" ], "b"], "a"]], (env, nEaten) => {
+    return {env, nEaten}
+})
+
+console.log(inspect(result, {showHidden: true, depth: 10}))
+```
 
 output:
 ```
-Matched Environment: MatchEnvironment { ... }
-Number of elements processed: 1
+{
+  env: MatchDict {
+    dict: Map(2) {
+      'palindrome' => DictValue {
+        referenced_definition: Map(1) {
+          1 => [Function (anonymous)] { [length]: 4, [name]: '' }
+        }
+      },
+      'x' => DictValue {
+        referenced_definition: Map(4) { 2 => 'a', 3 => 'b', 4 => 'c', 5 => '$$$_&&&' }
+      }
+    }
+  },
+  nEaten: 1
+}
 ```
 
-i also tried to implemented an lexical scoping environment for match_letrec but it was not working as expected.
-btw, although the definition of environment do look like some sort of lexical scoping,
-it has some weird bug made it actually scoped dynamically,
-but who the hell needs a lexical scoped pattern matcher anyway.
 
 
 ## Detailed Explanation for MatchCallback.ts and MatchCombinator.ts in MatchBuilder.ts
