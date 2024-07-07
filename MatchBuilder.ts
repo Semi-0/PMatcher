@@ -1,7 +1,7 @@
 import type { matcher_callback } from "./MatchCallback";
 import { MatchDict } from "./MatchDict/MatchDict";
-import { match_constant, match_element, match_segment } from "./MatchCallback";
-import {  match_choose, match_letrec, match_reference, match_new_var } from "./MatchCombinator";
+import { match_constant, match_element, match_empty, match_segment } from "./MatchCallback";
+import {  match_choose, match_letrec, match_reference, match_new_var, match_compose } from "./MatchCombinator";
 import { empty_match_dict } from "./MatchDict/MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
@@ -21,6 +21,8 @@ export const build = construct_simple_generic_procedure("build", 1,
     }
 )
 
+
+
 export const enum P { // Stands for Pattern
     letrec = "$.letrec.$", 
     choose = "$.choose.$", 
@@ -29,7 +31,9 @@ export const enum P { // Stands for Pattern
     segment = "$.segment.$",
     ref = "$.ref.$",
     constant = "$.constant.$",
-    repeated = "$.repeated.$"
+    repeated = "$.repeated.$",
+    compose = "$.compose.$",
+    empty = "$.empty.$"
 }
 
 
@@ -95,6 +99,18 @@ define_generic_procedure_handler(build,
 )
 
 
+function is_empty(pattern: any): boolean{
+    return  pattern === P.empty
+}
+
+define_generic_procedure_handler(build,
+    (pattern: any) => is_empty(pattern),
+    (pattern: any) => {
+        return match_empty()
+    }
+)
+
+
 export function is_Letrec(pattern: any): boolean {
     return first_equal_with(pattern, P.letrec)
 }
@@ -111,6 +127,25 @@ define_generic_procedure_handler(build,
         return match_letrec(bindings, build(pattern[2]))
     }
 )
+
+
+export function is_compose(pattern: any[]): boolean{
+    return first_equal_with(pattern, P.compose) && pattern.length == 2
+}
+
+define_generic_procedure_handler(build,
+    (pattern: any[]) => is_compose(pattern),
+    (pattern: any[]) => {
+        const a = pattern[1].map((item: any) => build(item)) 
+        console.log(a)
+        console.log(a.length)
+
+        match_compose(a)
+    }
+)
+
+
+
 
 
 export function is_select(pattern: any): boolean {
@@ -228,3 +263,34 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 // })
 
 // console.log(inspect(result, {showHidden: true, depth: 10}))
+
+
+// const t = build([
+//     [[P.letrec,
+//         [["repeat", 
+//             [P.new, ["x"],
+//                 [P.choose,
+//                     P.empty,
+//                     [P.compose, 
+//                         [[P.element, "x"],
+//                          [P.ref, "repeat"]]]
+//                 ]
+//         ]]],
+//         [P.ref, "repeat"]
+//     ]]
+// ])
+
+
+// const r = run_matcher(t, ["a", "a", "a", "a"], (dict: MatchDict, eaten: number) => {
+//     return dict
+// } )
+
+// console.log(r)
+
+// const t = build([[P.compose, [[P.constant, "a"], [P.constant, "a"]]]])
+
+// const r = run_matcher(t, ["a", "a"], (dict: MatchDict, eaten: number) => {
+//     return dict
+// })
+
+// console.log(r)

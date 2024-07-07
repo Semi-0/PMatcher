@@ -15,13 +15,13 @@ import { construct_dict_value } from "./MatchDict/DictValue";
 import { is_will_define, will_define } from "./MatchDict/DictValue";
 
 
-
-export function match_array(all_matchers: matcher_callback[]) : matcher_callback {
+export function match_compose(matchers: matcher_callback[]) : matcher_callback{
+    console.log("m c start:" + matchers.length)
     return (data: any[], dictionary: MatchDict , match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         const detailizeInfoWhenError = (result: any, position: number) => {
             // LIMITIONS: WOULD BACKTRACK ALL ERRORS WHEN ERROR OCCURS TODO: IMPROVE IT
             if (isMatchFailure(result)) {
-                return createMatchFailure(FailedMatcher.Array, FailedReason.UnexpectedInput, data, position, result)
+                return createMatchFailure(FailedMatcher.Compose, FailedReason.UnexpectedInput, data, position, result)
             }
             else{
                 return result
@@ -30,21 +30,25 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
         
         
         const loop = (data_list: any[], matchers: matcher_callback[], dictionary: MatchDict): any => {
+            console.log(matchers.length)
+            console.log("looped")
                 // const matcher = matchers[matcher_index];
             if (isPair(matchers)){
-
+                console.log("isPair")
+                console.log(matchers.length)
+                console.log(data_list)
                 const matcher = first(matchers)
                 const result = matcher(data_list, dictionary, match_env, (new_dict: MatchDict, nEaten: number) => {
-                    console.log("dictionary_array", dictionary)
-                    console.log("new_dict", new_dict)
-                    // console.log("dict:", dictionary)
+                    console.log("succeed")
+                    console.log(data_list.slice(nEaten))
                     return loop(data_list.slice(nEaten), rest(matchers), new_dict);
                 });
-                // console.log("success matcher:" + matcher.toString())
-                return detailizeInfoWhenError(result, all_matchers.findIndex((m) => m === matcher));
+                console.log(result)
+                console.log("ee:" + matchers.length)
+                return detailizeInfoWhenError(result, matchers.findIndex((m) => m === matcher));
             }
              else if (isPair(data_list)){
-               return createMatchFailure(FailedMatcher.Array, 
+               return createMatchFailure(FailedMatcher.Compose, 
                                          FailedReason.UnConsumedInput, 
                                          data_list, 0, null)  
             } 
@@ -53,12 +57,20 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
                 return succeed(dictionary, 1)
             }
             else{
-                return createMatchFailure(FailedMatcher.Array, 
+                return createMatchFailure(FailedMatcher.Compose, 
                                          FailedReason.UnexpectedEnd, 
                                          data_list, 0, null)
             }
 
         };
+        console.log("c:" + matchers.length)
+        return loop(data, matchers, dictionary)
+    }
+}
+
+export function match_array(all_matchers: matcher_callback[]) : matcher_callback {
+    return (data: any[], dictionary: MatchDict , match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        const compose_matcher = match_compose(all_matchers)
 
         if (data === undefined || data === null) {
             return createMatchFailure(FailedMatcher.Array, FailedReason.UnexpectedEnd, data, 0, null)
@@ -67,8 +79,8 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
             return succeed(dictionary, 0)
         }
         else{
-            // console.log("loop", first(data), all_matchers, dictionary)
-            return loop(first(data), all_matchers, dictionary)
+         
+            return compose_matcher(first(data), dictionary, match_env, succeed)
         }
     };
 }
