@@ -2,12 +2,8 @@ import { guard } from "../utility";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import {  inspect } from "bun";
 import { get_value, extend } from "./DictInterface";
-export type ScopeReference = Number;
-
-export function is_scope_reference(ref: any): boolean{
-    return typeof ref === "number"
-}
-
+import {  default_ref, is_scope_reference, new_ref } from "./ScopeReference";
+import type { ScopeReference } from "./ScopeReference";
 
 
 
@@ -28,7 +24,7 @@ export function empty_dict_value(): DictValue{
 }
 
 export function has_default_value(value: DictValue): boolean{
-    return value.referenced_definition.size >= 1 && value.referenced_definition.has(0)
+    return value.referenced_definition.size >= 1 && value.referenced_definition.has(default_ref())
 }
 
 export function is_empty_dict_value(value: DictValue): boolean{
@@ -37,17 +33,22 @@ export function is_empty_dict_value(value: DictValue): boolean{
 
 export function get_default_value(value: DictValue): any{
     if (has_default_value(value)){
-        return value.referenced_definition.get(0)
+        return value.referenced_definition.get(default_ref())
     }
     else{
         throw Error("attempt to get default value from empty, v:" + value)
     }
 }
 
-export function construct_dict_value(num: ScopeReference, value: any): DictValue {
+export function construct_dict_value(value: any, scope_ref: ScopeReference): DictValue {
     const dict_item = empty_dict_value()
-    dict_item.referenced_definition.set(num, value)
+    dict_item.referenced_definition.set(scope_ref, value)
     return dict_item
+}
+
+export function add_new_value(value: any, ref: ScopeReference , dictValue: DictValue): DictValue{
+    dictValue.referenced_definition.set(ref, value)
+    return dictValue
 }
 
 export function has_multi_scope_definition(item: DictValue): boolean {

@@ -2,9 +2,10 @@
 import { guard } from "../utility";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import {  inspect } from "bun";
-import { DictValue, is_dict_value, construct_dict_value, get_default_value, is_scope_reference } from "./DictValue";
+import { DictValue, is_dict_value, construct_dict_value, get_default_value } from "./DictValue";
 import { get_value, extend } from "./DictInterface";
 
+import { default_ref, is_scope_reference } from "./ScopeReference";
 
 export class MatchDict {
     dict: Map<string, DictValue>
@@ -61,7 +62,7 @@ define_generic_procedure_handler(extend,
             return match_dict
         }
         else if ((A !== null) && (A !== undefined)){
-            const new_value = construct_dict_value(0, A.value)
+            const new_value = construct_dict_value(A.value, default_ref())
             match_dict.dict.set(A.key, new_value)
             return match_dict
         }

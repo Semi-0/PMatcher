@@ -5,10 +5,12 @@ import {
 import { extend, get_value} from '../MatchDict/DictInterface'
 import { DictValue,  empty_dict_value, construct_dict_value,
     has_default_value, get_default_value, has_multi_scope_definition,
-    has_scope_reference,   is_empty_dict_value } from "../MatchDict/DictValue"
-
-import type {ScopeReference, NestedValue} from "../MatchDict/DictValue"
+    has_scope_reference,   is_empty_dict_value, 
+    add_new_value} from "../MatchDict/DictValue"
+import type { ScopeReference } from '../MatchDict/ScopeReference';
+import type { NestedValue} from "../MatchDict/DictValue"
 import type {  DictItem, KeyAndScopedRef } from '../MatchDict/MatchDict';
+import  { new_ref , default_ref, clearRefHistory, is_scope_reference } from '../MatchDict/ScopeReference'
 import {test, expect, describe, beforeEach} from "bun:test";
 
 describe('MatchDict', () => {
@@ -18,6 +20,7 @@ describe('MatchDict', () => {
     beforeEach(() => {
         dictValue = empty_dict_value();
         matchDict = new MatchDict();
+        clearRefHistory()
     });
 
     describe('DictValue operations', () => {
@@ -26,20 +29,21 @@ describe('MatchDict', () => {
         });
 
         test('construct_dict_value', () => {
-            dictValue = construct_dict_value(0, 'default');
+            dictValue = construct_dict_value('default', 0);
             expect(has_default_value(dictValue)).toBe(true);
             expect(get_default_value(dictValue)).toBe('default');
-
-            dictValue = construct_dict_value(1, 'non-default');
+            
+            dictValue = construct_dict_value("non-default", 1)
             expect(has_default_value(dictValue)).toBe(false);
             expect(has_scope_reference(1, dictValue)).toBe(true);
         });
 
         test('has_multi_scope_definition', () => {
-            dictValue = construct_dict_value(1, 'value1');
+            console.log("start test 3")
+            dictValue = construct_dict_value("a", 0);
             expect(has_multi_scope_definition(dictValue)).toBe(false);
 
-            dictValue = extend({value: 'value2', scopeRef: 2}, dictValue);
+            dictValue = extend({value: 'value2', scopeRef: new_ref()}, dictValue);
             expect(has_multi_scope_definition(dictValue)).toBe(true);
         });
     });
@@ -47,9 +51,11 @@ describe('MatchDict', () => {
     describe('MatchDict operations', () => {
         test('extend and get_value', () => {
             extend({key: 'test', value: 'value'}, matchDict);
+            console.log(matchDict)
             expect(get_value('test', matchDict)).toBe('value');
+            const dict = construct_dict_value("default", 0)
 
-            const complexValue = construct_dict_value(1, 'complex');
+            const complexValue = add_new_value( 'complex', new_ref(), dict);
             extend({key: 'complex', value: complexValue}, matchDict);
             expect(get_value({key: 'complex', scopeRef: 1}, matchDict)).toBe('complex');
         });
@@ -125,9 +131,9 @@ describe('MatchDict', () => {
         beforeEach(() => {
             matchDict = new MatchDict();
             const complexValue = new DictValue();
-            complexValue.referenced_definition.set(0, 'outer');
-            complexValue.referenced_definition.set(1, 'inner');
-            complexValue.referenced_definition.set(2, 'innermost');
+            complexValue.referenced_definition.set(default_ref(), 'outer');
+            complexValue.referenced_definition.set(new_ref(), 'inner');
+            complexValue.referenced_definition.set(new_ref(), 'innermost');
             extend({key: 'complex', value: complexValue}, matchDict);
         });
 
