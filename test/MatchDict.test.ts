@@ -108,3 +108,46 @@ describe('MatchDict', () => {
         });
     });
 });
+
+// ... existing imports ...
+import type { KeyAndScopeIndex } from '../MatchDict';
+import { is_key_and_scoped_index } from '../MatchDict';
+
+describe('MatchDict', () => {
+    // ... existing test suites ...
+
+    describe('KeyAndScopeIndex operations', () => {
+        let matchDict: MatchDict;
+
+        beforeEach(() => {
+            matchDict = new MatchDict();
+            const complexValue = new DictValue();
+            complexValue.referenced_definition.set(0, 'outer');
+            complexValue.referenced_definition.set(1, 'inner');
+            complexValue.referenced_definition.set(2, 'innermost');
+            extend({key: 'complex', value: complexValue}, matchDict);
+        });
+
+        test('is_key_and_scoped_index', () => {
+            expect(is_key_and_scoped_index({key: 'test', scopeIndex: 0})).toBe(true);
+            expect(is_key_and_scoped_index({key: 'test', scopeIndex: '0'})).toBe(true);
+            expect(is_key_and_scoped_index({key: 'test'})).toBe(false);
+            expect(is_key_and_scoped_index({scopeIndex: 0})).toBe(false);
+            expect(is_key_and_scoped_index(null)).toBe(false);
+        });
+
+        test('get_value with KeyAndScopeIndex', () => {
+            expect(get_value({key: 'complex', scopeIndex: 0}, matchDict)).toBe('outer');
+            expect(get_value({key: 'complex', scopeIndex: 1}, matchDict)).toBe('inner');
+            expect(get_value({key: 'complex', scopeIndex: 2}, matchDict)).toBe('innermost');
+        });
+
+        test('get_value with invalid scopeIndex', () => {
+            expect(() => get_value({key: 'complex', scopeIndex: 3}, matchDict)).toThrow(/attempt to get scope index exceeds from the value size/);
+        });
+
+        test('get_value with non-existent key', () => {
+            expect(() => get_value({key: 'nonexistent', scopeIndex: 0}, matchDict)).toThrow(/attempt to get the scope value from a undefined index/);
+        });
+    });
+});

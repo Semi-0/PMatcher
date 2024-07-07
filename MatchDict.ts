@@ -182,7 +182,7 @@ define_generic_procedure_handler(extend,
             return match_dict
         }
         else{
-            throw Error("captured empty when setting up dict value, match_dict:" + match_dict)
+            throw Error("captured empty when setting up dict value, match_dict:" + inspect(match_dict))
         }
     }
 )
@@ -204,7 +204,7 @@ define_generic_procedure_handler(get_value,
             return get_default_value(v)
         }
         else{
-            throw Error("try to get default value when it is not bounded, key = " + key + " dict = " + dict)
+            throw Error("try to get default value when it is not bounded, key = " + inspect(key) + " dict = " + inspect(dict))
         }
     }
 )
@@ -227,12 +227,48 @@ define_generic_procedure_handler(get_value,
     (A: any, B: any) => {
         return is_key_and_scoped_ref(A) && is_match_dict(B)
     }, 
-    (kas: KeyAndScopedRef, mdict: MatchDict) => {
-        const item = mdict.dict.get(kas.key)
+    (kasf: KeyAndScopedRef, mdict: MatchDict) => {
+        const item = mdict.dict.get(kasf.key)
 
-        return get_value(kas.scopeRef, item)
+        return get_value(kasf.scopeRef, item)
     }
 )
 
+// Scope index refers to the position of a value within nested scopes, starting from the outermost scope.
+// It is zero-based: 0 represents the outermost scope, and (map.size - 1) represents the innermost scope.
+// Example: For scopes [A, B, C], index 0 = A (outermost), 1 = B, 2 = C (innermost)
+export type KeyAndScopeIndex = {
+    key: string,
+    scopeIndex : number
+}
+
+export function is_key_and_scoped_index(A: any) : boolean{
+    return typeof A === 'object'
+         && A !== null 
+        && 'key' in A 
+        && 'scopeIndex' in A 
+}
+
+define_generic_procedure_handler(get_value,
+    (A: any, B: any) => {
+        return  is_key_and_scoped_index(A) && is_match_dict(B)
+    },
+    (kasi: KeyAndScopeIndex, mdict: MatchDict) => {
+        const item = mdict.dict.get(kasi.key)
+
+        if ((item !== undefined) && (item !== null)){
+            if (kasi.scopeIndex < item.referenced_definition.size){
+                const entries = Array.from(item.referenced_definition.entries())
+                return entries[kasi.scopeIndex][1]
+            }
+            else{
+                throw Error("attempt to get scope index exceeds from the value size, kasi: " + inspect(kasi) + " dict: " + inspect(mdict) )
+            }
+        }
+        else{
+            throw Error("attempt to get the scope value from a undefined index, kasi: " + inspect(kasi) + " dict: " + inspect(mdict) )
+        }
+    }
+)
 
 // TODO: ADD UNIT TEST
