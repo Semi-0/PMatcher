@@ -49,16 +49,6 @@ export function match_element(variable: string, restriction: (value: any) => boo
                                       FailedReason.RestrictionUnmatched, 
                                       data[0], 0, null);
         }
-
-        if (is_will_define(binding_value, current_scope_ref)) {
-            const extended = extend({key: variable, 
-                                     value: extend_new_value_in_scope(data[0],
-                                                                      current_scope_ref,
-                                                                      binding_value)},
-                                     dictionary);
-
-            return succeed(extended, 1);
-        }
         else if ((binding_value === undefined) || (binding_value === null)){
             const current_env = get_current_scope(matchEnv)
             const extended = extend({key: variable,
@@ -67,6 +57,16 @@ export function match_element(variable: string, restriction: (value: any) => boo
                                      dictionary);
             return succeed(extended, 1)
         }
+        else if (is_will_define(binding_value, current_scope_ref)) {
+            const extended = extend({key: variable, 
+                                     value: extend_new_value_in_scope(data[0],
+                                                                      current_scope_ref,
+                                                                      binding_value)},
+                                     dictionary);
+
+            return succeed(extended, 1);
+        }
+        
         
         else if (binding_value === data[0]) {
             return succeed(dictionary, 1);

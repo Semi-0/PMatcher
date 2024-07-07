@@ -78,15 +78,19 @@ export function match_choose(matchers: matcher_callback[]): matcher_callback {
     return (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         for (const matcher of matchers) {
             const result = matcher(data, dictionary, match_env, succeed)
+            var failures = []
             // console.log("choose matcher", matcher.toString(), "result", result)
             if (matchSuccess(result)) {
                 return result
+            }
+            else{
+                failures.push(result)
             }
         }
 
         return createMatchFailure(FailedMatcher.Choice, 
                                   FailedReason.UnexpectedEnd, 
-                                  data, matchers.length, null)
+                                  [data, failures], matchers.length, null)
     }
 }
 
@@ -94,13 +98,13 @@ export function match_choose(matchers: matcher_callback[]): matcher_callback {
 export function match_reference(reference_symbol: string): matcher_callback{
     return (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         const matcher = get_value({key: reference_symbol,
-                                   match_env: match_env},
+                                   matchEnv: match_env},
                                    dictionary)
         if (data === undefined || data === null || typeof data === "string") {
             return createMatchFailure(FailedMatcher.Reference, FailedReason.UnexpectedEnd, data, 0, null)
         }
         else if (matcher) {
-            const result = matcher(data, dictionary, succeed)
+            const result = matcher(data, dictionary, match_env, succeed)
             console.log("reference success", result)
             if (matchSuccess(result)) {
                 return succeed(dictionary, 1) 
@@ -125,7 +129,7 @@ export function match_letrec(bindings: {key: string, value: matcher_callback}[],
             return extend({key: binding.key,
                            value: binding.value,
                            scopeRef: new_env_ref},
-                          acc)
+                           acc)
         }, dictionary)
         
         return body(data, extended_dict, new_env, succeed)
