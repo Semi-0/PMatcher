@@ -50,20 +50,20 @@ describe('MatchDict', () => {
 
     describe('MatchDict operations', () => {
         test('extend and get_value', () => {
-            extend({key: 'test', value: 'value'}, matchDict);
+            const new_dict = extend({key: 'test', value: 'value'}, matchDict);
             console.log(matchDict)
-            expect(get_value('test', matchDict)).toBe('value');
+            expect(get_value('test', new_dict)).toBe('value');
             const dict = construct_dict_value("default", 0)
 
             const complexValue = add_new_value( 'complex', new_ref(), dict);
-            extend({key: 'complex', value: complexValue}, matchDict);
-            expect(get_value({key: 'complex', scopeRef: 1}, matchDict)).toBe('complex');
+            const extended = extend({key: 'complex', value: complexValue}, matchDict);
+            expect(get_value({key: 'complex', scopeRef: 1}, extended)).toBe('complex');
         });
 
         test('has_key', () => {
-            extend({key: 'test', value: 'value'}, matchDict);
-            expect(has_key('test', matchDict)).toBe(true);
-            expect(has_key('nonexistent', matchDict)).toBe(false);
+            const ext = extend({key: 'test', value: 'value'}, matchDict);
+            expect(has_key('test', ext)).toBe(true);
+            expect(has_key('nonexistent', ext )).toBe(false);
         });
     });
 
@@ -134,7 +134,7 @@ describe('MatchDict', () => {
             complexValue.referenced_definition.set(default_ref(), 'outer');
             complexValue.referenced_definition.set(new_ref(), 'inner');
             complexValue.referenced_definition.set(new_ref(), 'innermost');
-            extend({key: 'complex', value: complexValue}, matchDict);
+            matchDict = extend({key: 'complex', value: complexValue}, matchDict);
         });
 
         test('is_key_and_scoped_index', () => {
@@ -146,6 +146,7 @@ describe('MatchDict', () => {
         });
 
         test('get_value with KeyAndScopeIndex', () => {
+            
             expect(get_value({key: 'complex', scopeIndex: 0}, matchDict)).toBe('outer');
             expect(get_value({key: 'complex', scopeIndex: 1}, matchDict)).toBe('inner');
             expect(get_value({key: 'complex', scopeIndex: 2}, matchDict)).toBe('innermost');

@@ -2,14 +2,12 @@ import type { matcher_callback } from "./MatchCallback";
 import { MatchDict } from "./MatchDict/MatchDict";
 import { match_constant, match_element, match_segment } from "./MatchCallback";
 import {  match_choose, match_letrec, match_reference, match_new_var, match_repeated_patterns } from "./MatchCombinator";
-import { emptyMatchDict } from "./MatchDict/MatchDict";
+import { empty_match_dict } from "./MatchDict/MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
 import { inspect } from "util";
 import type { MatchFailure } from "./MatchResult";
 import { match_all_other_element } from "./MatchCallback";
-import { emptyEnvironment } from "./MatchEnvironment";
-import type { MatchEnvironment } from "./MatchEnvironment";
 
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 

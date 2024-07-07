@@ -6,6 +6,8 @@ import { DictValue, is_dict_value, construct_dict_value, get_default_value } fro
 import { get_value, extend } from "./DictInterface";
 
 import { default_ref, is_scope_reference } from "./ScopeReference";
+import { copy } from "../utility"
+
 
 export class MatchDict {
     dict: Map<string, DictValue>
@@ -13,6 +15,19 @@ export class MatchDict {
     constructor(){
         this.dict = new Map()
     }
+}
+
+define_generic_procedure_handler(copy, ( A:any ) => { return is_match_dict(A)}, 
+    (dict: MatchDict) => {
+        const copy = new MatchDict()
+        copy.dict = new Map(dict.dict)
+        return copy
+    }
+)
+
+
+export function empty_match_dict(): MatchDict{
+    return new MatchDict()
 }
 
 export function is_match_key(a: any): boolean{
@@ -56,15 +71,16 @@ define_generic_procedure_handler(extend,
         return  is_dict_item(A) && is_match_dict(B)
     },
     (A: any, match_dict: MatchDict) => {
+        const c = copy(match_dict)
         // empty dict value is also included
         if (is_dict_value(A.value)){
-            match_dict.dict.set(A.key, A.value)
-            return match_dict
+            c.dict.set(A.key, A.value)
+            return c
         }
         else if ((A !== null) && (A !== undefined)){
             const new_value = construct_dict_value(A.value, default_ref())
-            match_dict.dict.set(A.key, new_value)
-            return match_dict
+            c.dict.set(A.key, new_value)
+            return c
         }
         else{
             throw Error("captured empty when setting up dict value, match_dict:" + inspect(match_dict))

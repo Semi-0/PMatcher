@@ -4,7 +4,7 @@ import {  inspect } from "bun";
 import { get_value, extend } from "./DictInterface";
 import {  default_ref, is_scope_reference, new_ref } from "./ScopeReference";
 import type { ScopeReference } from "./ScopeReference";
-
+import { copy } from "../utility"
 
 
 export class DictValue{
@@ -14,6 +14,14 @@ export class DictValue{
         this.referenced_definition = new Map()
     }
 }
+
+define_generic_procedure_handler(copy, (A: any) => {
+    return is_dict_value(A)
+}, (dict: DictValue) => {
+    const copy = new DictValue()
+    copy.referenced_definition = new Map(dict.referenced_definition)
+    return copy
+})
 
 export function is_dict_value(item: any): boolean{
     return item instanceof DictValue
@@ -107,8 +115,9 @@ define_generic_procedure_handler(extend,
         return is_nested_value(A) && is_dict_value(B)
     },
     (nested_value: NestedValue, item: DictValue) => {
-        item.referenced_definition.set(nested_value.scopeRef, nested_value.value)
-        return item
+        const c = copy(item)
+        c.referenced_definition.set(nested_value.scopeRef, nested_value.value)
+        return c
     }
 )
 

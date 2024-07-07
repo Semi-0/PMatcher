@@ -1,11 +1,12 @@
+import { get_value } from "./MatchDict/DictInterface";
 import { MatchDict } from "./MatchDict/MatchDict";
-import type { MatchEnvironment } from "./MatchEnvironment";
+import type { ScopeReference } from "./MatchDict/ScopeReference";
 import type { MatchFailure } from "./MatchResult";
 import { createMatchFailure } from "./MatchResult";
 import { FailedMatcher, FailedReason } from "./MatchResult";
 import { matchSuccess } from "./MatchResult";
 
-export type matcher_callback =  (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any) => any
+export type matcher_callback =  (data: any[], dictionary: MatchDict, environment_reference: ScopeReference, succeed: (dictionary: MatchDict, nEaten: number) => any) => any
 // needs more precise error handler
 // TODO: Support Any Type Done  
 // TODO: Composable Matcher Done
@@ -15,14 +16,13 @@ export type matcher_callback =  (data: any[], dictionary: MatchEnvironment, succ
 
 
 export function match_constant(pattern_constant: string): matcher_callback {
-    return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any  => {
+    return (data: any[], dictionary: MatchDict, environment_reference: ScopeReference, succeed: (dictionary: MatchDict, nEaten: number) => any): any  => {
         if (data === undefined || data === null || data.length === 0) {
             return createMatchFailure(FailedMatcher.Constant, 
                                       FailedReason.UnexpectedEnd, 
                                       data, 0, null);
         }
         if (data[0] === pattern_constant) {
-            console.log("match_constant", pattern_constant, data[0], dictionary.to_String())
             return succeed(dictionary, 1);
         } else {
             return createMatchFailure(FailedMatcher.Constant, 
@@ -33,14 +33,13 @@ export function match_constant(pattern_constant: string): matcher_callback {
 }
 
 export function match_element(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {
-    return (data: any[], environment: MatchEnvironment, succeed: (environment: MatchEnvironment, nEaten: number) => any): any => {
+    return (data: any[], dictionary: MatchDict, environment_reference: ScopeReference, succeed: (environment: MatchDict, nEaten: number) => any): any => {
         if (data === undefined || data === null || data.length === 0) {
             return createMatchFailure(FailedMatcher.Element, 
                                       FailedReason.UnexpectedEnd, 
                                       data, 0, null);
         }
-        const binding_value = environment.get(variable);
-        console.log("match_element", variable, data[0], "binding_value", binding_value, environment)
+        const binding_value = get_value({key: variable, scopeRef: environment_reference}, dictionary)
         if (!restriction(data[0])){
             return createMatchFailure(FailedMatcher.Element, 
                                       FailedReason.RestrictionUnmatched, 
@@ -48,7 +47,7 @@ export function match_element(variable: string, restriction: (value: any) => boo
         }
 
         if (binding_value === undefined || binding_value === null) {
-            const extendedEnvironment = environment.extend(variable, data[0]);
+            const extendedEnvironment = .extend(variable, data[0]);
             return succeed(extendedEnvironment, 1);
         } else if (binding_value === data[0]) {
             return succeed(environment, 1);
