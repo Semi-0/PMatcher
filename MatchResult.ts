@@ -1,4 +1,4 @@
-import { MatchDict } from "./MatchDict";
+import { MatchDict } from "./MatchDict/MatchDict";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import { toString } from "./utility"
 import { isElementAccessExpression } from "typescript";

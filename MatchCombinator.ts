@@ -1,4 +1,4 @@
-import { MatchDict, emptyMatchDict } from "./MatchDict";
+import { MatchDict, emptyMatchDict } from "./MatchDict/MatchDict";
 import { match_constant, match_element, match_segment } from "./MatchCallback";
 import type { matcher_callback } from "./MatchCallback";
 import { inspect } from "util";

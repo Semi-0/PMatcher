@@ -1,6 +1,6 @@
 
 
-import { MatchDict } from "./MatchDict";
+import { MatchDict } from "./MatchDict/MatchDict";
 
 export class MatchEnvironment{
     public readonly parentEnvironment: MatchEnvironment | null;

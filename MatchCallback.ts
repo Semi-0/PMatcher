@@ -1,4 +1,4 @@
-import { MatchDict } from "./MatchDict";
+import { MatchDict } from "./MatchDict/MatchDict";
 import type { MatchEnvironment } from "./MatchEnvironment";
 import type { MatchFailure } from "./MatchResult";
 import { createMatchFailure } from "./MatchResult";

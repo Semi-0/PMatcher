@@ -1,11 +1,14 @@
 import {
-    DictValue, MatchDict, empty_dict_value, construct_dict_value,
-    has_default_value, get_default_value, has_multi_scope_definition,
-    has_scope_reference, extend, get_value, is_empty_dict_value,
     is_match_key, is_match_dict, has_key, is_dict_item, format_match_dict_item,
-    is_dict_key, is_key_and_scoped_ref
-} from '../MatchDict';
-import type { ScopeReference, NestedValue, DictItem, KeyAndScopedRef } from '../MatchDict';
+    is_dict_key, is_key_and_scoped_ref, MatchDict, 
+} from '../MatchDict/MatchDict';
+import { extend, get_value} from '../MatchDict/DictInterface'
+import { DictValue,  empty_dict_value, construct_dict_value,
+    has_default_value, get_default_value, has_multi_scope_definition,
+    has_scope_reference,   is_empty_dict_value } from "../MatchDict/DictValue"
+
+import type {ScopeReference, NestedValue} from "../MatchDict/DictValue"
+import type {  DictItem, KeyAndScopedRef } from '../MatchDict/MatchDict';
 import {test, expect, describe, beforeEach} from "bun:test";
 
 describe('MatchDict', () => {
@@ -110,8 +113,8 @@ describe('MatchDict', () => {
 });
 
 // ... existing imports ...
-import type { KeyAndScopeIndex } from '../MatchDict';
-import { is_key_and_scoped_index } from '../MatchDict';
+import type { KeyAndScopeIndex } from '../MatchDict/MatchDict';
+import { is_key_and_scoped_index } from '../MatchDict/MatchDict';
 
 describe('MatchDict', () => {
     // ... existing test suites ...

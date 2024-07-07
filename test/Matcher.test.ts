@@ -1,5 +1,5 @@
 import {test, expect, describe, beforeEach, mock, jest} from "bun:test";
-import { MatchDict, emptyMatchDict } from '../MatchDict';
+import { MatchDict, emptyMatchDict } from '../MatchDict/MatchDict';
 import { MatchResult, isMatchFailure } from '../MatchResult';
 import type { MatchFailure } from "../MatchResult";
 import { FailedMatcher, FailedReason } from '../MatchResult';
