@@ -1,6 +1,6 @@
 import { get_value } from "./MatchDict/DictInterface";
 import { DictValue, construct_dict_value, extend_new_value_in_scope, is_empty_dict_value, is_will_define } from "./MatchDict/DictValue";
-import { MatchDict } from "./MatchDict/MatchDict";
+import { MatchDict, get_raw_entity } from "./MatchDict/MatchDict";
 import type { ScopeReference } from "./MatchDict/ScopeReference";
 import type { MatchFailure } from "./MatchResult";
 import { createMatchFailure } from "./MatchResult";
@@ -58,13 +58,20 @@ export function match_element(variable: string, restriction: (value: any) => boo
             return succeed(extended, 1)
         }
         else if (is_will_define(binding_value, current_scope_ref)) {
-            const extended = extend({key: variable, 
-                                     value: extend_new_value_in_scope(data[0],
-                                                                      current_scope_ref,
-                                                                      binding_value)},
-                                     dictionary);
+            const entity = get_raw_entity(variable, dictionary)
+            
+            if ((entity !== undefined) && (entity !== null)){
+                const extended = extend({key: variable, 
+                                        value: extend_new_value_in_scope(data[0],
+                                                                        current_scope_ref,
+                                                                        entity)},
+                                        dictionary);
 
-            return succeed(extended, 1);
+                return succeed(extended, 1);
+            }
+            else{
+                throw Error("unexpected catch undefined entity in match_element")
+            }
         }
         
         

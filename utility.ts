@@ -6,7 +6,8 @@ import { isMatchFailure } from "./MatchResult"
 
 export const copy = construct_simple_generic_procedure("copy", 1,
     (A: any) => {
-        throw Error("unknown object to copy")
+        throw Error("unknown object to copy, A: " + A)
+
     }
 )
 

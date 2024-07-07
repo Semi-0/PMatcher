@@ -107,7 +107,7 @@ export function match_reference(reference_symbol: string): matcher_callback{
             const result = matcher(data, dictionary, match_env, succeed)
             console.log("reference success", result)
             if (matchSuccess(result)) {
-                return succeed(dictionary, 1) 
+                return result
             }
             else{
                 return createMatchFailure(FailedMatcher.Reference, FailedReason.UnexpectedEnd, data, 0, result)

@@ -194,6 +194,21 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 // })
 
 
+// const test_matcher = build([P.letrec,
+//     [["a", [P.choose, [], [ "1", [P.ref, "b"]]]],
+//     ["b", [P.choose, [], [ "2", [P.ref, "a"]]]]],
+//     [P.ref, "a"]]
+// )
+//   // Example data array
+
+//   const data = ["1", ["2", ["1", ["2", []]]]];
+  
+//   const result = run_matcher(test_matcher, data, (dict, nEaten) => {
+//     return {dict, nEaten}
+//   })
+
+//   console.log(inspect(result, {showHidden: true, depth: 10}))
+
 // const test_matcher = build([
 //     [P.letrec,
 //         [["palindrome",
@@ -212,4 +227,4 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 //     return {env, nEaten}
 // })
 
-// console.log(result)
+// console.log(inspect(result, {showHidden: true, depth: 10}))

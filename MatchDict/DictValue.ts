@@ -45,9 +45,8 @@ export function is_empty_dict_value(value: DictValue): boolean{
     return value.referenced_definition.size === 0
 }
 
-export function is_will_define(value: DictValue, scope_ref: ScopeReference): boolean{
-    const v = value.referenced_definition.get(scope_ref)
-    return v === will_define
+export function is_will_define(value: any, scope_ref: ScopeReference): boolean{
+    return value === will_define
 }
 
 export function get_default_value(value: DictValue): any{

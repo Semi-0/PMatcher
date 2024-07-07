@@ -45,8 +45,9 @@ export function has_key(key: string, match_dict: MatchDict): boolean{
     return match_dict.dict.has(key);
 }
 
-export function get_raw_value(key: string, mdict: MatchDict): DictValue | undefined{
+export function get_raw_entity(key: string, mdict: MatchDict): DictValue | undefined {
     return mdict.dict.get(key)
+
 }
 
 
@@ -164,7 +165,7 @@ define_generic_procedure_handler(extend,
         return is_binding_and_scope_ref(A) && is_match_dict(B)
     },
     (bas: bindingAndScopeRef, mdict: MatchDict) => {
-        const existed = get_raw_value(bas.key, mdict)
+        const existed = get_raw_entity(bas.key, mdict)
 
         if (existed !== undefined){
             const new_item = {
