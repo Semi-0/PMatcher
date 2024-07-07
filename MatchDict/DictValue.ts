@@ -16,6 +16,11 @@ export class DictValue{
     }
 }
 
+////WARNINF!!!!
+export const will_define = "$$$_&&&"
+
+
+
 define_generic_procedure_handler(copy, (A: any) => {
     return is_dict_value(A)
 }, (dict: DictValue) => {
@@ -40,6 +45,11 @@ export function is_empty_dict_value(value: DictValue): boolean{
     return value.referenced_definition.size === 0
 }
 
+export function is_will_define(value: DictValue, scope_ref: ScopeReference): boolean{
+    const v = value.referenced_definition.get(scope_ref)
+    return v === will_define
+}
+
 export function get_default_value(value: DictValue): any{
     if (has_default_value(value)){
         return value.referenced_definition.get(default_ref())
@@ -53,6 +63,12 @@ export function construct_dict_value(value: any, scope_ref: ScopeReference): Dic
     const dict_item = empty_dict_value()
     dict_item.referenced_definition.set(scope_ref, value)
     return dict_item
+}
+
+export function extend_will_define_in_scope(ref: ScopeReference, dictValue: DictValue): DictValue{
+    const c = copy(dictValue)
+    c.referenced_definition.set(ref, will_define)
+    return c
 }
 
 export function extend_new_value_in_scope(value: any, ref: ScopeReference , dictValue: DictValue): DictValue{

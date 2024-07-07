@@ -5,7 +5,7 @@ import { extend } from "./MatchDict/DictInterface"
 import { is_scope_reference } from "./MatchDict/ScopeReference"
 export type MatchEnvironment = ScopeReference[]
 // MatchEnvironment is a record of the address of scope reference
-
+import { first } from "./utility"
 export function is_match_env(A: any): boolean{
     return Array.isArray(A)
         && A.every((item) => {
@@ -37,6 +37,10 @@ define_generic_procedure_handler(extend,
         return c
     }
 )
+
+export function get_current_scope(env: MatchEnvironment){
+    return first(env)
+}
 
 // import { MatchDict } from "./MatchDict/MatchDict";
 

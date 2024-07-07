@@ -1,6 +1,6 @@
 import {
     is_match_key, is_match_dict, has_key, is_dict_item, format_match_dict_item,
-    is_dict_key, is_key_and_scoped_ref, MatchDict, 
+    is_dict_key, is_key_and_scope_ref, MatchDict, 
 } from '../MatchDict/MatchDict';
 import { extend, get_value} from '../MatchDict/DictInterface'
 import { DictValue,  empty_dict_value, construct_dict_value,
@@ -99,8 +99,8 @@ describe('MatchDict', () => {
         });
 
         test('is_key_and_scoped_ref', () => {
-            expect(is_key_and_scoped_ref({key: 'test', scopeRef: 1})).toBe(true);
-            expect(is_key_and_scoped_ref({key: 'test'})).toBe(false);
+            expect(is_key_and_scope_ref({key: 'test', scopeRef: 1})).toBe(true);
+            expect(is_key_and_scope_ref({key: 'test'})).toBe(false);
         });
     });
 

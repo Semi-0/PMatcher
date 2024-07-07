@@ -2,7 +2,7 @@
 import { guard } from "../utility";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import {  inspect } from "bun";
-import { DictValue, is_dict_value, construct_dict_value, get_default_value } from "./DictValue";
+import { DictValue, is_dict_value, construct_dict_value, get_default_value, extend_new_value_in_scope } from "./DictValue";
 import { get_value, extend } from "./DictInterface";
 
 import { default_ref, is_scope_reference, type ScopeReference } from "./ScopeReference";
@@ -144,13 +144,57 @@ define_generic_procedure_handler(get_value,
 )
 
 
+export type bindingAndScopeRef = {
+    key: string,
+    value: any,
+    scopeRef: ScopeReference
+}
+
+export function is_binding_and_scope_ref(A: any){
+    return typeof A === 'object'
+        && A !== null 
+        && 'key' in A 
+        && 'value' in A
+        && 'scopeRef' in A 
+        && is_scope_reference(A.scopeRef) 
+}
+
+define_generic_procedure_handler(extend,
+    (A: any, B: any) => {
+        return is_binding_and_scope_ref(A) && is_match_dict(B)
+    },
+    (bas: bindingAndScopeRef, mdict: MatchDict) => {
+        const existed = get_raw_value(bas.key, mdict)
+
+        if (existed !== undefined){
+            const new_item = {
+                key: bas.key,
+                value: extend_new_value_in_scope(bas.value,
+                                                 bas.scopeRef,
+                                                 existed)
+            }
+
+            return extend(new_item, mdict)
+        }
+        else{
+            const new_item = {
+                key: bas.key,
+                value: construct_dict_value(bas.value,
+                                            bas.scopeRef)
+            }
+            
+            return extend(new_item, mdict)
+        }
+    }
+)
+
 
 export type KeyAndScopeRef = {
     key: string,
     scopeRef: ScopeReference 
 }
 
-export function is_key_and_scoped_ref(A: any){
+export function is_key_and_scope_ref(A: any){
     return typeof A === 'object'
         && A !== null 
         && 'key' in A 
@@ -160,7 +204,7 @@ export function is_key_and_scoped_ref(A: any){
 
 define_generic_procedure_handler(get_value,
     (A: any, B: any) => {
-        return is_key_and_scoped_ref(A) && is_match_dict(B)
+        return is_key_and_scope_ref(A) && is_match_dict(B)
     }, 
     (kasf: KeyAndScopeRef, mdict: MatchDict) => {
         const item = mdict.dict.get(kasf.key)

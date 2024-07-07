@@ -1,7 +1,7 @@
 import type { matcher_callback } from "./MatchCallback";
 import { MatchDict } from "./MatchDict/MatchDict";
 import { match_constant, match_element, match_segment } from "./MatchCallback";
-import {  match_choose, match_letrec, match_reference, match_new_var, match_repeated_patterns } from "./MatchCombinator";
+import {  match_choose, match_letrec, match_reference, match_new_var } from "./MatchCombinator";
 import { empty_match_dict } from "./MatchDict/MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
@@ -12,6 +12,7 @@ import { match_all_other_element } from "./MatchCallback";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+import { default_match_env } from "./MatchEnvironment";
 
 
 export const build = construct_simple_generic_procedure("build", 1,
@@ -56,18 +57,18 @@ define_generic_procedure_handler(build,
     }
 )
 
-define_generic_procedure_handler(build, 
-    (pattern: any[]) => is_match_repeated_pattern(pattern),
-    (pattern: any[]) => {
-        console.log("matched")
-        if (pattern.length !== 2) {
-            throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
-        }
-        const built_pattern = build(pattern[1])
-        console.log("build(pattern[1])", built_pattern.toString() )
-        return match_repeated_patterns(built_pattern)
-    }
-)
+// define_generic_procedure_handler(build, 
+//     (pattern: any[]) => is_match_repeated_pattern(pattern),
+//     (pattern: any[]) => {
+//         console.log("matched")
+//         if (pattern.length !== 2) {
+//             throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
+//         }
+//         const built_pattern = build(pattern[1])
+//         console.log("build(pattern[1])", built_pattern.toString() )
+//         return match_repeated_patterns(built_pattern)
+//     }
+// )
 
 
 export function is_match_constant(pattern: any): boolean {
@@ -178,9 +179,10 @@ function is_match_repeated_pattern(pattern: any): boolean {
 
 
 
-export function run_matcher(matcher: matcher_callback, data: any[], succeed: (environment: MatchEnvironment, nEaten: number) => any): MatchEnvironment | MatchFailure {
-    return matcher([data], emptyEnvironment(), (environment, nEaten) => {
-        return succeed(environment, nEaten)
+export function run_matcher(matcher: matcher_callback, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): MatchDict | MatchFailure {
+
+    return matcher([data], empty_match_dict(), default_match_env(), (dict, nEaten) => {
+        return succeed(dict, nEaten)
     })
 }
 
