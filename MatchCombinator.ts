@@ -1,19 +1,20 @@
-import { MatchDict, emptyMatchDict } from "./MatchDict/MatchDict";
+import { MatchDict, empty_match_dict } from "./MatchDict/MatchDict";
 import { match_constant, match_element, match_segment } from "./MatchCallback";
 import type { matcher_callback } from "./MatchCallback";
 import { inspect } from "util";
 import { first, rest, isPair, isEmptyArray } from "./utility";
 import { createMatchFailure, FailedMatcher, FailedReason } from "./MatchResult";
 import { matchSuccess, isMatchFailure } from "./MatchResult";
-import { emptyEnvironment, type MatchEnvironment } from "./MatchEnvironment";
 import type { MatchFailure } from "./MatchResult";
+import type { ScopeReference } from "./MatchDict/ScopeReference";
+import { get_value } from "./MatchDict/DictInterface";
 
 // match_element match_segment match_compose(match_constant, match_segment))
 
 
 
 export function match_array(all_matchers: matcher_callback[]) : matcher_callback {
-    return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
+    return (data: any[], dictionary: MatchDict , environment_reference: ScopeReference, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         const detailizeInfoWhenError = (result: any, position: number) => {
             // LIMITIONS: WOULD BACKTRACK ALL ERRORS WHEN ERROR OCCURS TODO: IMPROVE IT
             if (isMatchFailure(result)) {
@@ -25,14 +26,14 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
         }
         
         
-        const loop = (data_list: any[], matchers: matcher_callback[], dictionary: MatchEnvironment): any => {
+        const loop = (data_list: any[], matchers: matcher_callback[], dictionary: MatchDict): any => {
                 // const matcher = matchers[matcher_index];
             if (isPair(matchers)){
 
                 const matcher = first(matchers)
-                const result = matcher(data_list, dictionary, (new_dict: MatchEnvironment, nEaten: number) => {
-                    console.log("dictionary_array", dictionary.to_String())
-                    console.log("new_dict", new_dict.to_String())
+                const result = matcher(data_list, dictionary, environment_reference, (new_dict: MatchDict, nEaten: number) => {
+                    console.log("dictionary_array", dictionary)
+                    console.log("new_dict", new_dict)
                     // console.log("dict:", dictionary)
                     return loop(data_list.slice(nEaten), rest(matchers), new_dict);
                 });
@@ -71,9 +72,9 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
 
 
 export function match_choose(matchers: matcher_callback[]): matcher_callback {
-    return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
+    return (data: any[], dictionary: MatchDict, environment_reference: ScopeReference, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         for (const matcher of matchers) {
-            const result = matcher(data, dictionary, succeed)
+            const result = matcher(data, dictionary, environment_reference, succeed)
             // console.log("choose matcher", matcher.toString(), "result", result)
             if (matchSuccess(result)) {
                 return result
@@ -88,8 +89,8 @@ export function match_choose(matchers: matcher_callback[]): matcher_callback {
 
 
 export function match_reference(reference_symbol: string): matcher_callback{
-    return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
-        const matcher = dictionary.get(reference_symbol)
+    return (data: any[], dictionary: MatchDict, environment_reference: ScopeReference, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        const matcher = get_value()
         if (data === undefined || data === null || typeof data === "string") {
             return createMatchFailure(FailedMatcher.Reference, FailedReason.UnexpectedEnd, data, 0, null)
         }

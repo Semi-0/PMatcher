@@ -6,12 +6,15 @@ import { extend, get_value} from '../MatchDict/DictInterface'
 import { DictValue,  empty_dict_value, construct_dict_value,
     has_default_value, get_default_value, has_multi_scope_definition,
     has_scope_reference,   is_empty_dict_value, 
-    add_new_value} from "../MatchDict/DictValue"
+    extend_new_value_in_scope} from "../MatchDict/DictValue"
 import type { ScopeReference } from '../MatchDict/ScopeReference';
 import type { NestedValue} from "../MatchDict/DictValue"
-import type {  DictItem, KeyAndScopedRef } from '../MatchDict/MatchDict';
+import type {  DictItem, KeyAndMatchEnv } from '../MatchDict/MatchDict';
 import  { new_ref , default_ref, clearRefHistory, is_scope_reference } from '../MatchDict/ScopeReference'
 import {test, expect, describe, beforeEach} from "bun:test";
+import { default_match_env, type MatchEnvironment } from '../MatchEnvironment';
+import { is_key_and_match_env } from '../MatchDict/MatchDict';
+
 
 describe('MatchDict', () => {
     let dictValue: DictValue;
@@ -53,11 +56,13 @@ describe('MatchDict', () => {
             const new_dict = extend({key: 'test', value: 'value'}, matchDict);
             console.log(matchDict)
             expect(get_value('test', new_dict)).toBe('value');
+            console.log("pA")
             const dict = construct_dict_value("default", 0)
 
-            const complexValue = add_new_value( 'complex', new_ref(), dict);
+            const complexValue = extend_new_value_in_scope( 'complex', new_ref(), dict);
             const extended = extend({key: 'complex', value: complexValue}, matchDict);
             expect(get_value({key: 'complex', scopeRef: 1}, extended)).toBe('complex');
+            console.log("pB")
         });
 
         test('has_key', () => {
@@ -158,6 +163,44 @@ describe('MatchDict', () => {
 
         test('get_value with non-existent key', () => {
             expect(() => get_value({key: 'nonexistent', scopeIndex: 0}, matchDict)).toThrow(/attempt to get the scope value from a undefined index/);
+        });
+    });
+
+
+    describe('KeyAndMatchEnv operations', () => {
+        let matchDict: MatchDict;
+        let matchEnv: MatchEnvironment;
+
+        beforeEach(() => {
+            matchDict = new MatchDict();
+            matchEnv = default_match_env();
+            const complexValue = new DictValue();
+            complexValue.referenced_definition.set(default_ref(), 'outer');
+            complexValue.referenced_definition.set(new_ref(), 'inner');
+            matchDict = extend({key: 'complex', value: complexValue}, matchDict);
+        });
+
+        test('is_key_and_match_env', () => {
+            expect(is_key_and_match_env({key: 'test', matchEnv: matchEnv})).toBe(true);
+            expect(is_key_and_match_env({key: 'test', matchEnv: {}})).toBe(false);
+            expect(is_key_and_match_env({key: 'test'})).toBe(false);
+            expect(is_key_and_match_env({matchEnv})).toBe(false);
+            expect(is_key_and_match_env(null)).toBe(false);
+        });
+
+        test('get_value with KeyAndMatchEnv', () => {
+            const kae: KeyAndMatchEnv = { key: 'complex', matchEnv: matchEnv};
+            expect(get_value(kae, matchDict)).toBe('outer');
+        });
+
+        test('get_value with non-existent key', () => {
+            const kae: KeyAndMatchEnv = { key: 'nonexistent', matchEnv };
+            expect(get_value(kae, matchDict)).toBeUndefined();
+        });
+
+        test('get_value with invalid matchEnv', () => {
+            const kae: KeyAndMatchEnv = { key: 'complex', matchEnv: {} as MatchEnvironment };
+            expect(() => get_value(kae, matchDict)).toThrow();
         });
     });
 });

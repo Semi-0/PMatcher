@@ -1,10 +1,12 @@
 import { get_value } from "./MatchDict/DictInterface";
+import { DictValue, construct_dict_value, extend_new_value_in_scope, is_empty_dict_value } from "./MatchDict/DictValue";
 import { MatchDict } from "./MatchDict/MatchDict";
 import type { ScopeReference } from "./MatchDict/ScopeReference";
 import type { MatchFailure } from "./MatchResult";
 import { createMatchFailure } from "./MatchResult";
 import { FailedMatcher, FailedReason } from "./MatchResult";
 import { matchSuccess } from "./MatchResult";
+import { extend } from "./MatchDict/DictInterface"
 
 export type matcher_callback =  (data: any[], dictionary: MatchDict, environment_reference: ScopeReference, succeed: (dictionary: MatchDict, nEaten: number) => any) => any
 // needs more precise error handler
@@ -46,11 +48,25 @@ export function match_element(variable: string, restriction: (value: any) => boo
                                       data[0], 0, null);
         }
 
-        if (binding_value === undefined || binding_value === null) {
-            const extendedEnvironment = .extend(variable, data[0]);
-            return succeed(extendedEnvironment, 1);
-        } else if (binding_value === data[0]) {
-            return succeed(environment, 1);
+        if (is_empty_dict_value(binding_value)) {
+            const extended = extend({key: variable, 
+                                     value: extend_new_value_in_scope(data[0],
+                                                                      environment_reference,
+                                                                      binding_value)},
+                                     dictionary);
+
+            return succeed(extended, 1);
+        }
+        else if ((binding_value === undefined) || (binding_value === null)){
+            const extended = extend({key: variable,
+                                     value: construct_dict_value(data[0],
+                                                                 environment_reference)},
+                                     dictionary);
+            return succeed(extended, 1)
+        }
+        
+        else if (binding_value === data[0]) {
+            return succeed(dictionary, 1);
         } else {
             return createMatchFailure(FailedMatcher.Element,
                                       FailedReason.BindingValueUnmatched, 
@@ -61,7 +77,7 @@ export function match_element(variable: string, restriction: (value: any) => boo
 
 export function match_segment(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {
 
-    const loop = (index: number, data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
+    const loop = (index: number, data: any[], dictionary: MatchDict, extend_method: (data: any) => MatchDict,  succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         
         if (index >= data.length) {
             return createMatchFailure(FailedMatcher.Segment, 
@@ -74,12 +90,12 @@ export function match_segment(variable: string, restriction: (value: any) => boo
                                       data[index], index, null);
         }
 
-        const result = succeed(dictionary.extend(variable, data.slice(0, index + 1)), index + 1);
+        const result = succeed(extend_method(data.slice(0, index + 1)), index + 1);
 
         if (matchSuccess(result)) {
             return result;
         }
-        return loop(index + 1, data, dictionary, succeed);
+        return loop(index + 1, data, dictionary, extend_method, succeed);
     };
 
     const match_segment_equal = (data: any[], value: any[], ok: (i: number) => any): any => {
@@ -98,17 +114,38 @@ export function match_segment(variable: string, restriction: (value: any) => boo
         return ok(data.length);
     };
 
-    return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
+    return (data: any[], dictionary: MatchDict, environment_reference: ScopeReference, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         if (data === undefined || data === null || data.length === 0) {
             return createMatchFailure(FailedMatcher.Segment, 
                                       FailedReason.UnexpectedEnd, 
                                       data, 0, null);
         }
 
-        const binding = dictionary.get(variable);
+        const binding = get_value({key: variable, 
+                                   scopeRef: environment_reference},
+                                   dictionary);
         if (binding === undefined || binding === null) {
-            return loop(0, data, dictionary, succeed);
-        } else {
+            return loop(0, 
+                        data, 
+                        dictionary, 
+                        (data: any) => {
+                            return extend({key: variable,
+                                           value: construct_dict_value(data, environment_reference)},
+                                           dictionary)
+                        },
+                        succeed);
+        } else if (is_empty_dict_value(binding)){
+            return loop(1, 
+                        data, 
+                        dictionary, 
+                        (data: any) => {
+                            return extend({key: variable,
+                                           value: extend_new_value_in_scope(data, environment_reference, binding)},
+                                           dictionary)
+                        },
+                        succeed);
+        } 
+        else {
             return match_segment_equal(data, binding, (i) => succeed(dictionary, i));
         }
     };
@@ -116,8 +153,8 @@ export function match_segment(variable: string, restriction: (value: any) => boo
 
 export function match_segment_independently(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {
     const match_segment_all_impl = match_segment(variable, restriction)
-    return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
-        return match_segment_all_impl(data, dictionary, (new_dict, nEaten) => {
+    return (data: any[], dictionary: MatchDict, environment_reference: ScopeReference, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        return match_segment_all_impl(data, dictionary, environment_reference, (new_dict: MatchDict, nEaten: number) => {
             if (nEaten == data.length) {
                 return succeed(new_dict, nEaten);
             }
@@ -129,8 +166,8 @@ export function match_segment_independently(variable: string, restriction: (valu
 }
 export function match_all_other_element(): matcher_callback {
   
-    return (data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {  
-        const loop = (index: number, data: any[], dictionary: MatchEnvironment, succeed: (dictionary: MatchEnvironment, nEaten: number) => any): any => {
+    return (data: any[], dictionary: MatchDict, environment_reference: ScopeReference, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {  
+        const loop = (index: number, data: any[], dictionary: MatchDict, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
             if (index >= data.length) {
                 return succeed(dictionary, 0);
             }

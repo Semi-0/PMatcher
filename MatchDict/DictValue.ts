@@ -5,6 +5,7 @@ import { get_value, extend } from "./DictInterface";
 import {  default_ref, is_scope_reference, new_ref } from "./ScopeReference";
 import type { ScopeReference } from "./ScopeReference";
 import { copy } from "../utility"
+import { is_match_env, type MatchEnvironment } from "../MatchEnvironment";
 
 
 export class DictValue{
@@ -54,9 +55,10 @@ export function construct_dict_value(value: any, scope_ref: ScopeReference): Dic
     return dict_item
 }
 
-export function add_new_value(value: any, ref: ScopeReference , dictValue: DictValue): DictValue{
-    dictValue.referenced_definition.set(ref, value)
-    return dictValue
+export function extend_new_value_in_scope(value: any, ref: ScopeReference , dictValue: DictValue): DictValue{
+    const c = copy(dictValue)
+    c.referenced_definition.set(ref, value)
+    return c
 }
 
 export function has_multi_scope_definition(item: DictValue): boolean {
@@ -72,11 +74,41 @@ define_generic_procedure_handler(get_value,
         return is_scope_reference(A) && is_dict_value(B)
     },
     (scope_ref: ScopeReference, value: DictValue) => {
+        // interface for precise get_value
         guard(() => {return has_scope_reference(scope_ref, value)},() => {
             throw Error("scope reference not existed in scope item, scope_ref: " + scope_ref + " dict: " + value)
         })
 
         return value.referenced_definition.get(scope_ref)
+    }
+)
+
+define_generic_procedure_handler(get_value,
+    (A: any, B: any) => {
+        return is_match_env(A) && is_dict_value(B)
+    },
+     (env: MatchEnvironment, value: DictValue) => {
+
+        guard(() => {return env.length !== 0}, () => {
+            throw Error("error try to get value from a empty env, env: " + inspect(env))
+        })
+
+        for (var index = 0; index < env.length; index++){
+            const ref: ScopeReference = env[index]
+            
+            guard(() => {return value.referenced_definition.size !== 0}, () =>{
+                throw Error("error try to get value from a empty dict, dict: " + inspect(value))
+            })
+            const result = value.referenced_definition.get(ref)
+
+             if ((result != undefined) && (result != null)){
+                return result
+            }
+            else{
+                continue
+            }
+        }
+        return undefined
     }
 )
 

@@ -5,7 +5,10 @@ import {  inspect } from "bun";
 import { DictValue, is_dict_value, construct_dict_value, get_default_value } from "./DictValue";
 import { get_value, extend } from "./DictInterface";
 
-import { default_ref, is_scope_reference } from "./ScopeReference";
+import { default_ref, is_scope_reference, type ScopeReference } from "./ScopeReference";
+import type { MatchEnvironment } from "../MatchEnvironment";
+import { is_match_env } from "../MatchEnvironment";
+import { default_match_env } from "../MatchEnvironment";
 import { copy } from "../utility"
 
 
@@ -111,9 +114,40 @@ define_generic_procedure_handler(get_value,
 )
 
 
-export type KeyAndScopedRef = {
+export type KeyAndMatchEnv ={
     key: string,
-    scopeRef: number
+    matchEnv: MatchEnvironment
+}
+
+export function is_key_and_match_env(A: any){
+    return typeof A === 'object'
+        && A !== null 
+        && 'key' in A 
+        && 'matchEnv' in A 
+        && is_match_env(A.matchEnv) 
+}
+
+define_generic_procedure_handler(get_value, 
+    (A: any, B: any) => {
+        return is_key_and_match_env(A) && is_match_dict(B)
+    }, (kae: KeyAndMatchEnv, mdict: MatchDict) => {
+        const item = mdict.dict.get(kae.key)
+
+        if ((item != undefined) && (item != null)){
+            return get_value(kae.matchEnv, item)
+        }
+        else {
+            return undefined
+        }
+    }
+    
+)
+
+
+
+export type KeyAndScopeRef = {
+    key: string,
+    scopeRef: ScopeReference 
 }
 
 export function is_key_and_scoped_ref(A: any){
@@ -128,10 +162,15 @@ define_generic_procedure_handler(get_value,
     (A: any, B: any) => {
         return is_key_and_scoped_ref(A) && is_match_dict(B)
     }, 
-    (kasf: KeyAndScopedRef, mdict: MatchDict) => {
+    (kasf: KeyAndScopeRef, mdict: MatchDict) => {
         const item = mdict.dict.get(kasf.key)
-
-        return get_value(kasf.scopeRef, item)
+        
+        if ((item != undefined) && (item != null)){
+            return get_value(kasf.scopeRef, item)
+        }
+        else{
+            return undefined
+        }
     }
 )
 
