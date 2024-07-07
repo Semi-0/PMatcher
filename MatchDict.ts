@@ -1,6 +1,6 @@
 import { guard } from "./utility";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { inspect } from "bun";
+import {  inspect } from "bun";
 
 export type ScopeReference = Number;
 
@@ -29,7 +29,7 @@ export class DictValue{
     }
 }
 
-function is_dict_value(item: any): boolean{
+export function is_dict_value(item: any): boolean{
     return item instanceof DictValue
 }
 
@@ -144,6 +144,10 @@ export function is_match_dict(a: any): boolean{
 
 export function has_key(key: string, match_dict: MatchDict): boolean{
     return match_dict.dict.has(key);
+}
+
+export function get_raw_value(key: string, mdict: MatchDict): DictValue | undefined{
+    return mdict.dict.get(key)
 }
 
 
@@ -270,5 +274,3 @@ define_generic_procedure_handler(get_value,
         }
     }
 )
-
-// TODO: ADD UNIT TEST
