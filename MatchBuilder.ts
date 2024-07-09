@@ -1,7 +1,7 @@
 import type { matcher_callback } from "./MatchCallback";
 import { MatchDict } from "./MatchDict/MatchDict";
-import { match_constant, match_element, match_segment } from "./MatchCallback";
-import {  match_choose, match_letrec, match_reference, match_new_var } from "./MatchCombinator";
+import { match_constant, match_element, match_empty, match_segment } from "./MatchCallback";
+import {  match_choose, match_letrec, match_reference, match_new_var, match_compose } from "./MatchCombinator";
 import { empty_match_dict } from "./MatchDict/MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
@@ -21,6 +21,8 @@ export const build = construct_simple_generic_procedure("build", 1,
     }
 )
 
+
+
 export const enum P { // Stands for Pattern
     letrec = "$.letrec.$", 
     choose = "$.choose.$", 
@@ -29,7 +31,9 @@ export const enum P { // Stands for Pattern
     segment = "$.segment.$",
     ref = "$.ref.$",
     constant = "$.constant.$",
-    repeated = "$.repeated.$"
+    repeated = "$.repeated.$",
+    compose = "$.compose.$",
+    empty = "$.empty.$"
 }
 
 
@@ -75,8 +79,6 @@ export function is_match_constant(pattern: any): boolean {
     return first_equal_with(pattern, P.constant) || isString(pattern)
 }
 
-
-
 export function first_equal_with(pattern: any, value: any): boolean {
     return isPair(pattern) && isString(first(pattern)) && first(pattern) === value
 }
@@ -91,6 +93,18 @@ define_generic_procedure_handler(build,
     (pattern: any[]) => is_all_other_element(pattern),
     (pattern: any[]) => {
         return match_all_other_element()
+    }
+)
+
+
+function is_empty(pattern: any): boolean{
+    return  pattern === P.empty
+}
+
+define_generic_procedure_handler(build,
+    (pattern: any) => is_empty(pattern),
+    (pattern: any) => {
+        return match_empty()
     }
 )
 
@@ -111,6 +125,21 @@ define_generic_procedure_handler(build,
         return match_letrec(bindings, build(pattern[2]))
     }
 )
+
+
+export function is_compose(pattern: any[]): boolean{
+    return first_equal_with(pattern, P.compose) && pattern.length == 2
+}
+
+define_generic_procedure_handler(build,
+    (pattern: any[]) => is_compose(pattern),
+    (pattern: any[]) => {
+        return match_compose(pattern[1].map((item: any) => build(item)))
+    }
+)
+
+
+
 
 
 export function is_select(pattern: any): boolean {
@@ -228,3 +257,58 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 // })
 
 // console.log(inspect(result, {showHidden: true, depth: 10}))
+
+
+// const t = build(P.empty)
+
+// const r = run_matcher(t, ["a"], (dict, e) => {return dict})
+// console.log(r)
+
+const t = build(
+    [P.letrec,
+        [["repeat", 
+            [P.new, ["x"],
+                [P.choose,
+                    P.empty,
+                    [P.compose,
+                        [[P.constant, "a"],
+                        [P.element, "x"],
+                         [P.ref, "repeat"]]]]]]],
+        [[P.ref, "repeat"]]])
+
+const r = run_matcher(t, ["a", "b", "a", "d"], (dict, e) => {return dict})
+
+
+console.log(inspect(r, {showHidden: true}))
+// const t = build(
+//     ["a", [P.choose,"c",  P.empty],  "a"]
+// )
+
+// const r = run_matcher(t, ["a","c", "a"], (dict, e) => {return dict})
+
+
+// const t = build(
+//     [P.letrec,
+//         [["repeat", 
+//             [P.new, ["x"],
+//                 [P.choose,
+//                     P.empty,
+//                     "c",
+//                     [P.compose,
+//                         [[P.element, "x"],
+//                         [P.ref, "repeat"],
+//                         [P.element, "x"]]],
+//                      ]]]],
+//         [[P.ref, "repeat"]]])
+
+// const r = run_matcher(t, ["a", "b", "c", "b", "a"], (dict, e) => {return dict})
+
+// console.log(r)
+
+// console.log("r=" + inspect(r, {showHidden: true, depth:40}))
+
+// const t = build([P.compose, [[P.constant, "a"], [P.constant, "a"], ["b", "b"] ]] )
+
+// const r = run_matcher(t, ["a", "a", ["b", "b"]], (dict: MatchDict, eaten: number) => {
+//     return dict
+// })

@@ -8,6 +8,7 @@ import { FailedMatcher, FailedReason } from "./MatchResult";
 import { matchSuccess } from "./MatchResult";
 import { extend } from "./MatchDict/DictInterface"
 import { get_current_scope, type MatchEnvironment } from "./MatchEnvironment";
+import { isElementAccessExpression } from "typescript";
 
 export type matcher_callback =  (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any) => any
 // needs more precise error handler
@@ -20,12 +21,14 @@ export type matcher_callback =  (data: any[], dictionary: MatchDict, matchEnv: M
 
 export function match_constant(pattern_constant: string): matcher_callback {
     return (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any  => {
+        console.log("tr m c")
         if (data === undefined || data === null || data.length === 0) {
             return createMatchFailure(FailedMatcher.Constant, 
                                       FailedReason.UnexpectedEnd, 
                                       data, 0, null);
         }
         if (data[0] === pattern_constant) {
+            console.log("s")
             return succeed(dictionary, 1);
         } else {
             return createMatchFailure(FailedMatcher.Constant, 
@@ -33,6 +36,35 @@ export function match_constant(pattern_constant: string): matcher_callback {
                                       [data[0], pattern_constant], 0, null);
         }
     };
+}
+
+export function match_empty(): matcher_callback{
+    return (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any  => {
+        console.log("empty got data:", data)
+        // const next_succeed = succeed(dictionary, 1)
+        // if (matchSuccess(next_succeed)){
+        //     return next_succeed
+        // }
+        // else{
+        //            return createMatchFailure(FailedMatcher.Empty,
+        //                               FailedReason.UnexpectedInput,
+        //                               data, 0, null)
+        // }
+        // return succeed(dictionary, 0)
+
+        if (data.length === 0){
+            console.log("empty succeed!")
+            console.log(succeed.toString())
+            return succeed(dictionary, 0)
+        }
+        else{
+            console.log("empty failed")
+            return createMatchFailure(FailedMatcher.Empty,
+                                      FailedReason.UnexpectedInput,
+                                      data, 0, null)
+
+        }
+    }
 }
 
 export function match_element(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_callback {

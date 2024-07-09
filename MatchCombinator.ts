@@ -8,20 +8,28 @@ import { matchSuccess, isMatchFailure } from "./MatchResult";
 import type { MatchFailure } from "./MatchResult";
 import type { ScopeReference } from "./MatchDict/ScopeReference";
 import { extend, get_value } from "./MatchDict/DictInterface";
-import type { MatchEnvironment } from "./MatchEnvironment";
+import { default_match_env, type MatchEnvironment } from "./MatchEnvironment";
 import { new_ref } from "./MatchDict/ScopeReference";
 import { construct_dict_value } from "./MatchDict/DictValue";
 // match_element match_segment match_compose(match_constant, match_segment))
 import { is_will_define, will_define } from "./MatchDict/DictValue";
 
 
+// const match_comp = match_compose([match_element("a"), match_constant("b")])
 
-export function match_array(all_matchers: matcher_callback[]) : matcher_callback {
+// const rs = match_comp(["a", "b"], empty_match_dict(), default_match_env(), (dict, eaten) => {return dict})
+// console.log(rs)
+
+
+export function match_compose(matchers: matcher_callback[]) : matcher_callback{
+    console.log("m c start:" + matchers.length)
     return (data: any[], dictionary: MatchDict , match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        console.log("data= " + data)
+        
         const detailizeInfoWhenError = (result: any, position: number) => {
             // LIMITIONS: WOULD BACKTRACK ALL ERRORS WHEN ERROR OCCURS TODO: IMPROVE IT
             if (isMatchFailure(result)) {
-                return createMatchFailure(FailedMatcher.Array, FailedReason.UnexpectedInput, data, position, result)
+                return createMatchFailure(FailedMatcher.Compose, FailedReason.UnexpectedInput, data, position, result)
             }
             else{
                 return result
@@ -29,36 +37,41 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
         }
         
         
-        const loop = (data_list: any[], matchers: matcher_callback[], dictionary: MatchDict): any => {
-                // const matcher = matchers[matcher_index];
+        const loop = (data_list: any[], matchers: matcher_callback[], dictionary: MatchDict, eaten: number): any => {
+
             if (isPair(matchers)){
 
                 const matcher = first(matchers)
                 const result = matcher(data_list, dictionary, match_env, (new_dict: MatchDict, nEaten: number) => {
-                    console.log("dictionary_array", dictionary)
-                    console.log("new_dict", new_dict)
-                    // console.log("dict:", dictionary)
-                    return loop(data_list.slice(nEaten), rest(matchers), new_dict);
+                    return loop(data_list.slice(nEaten), rest(matchers), new_dict, eaten + nEaten);
                 });
-                // console.log("success matcher:" + matcher.toString())
-                return detailizeInfoWhenError(result, all_matchers.findIndex((m) => m === matcher));
+  
+                return detailizeInfoWhenError(result, matchers.findIndex((m) => m === matcher));
             }
-             else if (isPair(data_list)){
-               return createMatchFailure(FailedMatcher.Array, 
+            else if (isPair(data_list)){
+
+               return createMatchFailure(FailedMatcher.Compose, 
                                          FailedReason.UnConsumedInput, 
                                          data_list, 0, null)  
             } 
             else if (isEmptyArray(data_list)){
-                console.log("success empty")
-                return succeed(dictionary, 1)
+                return succeed(dictionary, eaten)
             }
             else{
-                return createMatchFailure(FailedMatcher.Array, 
+                return createMatchFailure(FailedMatcher.Compose, 
                                          FailedReason.UnexpectedEnd, 
                                          data_list, 0, null)
             }
 
         };
+        console.log("c:" + matchers.length)
+        return loop(data, matchers, dictionary, 0)
+    }
+}
+
+export function match_array(all_matchers: matcher_callback[]) : matcher_callback {
+    return (data: any[], dictionary: MatchDict , match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        const compose_matcher = match_compose(all_matchers)
 
         if (data === undefined || data === null) {
             return createMatchFailure(FailedMatcher.Array, FailedReason.UnexpectedEnd, data, 0, null)
@@ -67,8 +80,16 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
             return succeed(dictionary, 0)
         }
         else{
-            // console.log("loop", first(data), all_matchers, dictionary)
-            return loop(first(data), all_matchers, dictionary)
+            const result = compose_matcher(first(data), dictionary, match_env, (dict: MatchDict, nEaten: number) => {return dict})
+       
+            
+            if (matchSuccess(result)){
+                // @ts-ignore
+                return succeed(result,1)
+            }
+            else{
+                return result 
+            }
         }
     };
 }
@@ -77,7 +98,10 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
 export function match_choose(matchers: matcher_callback[]): matcher_callback {
     return (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         for (const matcher of matchers) {
+            console.log("begin choose, dict = " + inspect(dictionary, {depth: 10, showHidden: true}))
+            console.log(matcher.toString())
             const result = matcher(data, dictionary, match_env, succeed)
+            console.log("choose result =" + inspect(result))
             var failures = []
             // console.log("choose matcher", matcher.toString(), "result", result)
             if (matchSuccess(result)) {
@@ -90,7 +114,7 @@ export function match_choose(matchers: matcher_callback[]): matcher_callback {
 
         return createMatchFailure(FailedMatcher.Choice, 
                                   FailedReason.UnexpectedEnd, 
-                                  [data, failures], matchers.length, null)
+                                  ["matched len:" + matchers.length,data, failures], matchers.length, null)
     }
 }
 
@@ -100,7 +124,7 @@ export function match_reference(reference_symbol: string): matcher_callback{
         const matcher = get_value({key: reference_symbol,
                                    matchEnv: match_env},
                                    dictionary)
-        if (data === undefined || data === null || typeof data === "string") {
+        if (data === undefined || data === null ) {
             return createMatchFailure(FailedMatcher.Reference, FailedReason.UnexpectedEnd, data, 0, null)
         }
         else if (matcher) {
@@ -147,6 +171,7 @@ export function match_new_var(names: string[], body: matcher_callback): matcher_
                            scopeRef: new_env_ref},
                           acc)
         }, dictionary)
+        console.log("dict:" + inspect(dictionary, {showHidden: true, depth: 10}))
         
         return body(data, extended_dict, new_env, succeed)
     }

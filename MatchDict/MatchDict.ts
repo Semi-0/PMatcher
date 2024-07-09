@@ -2,7 +2,7 @@
 import { guard } from "../utility";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import {  inspect } from "bun";
-import { DictValue, is_dict_value, construct_dict_value, get_default_value, extend_new_value_in_scope } from "./DictValue";
+import { DictValue, is_dict_value, construct_dict_value, get_most_bottom_value, extend_new_value_in_scope } from "./DictValue";
 import { get_value, extend } from "./DictInterface";
 
 import { default_ref, is_scope_reference, type ScopeReference } from "./ScopeReference";
@@ -106,7 +106,7 @@ define_generic_procedure_handler(get_value,
         const v = dict.dict.get(key)
 
         if ((v !== undefined) && (v !== null)){
-            return get_default_value(v)
+            return get_most_bottom_value(v)
         }
         else{
             throw Error("try to get default value when it is not bounded, key = " + inspect(key) + " dict = " + inspect(dict))

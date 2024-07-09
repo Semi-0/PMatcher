@@ -4,7 +4,7 @@ import {
 } from '../MatchDict/MatchDict';
 import { extend, get_value} from '../MatchDict/DictInterface'
 import { DictValue,  empty_dict_value, construct_dict_value,
-    has_default_value, get_default_value, has_multi_scope_definition,
+    has_default_value, get_most_bottom_value, has_multi_scope_definition,
     has_scope_reference,   is_empty_dict_value, 
     extend_new_value_in_scope} from "../MatchDict/DictValue"
 import type { ScopeReference } from '../MatchDict/ScopeReference';
@@ -34,7 +34,7 @@ describe('MatchDict', () => {
         test('construct_dict_value', () => {
             dictValue = construct_dict_value('default', 0);
             expect(has_default_value(dictValue)).toBe(true);
-            expect(get_default_value(dictValue)).toBe('default');
+            expect(get_most_bottom_value(dictValue)).toBe('default');
             
             dictValue = construct_dict_value("non-default", 1)
             expect(has_default_value(dictValue)).toBe(false);
@@ -106,7 +106,7 @@ describe('MatchDict', () => {
 
     describe('Error cases', () => {
         test('get_default_value on empty DictValue', () => {
-            expect(() => get_default_value(dictValue)).toThrow();
+            expect(() => get_most_bottom_value(dictValue)).toThrow();
         });
 
         test('get_value on nonexistent key', () => {
@@ -206,3 +206,4 @@ describe('MatchDict', () => {
 
     
 });
+

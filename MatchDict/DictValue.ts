@@ -38,7 +38,11 @@ export function empty_dict_value(): DictValue{
 }
 
 export function has_default_value(value: DictValue): boolean{
-    return value.referenced_definition.size >= 1 && value.referenced_definition.has(default_ref())
+    return has_value(value) && value.referenced_definition.has(default_ref())
+}
+
+export function has_value(value: DictValue): boolean{
+    return value.referenced_definition.size >= 1
 }
 
 export function is_empty_dict_value(value: DictValue): boolean{
@@ -49,7 +53,7 @@ export function is_will_define(value: any, scope_ref: ScopeReference): boolean{
     return value === will_define
 }
 
-export function get_default_value(value: DictValue): any{
+export function get_most_bottom_value(value: DictValue): any{
     if (has_default_value(value)){
         return value.referenced_definition.get(default_ref())
     }
