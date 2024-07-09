@@ -1,0 +1,19 @@
+
+(letrec ((repeat 
+    (new (x)
+        (choose 
+            empty
+            (compose 
+                (element 'x)
+                (ref 'repeat)
+            )))))
+        (ref 'repeat))
+
+
+
+(def m (match_compose A B C D))
+
+(m ('a 'b 'c 'd))
+
+(matcher (A B C D))
+(loop (A ()))
