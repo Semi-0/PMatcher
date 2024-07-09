@@ -279,6 +279,7 @@ const t = build(
 const r = run_matcher(t, ["a", "b", "a", "d"], (dict, e) => {return dict})
 
 
+console.log(inspect(r, {showHidden: true}))
 // const t = build(
 //     ["a", [P.choose,"c",  P.empty],  "a"]
 // )
@@ -311,5 +312,3 @@ const r = run_matcher(t, ["a", "b", "a", "d"], (dict, e) => {return dict})
 // const r = run_matcher(t, ["a", "a", ["b", "b"]], (dict: MatchDict, eaten: number) => {
 //     return dict
 // })
-
-// console.log(inspect(r, {showHidden: true}))
