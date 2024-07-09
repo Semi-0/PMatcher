@@ -264,29 +264,47 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 // const r = run_matcher(t, ["a"], (dict, e) => {return dict})
 // console.log(r)
 
+const t = build(
+    [P.letrec,
+        [["repeat", 
+            [P.new, ["x"],
+                [P.choose,
+                    P.empty,
+                    [P.compose,
+                        [[P.constant, "a"],
+                        [P.element, "x"],
+                         [P.ref, "repeat"]]]]]]],
+        [[P.ref, "repeat"]]])
+
+const r = run_matcher(t, ["a", "b", "a", "d"], (dict, e) => {return dict})
+
+
+// const t = build(
+//     ["a", [P.choose,"c",  P.empty],  "a"]
+// )
+
+// const r = run_matcher(t, ["a","c", "a"], (dict, e) => {return dict})
+
+
 // const t = build(
 //     [P.letrec,
 //         [["repeat", 
 //             [P.new, ["x"],
 //                 [P.choose,
 //                     P.empty,
+//                     "c",
 //                     [P.compose,
 //                         [[P.element, "x"],
-//                          [P.ref, "repeat"]]]]]]],
+//                         [P.ref, "repeat"],
+//                         [P.element, "x"]]],
+//                      ]]]],
 //         [[P.ref, "repeat"]]])
 
-// const r = run_matcher(t, ["a", "b", "c", "d"], (dict, e) => {return dict})
-
-
-// const t = build(
-//     ["a", P.empty,  "a"]
-// )
-
-// const r = run_matcher(t, ["a", "a"], (dict, e) => {return dict})
+// const r = run_matcher(t, ["a", "b", "c", "b", "a"], (dict, e) => {return dict})
 
 // console.log(r)
 
-// console.log("r=" + inspect(r, {showHidden: true, depth:30}))
+// console.log("r=" + inspect(r, {showHidden: true, depth:40}))
 
 // const t = build([P.compose, [[P.constant, "a"], [P.constant, "a"], ["b", "b"] ]] )
 

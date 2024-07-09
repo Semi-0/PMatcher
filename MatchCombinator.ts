@@ -39,25 +39,17 @@ export function match_compose(matchers: matcher_callback[]) : matcher_callback{
         
         const loop = (data_list: any[], matchers: matcher_callback[], dictionary: MatchDict, eaten: number): any => {
 
-                // const matcher = matchers[matcher_index];
             if (isPair(matchers)){
 
                 const matcher = first(matchers)
                 const result = matcher(data_list, dictionary, match_env, (new_dict: MatchDict, nEaten: number) => {
-   
-                    // const remainingData = data_list.slice(nEaten);
-                    // if (isEmptyArray(remainingData) && isEmptyArray(rest(matchers))) {
-                    //     console.log(succeed.toString())
-                    //     return succeed(new_dict, nEaten);
-                    // }
                     return loop(data_list.slice(nEaten), rest(matchers), new_dict, eaten + nEaten);
                 });
   
                 return detailizeInfoWhenError(result, matchers.findIndex((m) => m === matcher));
             }
             else if (isPair(data_list)){
-                // console.log("running back with data: " + data_list.toString())
-                // return succeed(dictionary, 1)
+
                return createMatchFailure(FailedMatcher.Compose, 
                                          FailedReason.UnConsumedInput, 
                                          data_list, 0, null)  

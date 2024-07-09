@@ -9,6 +9,7 @@ import type { MatchFailure } from "../MatchResult";
 import { FailedMatcher, FailedReason, matchSuccess } from "../MatchResult";
 import { inspect } from "util";
 import { get_value } from "../MatchDict/DictInterface";
+import { clearRefHistory } from "../MatchDict/ScopeReference";
 
 describe('MatchBuilder', () => {
     test('should build and match constant patterns correctly', () => {
@@ -158,4 +159,41 @@ describe('MatchDict', () => {
 
         });
     });
+});
+
+
+test('letrec pattern with repeat', () => {
+    clearRefHistory()
+
+    const t = build(
+        [P.letrec,
+            [["repeat", 
+                [P.new, ["x"],
+                    [P.choose,
+                        P.empty,
+                        [P.compose,
+                            [[P.constant, "a"],
+                            [P.element, "x"],
+                             [P.ref, "repeat"]]]]]]],
+            [[P.ref, "repeat"]]]
+    );
+
+    const r = run_matcher(t, ["a", "b", "a", "d"], (dict, e) => { return dict });
+
+    console.log(inspect(r, { showHidden: true }));
+
+    // Expected result
+    const expectedResult = new MatchDict();
+    expectedResult.dict.set("repeat", {
+        referenced_definition: new Map([[1, expect.any(Function)]])
+    });
+    expectedResult.dict.set("x", {
+        referenced_definition: new Map([
+            [2, "b"],
+            [3, "d"],
+            [4, "$$$_&&&"]
+        ])
+    });
+
+    expect(r).toEqual(expectedResult);
 });
