@@ -6,7 +6,7 @@ import {  default_ref, is_scope_reference, new_ref } from "./ScopeReference";
 import type { ScopeReference } from "./ScopeReference";
 import { copy } from "../utility"
 import { is_match_env, type MatchEnvironment } from "../MatchEnvironment";
-
+import {v4 as uuidv4} from 'uuid'
 
 export class DictValue{
     referenced_definition: Map<ScopeReference, any>
@@ -17,7 +17,7 @@ export class DictValue{
 }
 
 ////WARNINF!!!!
-export const will_define = "$$$_&&&"
+export const will_define =  uuidv4()
 
 
 

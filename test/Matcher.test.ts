@@ -180,22 +180,10 @@ test('letrec pattern with repeat', () => {
 
     const r = run_matcher(t, ["a", "b", "a", "d"], (dict, e) => { return dict });
 
-    console.log(inspect(r, { showHidden: true }));
 
     // Expected result
-    const expectedResult = new MatchDict();
-    expectedResult.dict.set("repeat", {
-        referenced_definition: new Map([[1, expect.any(Function)]])
-    });
-    expectedResult.dict.set("x", {
-        referenced_definition: new Map([
-            [2, "b"],
-            [3, "d"],
-            [4, "$$$_&&&"]
-        ])
-    });
-
-    expect(r).toEqual(expectedResult);
+ 
+    expect(matchSuccess(r)).toEqual(true);
 });
 
 

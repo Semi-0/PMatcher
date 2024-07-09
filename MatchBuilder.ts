@@ -13,7 +13,7 @@ import { define_generic_procedure_handler } from "generic-handler/GenericProcedu
 
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
 import { default_match_env } from "./MatchEnvironment";
-
+import { v4 as uuidv4 } from 'uuid';
 
 export const build = construct_simple_generic_procedure("build", 1,
     (matchers: any[]) => {
@@ -23,19 +23,20 @@ export const build = construct_simple_generic_procedure("build", 1,
 
 
 
-export const enum P { // Stands for Pattern
-    letrec = "$.letrec.$", 
-    choose = "$.choose.$", 
-    new = "$.new.$", 
-    element = "$.element.$",
-    segment = "$.segment.$",
-    ref = "$.ref.$",
-    constant = "$.constant.$",
-    repeated = "$.repeated.$",
-    compose = "$.compose.$",
-    empty = "$.empty.$"
-}
 
+
+export const P = { // Stands for Pattern
+    letrec: uuidv4(), 
+    choose: uuidv4(), 
+    new: uuidv4(), 
+    element: uuidv4(),
+    segment: uuidv4(),
+    ref: uuidv4(),
+    constant: uuidv4(),
+    repeated: uuidv4(),
+    compose: uuidv4(),
+    empty: uuidv4()
+}
 
 
 define_generic_procedure_handler(build, 
@@ -214,101 +215,3 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
         return succeed(dict, nEaten)
     })
 }
-
-// const match_builder_test = build(["new", [P.element, "x"], "...", "sep", [P.segment, "seg"]]) 
-                                        
-
-
-// const result = run_matcher(match_builder_test, ["new", "c", "a", "b", "sep", "segabcdefg"], (environment, nEaten) => {
-// })
-
-
-// const test_matcher = build([P.letrec,
-//     [["a", [P.choose, [], [ "1", [P.ref, "b"]]]],
-//     ["b", [P.choose, [], [ "2", [P.ref, "a"]]]]],
-//     [P.ref, "a"]]
-// )
-//   // Example data array
-
-//   const data = ["1", ["2", ["1", ["2", []]]]];
-  
-//   const result = run_matcher(test_matcher, data, (dict, nEaten) => {
-//     return {dict, nEaten}
-//   })
-
-//   console.log(inspect(result, {showHidden: true, depth: 10}))
-
-// const test_matcher = build([
-//     [P.letrec,
-//         [["palindrome",
-//         [P.new, ["x"],
-//             [P.choose, 
-//                 [],
-//                 [[P.element, "x"],
-//                 [P.ref, "palindrome"],
-//                 [P.element, "x"]]
-//             ]]]],
-//         [P.ref, "palindrome"]
-//     ]])
-
-
-// const result = run_matcher(test_matcher, [["a", ["b", ["c" , [], "c" ], "b"], "a"]], (env, nEaten) => {
-//     return {env, nEaten}
-// })
-
-// console.log(inspect(result, {showHidden: true, depth: 10}))
-
-
-// const t = build(P.empty)
-
-// const r = run_matcher(t, ["a"], (dict, e) => {return dict})
-// console.log(r)
-
-const t = build(
-    [P.letrec,
-        [["repeat", 
-            [P.new, ["x"],
-                [P.choose,
-                    P.empty,
-                    [P.compose,
-                        [[P.constant, "a"],
-                        [P.element, "x"],
-                         [P.ref, "repeat"]]]]]]],
-        [[P.ref, "repeat"]]])
-
-const r = run_matcher(t, ["a", "b", "a", "d"], (dict, e) => {return dict})
-
-
-console.log(inspect(r, {showHidden: true}))
-// const t = build(
-//     ["a", [P.choose,"c",  P.empty],  "a"]
-// )
-
-// const r = run_matcher(t, ["a","c", "a"], (dict, e) => {return dict})
-
-
-// const t = build(
-//     [P.letrec,
-//         [["repeat", 
-//             [P.new, ["x"],
-//                 [P.choose,
-//                     P.empty,
-//                     "c",
-//                     [P.compose,
-//                         [[P.element, "x"],
-//                         [P.ref, "repeat"],
-//                         [P.element, "x"]]],
-//                      ]]]],
-//         [[P.ref, "repeat"]]])
-
-// const r = run_matcher(t, ["a", "b", "c", "b", "a"], (dict, e) => {return dict})
-
-// console.log(r)
-
-// console.log("r=" + inspect(r, {showHidden: true, depth:40}))
-
-// const t = build([P.compose, [[P.constant, "a"], [P.constant, "a"], ["b", "b"] ]] )
-
-// const r = run_matcher(t, ["a", "a", ["b", "b"]], (dict: MatchDict, eaten: number) => {
-//     return dict
-// })
