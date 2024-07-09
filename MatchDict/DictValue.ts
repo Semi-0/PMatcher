@@ -29,6 +29,10 @@ define_generic_procedure_handler(copy, (A: any) => {
     return copy
 })
 
+export function get_value_sequence(value: DictValue): any[] {
+    return Array.from(value.referenced_definition.values());
+}
+
 export function is_dict_value(item: any): boolean{
     return item instanceof DictValue
 }
@@ -54,8 +58,8 @@ export function is_will_define(value: any, scope_ref: ScopeReference): boolean{
 }
 
 export function get_most_bottom_value(value: DictValue): any{
-    if (has_default_value(value)){
-        return value.referenced_definition.get(default_ref())
+    if (has_value(value)){
+        return value.referenced_definition.values().next().value
     }
     else{
         throw Error("attempt to get default value from empty, v:" + value)

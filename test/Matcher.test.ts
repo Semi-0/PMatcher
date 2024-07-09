@@ -197,3 +197,52 @@ test('letrec pattern with repeat', () => {
 
     expect(r).toEqual(expectedResult);
 });
+
+
+import { DictValue, get_most_bottom_value, construct_dict_value, get_value_sequence } from '../MatchDict/DictValue';
+import { new_ref } from '../MatchDict/ScopeReference';
+
+test('get_most_bottom_value returns the correct value', () => {
+    const scopeRef = new_ref();
+    const value = { key: 'value' };
+    const dictValue = construct_dict_value(value, scopeRef);
+
+    const result = get_most_bottom_value(dictValue);
+    expect(result).toBe(value);
+});
+
+test('get_most_bottom_value throws an error for empty DictValue', () => {
+    const dictValue = new DictValue();
+
+    expect(() => get_most_bottom_value(dictValue)).toThrow("attempt to get default value from empty, v:");
+});
+
+
+
+test('get_most_bottom_value returns the correct value', () => {
+    const scopeRef = new_ref();
+    const value = { key: 'value' };
+    const dictValue = construct_dict_value(value, scopeRef);
+
+    const result = get_most_bottom_value(dictValue);
+    expect(result).toBe(value);
+});
+
+test('get_most_bottom_value throws an error for empty DictValue', () => {
+    const dictValue = new DictValue();
+
+    expect(() => get_most_bottom_value(dictValue)).toThrow("attempt to get default value from empty, v:");
+});
+
+test('get_value_sequence returns all values in the map as an array', () => {
+    const scopeRef1 = new_ref();
+    const scopeRef2 = new_ref();
+    const value1 = { key: 'value1' };
+    const value2 = { key: 'value2' };
+    const dictValue = new DictValue();
+    dictValue.referenced_definition.set(scopeRef1, value1);
+    dictValue.referenced_definition.set(scopeRef2, value2);
+
+    const result = get_value_sequence(dictValue);
+    expect(result).toEqual([value1, value2]);
+});
