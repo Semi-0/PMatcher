@@ -79,8 +79,6 @@ export function is_match_constant(pattern: any): boolean {
     return first_equal_with(pattern, P.constant) || isString(pattern)
 }
 
-
-
 export function first_equal_with(pattern: any, value: any): boolean {
     return isPair(pattern) && isString(first(pattern)) && first(pattern) === value
 }
@@ -136,11 +134,7 @@ export function is_compose(pattern: any[]): boolean{
 define_generic_procedure_handler(build,
     (pattern: any[]) => is_compose(pattern),
     (pattern: any[]) => {
-        const a = pattern[1].map((item: any) => build(item)) 
-        console.log(a)
-        console.log(a.length)
-
-        match_compose(a)
+        return match_compose(pattern[1].map((item: any) => build(item)))
     }
 )
 
@@ -265,32 +259,39 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 // console.log(inspect(result, {showHidden: true, depth: 10}))
 
 
-// const t = build([
-//     [[P.letrec,
+// const t = build(P.empty)
+
+// const r = run_matcher(t, ["a"], (dict, e) => {return dict})
+// console.log(r)
+
+// const t = build(
+//     [P.letrec,
 //         [["repeat", 
 //             [P.new, ["x"],
 //                 [P.choose,
 //                     P.empty,
-//                     [P.compose, 
+//                     [P.compose,
 //                         [[P.element, "x"],
-//                          [P.ref, "repeat"]]]
-//                 ]
-//         ]]],
-//         [P.ref, "repeat"]
-//     ]]
-// ])
+//                          [P.ref, "repeat"]]]]]]],
+//         [[P.ref, "repeat"]]])
+
+// const r = run_matcher(t, ["a", "b", "c", "d"], (dict, e) => {return dict})
 
 
-// const r = run_matcher(t, ["a", "a", "a", "a"], (dict: MatchDict, eaten: number) => {
-//     return dict
-// } )
+// const t = build(
+//     ["a", P.empty,  "a"]
+// )
+
+// const r = run_matcher(t, ["a", "a"], (dict, e) => {return dict})
 
 // console.log(r)
 
-// const t = build([[P.compose, [[P.constant, "a"], [P.constant, "a"]]]])
+// console.log("r=" + inspect(r, {showHidden: true, depth:30}))
 
-// const r = run_matcher(t, ["a", "a"], (dict: MatchDict, eaten: number) => {
+// const t = build([P.compose, [[P.constant, "a"], [P.constant, "a"], ["b", "b"] ]] )
+
+// const r = run_matcher(t, ["a", "a", ["b", "b"]], (dict: MatchDict, eaten: number) => {
 //     return dict
 // })
 
-// console.log(r)
+// console.log(inspect(r, {showHidden: true}))

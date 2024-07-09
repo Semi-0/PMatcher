@@ -39,10 +39,14 @@ export function match_constant(pattern_constant: string): matcher_callback {
 
 export function match_empty(): matcher_callback{
     return (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any  => {
-        if (data.length == 0){
+        console.log("empty got data:", data)
+        if (data.length === 0){
+            console.log("empty succeed!")
+            console.log(succeed.toString())
             return succeed(dictionary, 0)
         }
         else{
+            console.log("empty failed")
             return createMatchFailure(FailedMatcher.Empty,
                                       FailedReason.UnexpectedInput,
                                       data, 0, null)
