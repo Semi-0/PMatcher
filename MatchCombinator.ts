@@ -22,11 +22,9 @@ import { is_will_define, will_define } from "./MatchDict/DictValue";
 
 
 export function match_compose(matchers: matcher_callback[]) : matcher_callback{
-    console.log("m c start:" + matchers.length)
     return (data: any[], dictionary: MatchDict , match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        console.log("data= " + data)
         
-        const detailizeInfoWhenError = (result: any, position: number) => {
+        const handleMatchError = (result: any, position: number) => {
             // LIMITIONS: WOULD BACKTRACK ALL ERRORS WHEN ERROR OCCURS TODO: IMPROVE IT
             if (isMatchFailure(result)) {
                 return createMatchFailure(FailedMatcher.Compose, FailedReason.UnexpectedInput, data, position, result)
@@ -46,7 +44,7 @@ export function match_compose(matchers: matcher_callback[]) : matcher_callback{
                     return loop(data_list.slice(nEaten), rest(matchers), new_dict, eaten + nEaten);
                 });
   
-                return detailizeInfoWhenError(result, matchers.findIndex((m) => m === matcher));
+                return handleMatchError(result, matchers.findIndex((m) => m === matcher));
             }
             else if (isPair(data_list)){
 
@@ -64,7 +62,6 @@ export function match_compose(matchers: matcher_callback[]) : matcher_callback{
             }
 
         };
-        console.log("c:" + matchers.length)
         return loop(data, matchers, dictionary, 0)
     }
 }
