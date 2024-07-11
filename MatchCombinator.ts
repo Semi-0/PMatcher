@@ -95,10 +95,7 @@ export function match_array(all_matchers: matcher_callback[]) : matcher_callback
 export function match_choose(matchers: matcher_callback[]): matcher_callback {
     return (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         for (const matcher of matchers) {
-            console.log("begin choose, dict = " + inspect(dictionary, {depth: 10, showHidden: true}))
-            console.log(matcher.toString())
             const result = matcher(data, dictionary, match_env, succeed)
-            console.log("choose result =" + inspect(result))
             var failures = []
             // console.log("choose matcher", matcher.toString(), "result", result)
             if (matchSuccess(result)) {
@@ -126,7 +123,7 @@ export function match_reference(reference_symbol: string): matcher_callback{
         }
         else if (matcher) {
             const result = matcher(data, dictionary, match_env, succeed)
-            console.log("reference success", result)
+    
             if (matchSuccess(result)) {
                 return result
             }
@@ -176,39 +173,3 @@ export function match_new_var(names: string[], body: matcher_callback): matcher_
 
 
 
-
-
-// export function match_repeated_patterns(pattern: matcher_callback): matcher_callback {
-//     return (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dict: MatchDict, nEaten: number) => any): any => {
-//         const loop = (data: any[], dict: MatchDict, succeed: (dict: MatchDict, nEaten: number) => any, eaten: number): any =>   {
-//             console.log(data)
-//             const notConsumed = isPair(data)
-//             if (notConsumed){
-//                 const result = pattern(data, emptyEnvironment(), (new_dict: MatchEnvironment, nEaten: number) => {
-//                     return loop(data.slice(nEaten), new_dict.merge_environment(environment), succeed, eaten + 1)
-//                 })
-              
-//                 if (matchSuccess(result)) {
-//                     return result
-//                 }
-//                 else{
-//                     return createMatchFailure(FailedMatcher.Repeated, FailedReason.UnexpectedEnd, data, 0, result)
-//                 }
-//             }
-//             else{
-//                 return succeed(environment, eaten)
-//             }
-//         }
-
-//         return loop(data, environment, succeed, 0)
-//     }
-// }
-
-
-// const matcher = match_repeated_patterns(match_array([match_element("a"), match_element("b")]))
-
-// const result = matcher([["1", "2"], ["2", "3"], ["2", "3"], ["2", "3"], ["2", "3"]], emptyEnvironment(), (dict, n) => {
-//     return {new_dict: dict, nEaten: n}
-// })
-
-// console.log(result)

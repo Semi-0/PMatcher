@@ -9,6 +9,7 @@ import { matchSuccess } from "./MatchResult";
 import { extend } from "./MatchDict/DictInterface"
 import { get_current_scope, type MatchEnvironment } from "./MatchEnvironment";
 import { isElementAccessExpression } from "typescript";
+import { equal } from "./utility";
 
 export type matcher_callback =  (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any) => any
 // needs more precise error handler
@@ -27,7 +28,7 @@ export function match_constant(pattern_constant: string): matcher_callback {
                                       FailedReason.UnexpectedEnd, 
                                       data, 0, null);
         }
-        if (data[0] === pattern_constant) {
+        if (equal(data[0], pattern_constant)) {
             console.log("s")
             return succeed(dictionary, 1);
         } else {
@@ -92,7 +93,7 @@ export function match_element(variable: string, restriction: (value: any) => boo
         }
         
         
-        else if (binding_value === data[0]) {
+        else if (equal(binding_value, data[0])) {
             return succeed(dictionary, 1);
         } else {
             return createMatchFailure(FailedMatcher.Element,
@@ -127,7 +128,7 @@ export function match_segment(variable: string, restriction: (value: any) => boo
 
     const match_segment_equal = (data: any[], value: any[], ok: (i: number) => any): any => {
         for (let i = 0; i < data.length; i++) {
-            if (data[i] !== value[i]) {
+            if (!equal(data[i], value[i])) {
                 return createMatchFailure(FailedMatcher.Segment, 
                                           FailedReason.BindingValueUnmatched, 
                                           data[i], i, null);

@@ -3,6 +3,9 @@ import { define_generic_procedure_handler } from "generic-handler/GenericProcedu
 import type { MatchFailure } from "./MatchResult"
 import { isMatchFailure } from "./MatchResult"
 
+export const equal = construct_simple_generic_procedure("equal", 2,
+    (A: any, B: any) => A === B
+)
 
 export const copy = construct_simple_generic_procedure("copy", 1,
     (A: any) => {
