@@ -30,7 +30,7 @@ define_generic_procedure_handler(copy, (A: any) => {
 })
 
 export function get_value_sequence(value: DictValue): any[] {
-    return Array.from(value.referenced_definition.values());
+    return Array.from(value.referenced_definition.values()).filter((item) => item !== will_define);
 }
 
 export function is_dict_value(item: any): boolean{
