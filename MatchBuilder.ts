@@ -1,4 +1,5 @@
 import type { matcher_callback } from "./MatchCallback";
+import {match_args} from "generic-handler/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
 import { match_constant, match_element, match_empty, match_segment } from "./MatchCallback";
 import {  match_choose, match_letrec, match_reference, match_new_var, match_compose } from "./MatchCombinator";
@@ -16,13 +17,20 @@ import { default_match_env } from "./MatchEnvironment";
 import { v4 as uuidv4 } from 'uuid';
 import { DictValue, get_value_sequence } from "./MatchDict/DictValue";
 
-export const build = construct_simple_generic_procedure("build_matcher_expr", 1,
-    (matchers: any[]) => {
+
+export const compile_mexpr_to_matcher = "MEXPR_TO_MATCHER" 
+
+export const compile = construct_simple_generic_procedure("compile", 2,
+    (matchers: any[], option: string) => {
         throw Error(`unrecognized pattern in the build procedure: ${inspect(matchers)}`)
     }
 )
 
 
+
+export function is_mexpr_to_matcher(opt: string): boolean{
+    return opt == "MEXPR_TO_MATCHER"
+}
 
 
 
@@ -42,17 +50,17 @@ export const P = { // Stands for Pattern
 }
 
 
-define_generic_procedure_handler(build, 
-    (pattern: any[]) => isArray(pattern),
-    (pattern: any[]) => {
-        return match_array(pattern.map((item: any) => build(item)))
+define_generic_procedure_handler(compile, 
+    match_args(isArray, is_mexpr_to_matcher),
+    (pattern: any[], opt) => {
+        return match_array(pattern.map((item: any) => compile(item, opt)))
     }
 )
 
 
-define_generic_procedure_handler(build,
+define_generic_procedure_handler(compile,
     (pattern: any) => is_match_constant(pattern),
-    (pattern: any) => {
+    (pattern: any, opt) => {
         if ((isPair(pattern)) && (pattern.length == 2)){
             return match_constant(pattern[1])
         }
@@ -93,9 +101,9 @@ function is_all_other_element(pattern: any): boolean {
     return isString(pattern) && pattern === "..."
 }
 
-define_generic_procedure_handler(build, 
+define_generic_procedure_handler(compile, 
     (pattern: any[]) => is_all_other_element(pattern),
-    (pattern: any[]) => {
+    (pattern: any[], opt) => {
         return match_all_other_element()
     }
 )
@@ -105,9 +113,9 @@ function is_empty(pattern: any): boolean{
     return  pattern === P.empty
 }
 
-define_generic_procedure_handler(build,
+define_generic_procedure_handler(compile,
     (pattern: any) => is_empty(pattern),
-    (pattern: any) => {
+    (pattern: any, opt) => {
         return match_empty()
     }
 )
@@ -117,16 +125,16 @@ export function is_Letrec(pattern: any): boolean {
     return first_equal_with(pattern, P.letrec)
 }
 
-define_generic_procedure_handler(build, 
+define_generic_procedure_handler(compile, 
     (pattern: any[]) => is_Letrec(pattern),
-    (pattern: any[]) => {
+    (pattern: any[], opt) => {
         if (pattern.length !== 3) {
             throw Error(`unrecognized pattern in the letrec procedure: ${inspect(pattern)}`)
         }
 
-        const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: build(item[1]) }));
+        const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: compile(item[1], opt) }));
 
-        return match_letrec(bindings, build(pattern[2]))
+        return match_letrec(bindings, compile(pattern[2], opt))
     }
 )
 
@@ -135,10 +143,10 @@ export function is_compose(pattern: any[]): boolean{
     return first_equal_with(pattern, P.compose) 
 }
 
-define_generic_procedure_handler(build,
+define_generic_procedure_handler(compile,
     (pattern: any[]) => is_compose(pattern),
-    (pattern: any[]) => {
-        return match_compose(pattern.slice(1).map((item: any) => build(item)))
+    (pattern: any[], opt) => {
+        return match_compose(pattern.slice(1).map((item: any) => compile(item, opt)))
     }
 )
 
@@ -150,10 +158,10 @@ export function is_select(pattern: any): boolean {
     return first_equal_with(pattern, P.choose)
 }
 
-define_generic_procedure_handler(build, 
+define_generic_procedure_handler(compile, 
     (pattern: any[]) => is_select(pattern),
-    (pattern: any[]) => {
-        return match_choose(pattern.slice(1).map((item: any) => build(item)))
+    (pattern: any[], opt) => {
+        return match_choose(pattern.slice(1).map((item: any) => compile(item, opt)))
     }
 )
 
@@ -162,10 +170,10 @@ export function is_new_var(pattern: any): boolean {
     return first_equal_with(pattern, P.new)
 }
 
-define_generic_procedure_handler(build, 
+define_generic_procedure_handler(compile, 
     (pattern: any[]) => is_new_var(pattern),
-    (pattern: any[]) => {
-        return match_new_var(pattern[1], build(pattern[2]))
+    (pattern: any[], opt) => {
+        return match_new_var(pattern[1], compile(pattern[2], opt))
     }
 )
 
@@ -174,9 +182,9 @@ function is_match_element(pattern: any): boolean {
    return first_equal_with(pattern, P.element)
 }
 
-define_generic_procedure_handler(build, 
+define_generic_procedure_handler(compile, 
     (pattern: any[]) => is_match_element(pattern),
-    (pattern: any[]) => {
+    (pattern: any[], opt) => {
         return match_element(pattern[1], pattern[2])
     }
 )
@@ -186,9 +194,9 @@ function is_match_segment(pattern: any): boolean {
     return first_equal_with(pattern, P.segment)
 }
 
-define_generic_procedure_handler(build, 
+define_generic_procedure_handler(compile, 
     (pattern: any[]) => is_match_segment(pattern),
-    (pattern: any[]) => {
+    (pattern: any[], opt) => {
         return match_segment(pattern[1], pattern[2])
     }
 )
@@ -199,9 +207,9 @@ export function is_match_reference(pattern: any): boolean {
     return first_equal_with(pattern, P.ref)
 }
 
-define_generic_procedure_handler(build, 
+define_generic_procedure_handler(compile, 
     (pattern: any[]) => is_match_reference(pattern),
-    (pattern: any[]) => {
+    (pattern: any[], opt) => {
         return match_reference(pattern[1])
     }
 )
@@ -212,8 +220,8 @@ function is_many(pattern: any): boolean{
     return first_equal_with(pattern, P.many) && pattern.length == 2
 }
 
-define_generic_procedure_handler(build, is_many, 
-    (pattern: any[]) => {
+define_generic_procedure_handler(compile, is_many, 
+    (pattern: any[], opt) => {
         const matcher = pattern[1]
         console.log(matcher)
         
@@ -226,7 +234,7 @@ define_generic_procedure_handler(build, is_many,
                             [P.ref, "repeat"]]]]],
             [P.ref, "repeat"]]
 
-        return build(expr)
+        return compile(expr, opt)
     }
 )
 
@@ -258,7 +266,8 @@ interface MatchResult {
  *          or a MatchFailure object if the match fails.
  */
 export function match(input: any[], matcher_expr: string[]): MatchResult | MatchFailure {
-    const m = build(matcher_expr);
+    const m = compile(matcher_expr, compile_mexpr_to_matcher);
+
     const result = run_matcher(m, input, (dict, e) => { return { dict: dict, eaten: e } });
 
     if (matchSuccess(result)) {
@@ -285,5 +294,4 @@ export function try_match(input: any[], matcher_expr: string[]): boolean {
         return false;
     }
 }
-
 
