@@ -16,7 +16,7 @@ import { default_match_env } from "./MatchEnvironment";
 import { v4 as uuidv4 } from 'uuid';
 import { DictValue, get_value_sequence } from "./MatchDict/DictValue";
 
-export const build_matcher_expr = construct_simple_generic_procedure("build_matcher_expr", 1,
+export const build = construct_simple_generic_procedure("build_matcher_expr", 1,
     (matchers: any[]) => {
         throw Error(`unrecognized pattern in the build procedure: ${inspect(matchers)}`)
     }
@@ -42,15 +42,15 @@ export const P = { // Stands for Pattern
 }
 
 
-define_generic_procedure_handler(build_matcher_expr, 
+define_generic_procedure_handler(build, 
     (pattern: any[]) => isArray(pattern),
     (pattern: any[]) => {
-        return match_array(pattern.map((item: any) => build_matcher_expr(item)))
+        return match_array(pattern.map((item: any) => build(item)))
     }
 )
 
 
-define_generic_procedure_handler(build_matcher_expr,
+define_generic_procedure_handler(build,
     (pattern: any) => is_match_constant(pattern),
     (pattern: any) => {
         if ((isPair(pattern)) && (pattern.length == 2)){
@@ -93,7 +93,7 @@ function is_all_other_element(pattern: any): boolean {
     return isString(pattern) && pattern === "..."
 }
 
-define_generic_procedure_handler(build_matcher_expr, 
+define_generic_procedure_handler(build, 
     (pattern: any[]) => is_all_other_element(pattern),
     (pattern: any[]) => {
         return match_all_other_element()
@@ -105,7 +105,7 @@ function is_empty(pattern: any): boolean{
     return  pattern === P.empty
 }
 
-define_generic_procedure_handler(build_matcher_expr,
+define_generic_procedure_handler(build,
     (pattern: any) => is_empty(pattern),
     (pattern: any) => {
         return match_empty()
@@ -117,16 +117,16 @@ export function is_Letrec(pattern: any): boolean {
     return first_equal_with(pattern, P.letrec)
 }
 
-define_generic_procedure_handler(build_matcher_expr, 
+define_generic_procedure_handler(build, 
     (pattern: any[]) => is_Letrec(pattern),
     (pattern: any[]) => {
         if (pattern.length !== 3) {
             throw Error(`unrecognized pattern in the letrec procedure: ${inspect(pattern)}`)
         }
 
-        const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: build_matcher_expr(item[1]) }));
+        const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: build(item[1]) }));
 
-        return match_letrec(bindings, build_matcher_expr(pattern[2]))
+        return match_letrec(bindings, build(pattern[2]))
     }
 )
 
@@ -135,10 +135,10 @@ export function is_compose(pattern: any[]): boolean{
     return first_equal_with(pattern, P.compose) 
 }
 
-define_generic_procedure_handler(build_matcher_expr,
+define_generic_procedure_handler(build,
     (pattern: any[]) => is_compose(pattern),
     (pattern: any[]) => {
-        return match_compose(pattern.slice(1).map((item: any) => build_matcher_expr(item)))
+        return match_compose(pattern.slice(1).map((item: any) => build(item)))
     }
 )
 
@@ -150,10 +150,10 @@ export function is_select(pattern: any): boolean {
     return first_equal_with(pattern, P.choose)
 }
 
-define_generic_procedure_handler(build_matcher_expr, 
+define_generic_procedure_handler(build, 
     (pattern: any[]) => is_select(pattern),
     (pattern: any[]) => {
-        return match_choose(pattern.slice(1).map((item: any) => build_matcher_expr(item)))
+        return match_choose(pattern.slice(1).map((item: any) => build(item)))
     }
 )
 
@@ -162,10 +162,10 @@ export function is_new_var(pattern: any): boolean {
     return first_equal_with(pattern, P.new)
 }
 
-define_generic_procedure_handler(build_matcher_expr, 
+define_generic_procedure_handler(build, 
     (pattern: any[]) => is_new_var(pattern),
     (pattern: any[]) => {
-        return match_new_var(pattern[1], build_matcher_expr(pattern[2]))
+        return match_new_var(pattern[1], build(pattern[2]))
     }
 )
 
@@ -174,7 +174,7 @@ function is_match_element(pattern: any): boolean {
    return first_equal_with(pattern, P.element)
 }
 
-define_generic_procedure_handler(build_matcher_expr, 
+define_generic_procedure_handler(build, 
     (pattern: any[]) => is_match_element(pattern),
     (pattern: any[]) => {
         return match_element(pattern[1], pattern[2])
@@ -186,7 +186,7 @@ function is_match_segment(pattern: any): boolean {
     return first_equal_with(pattern, P.segment)
 }
 
-define_generic_procedure_handler(build_matcher_expr, 
+define_generic_procedure_handler(build, 
     (pattern: any[]) => is_match_segment(pattern),
     (pattern: any[]) => {
         return match_segment(pattern[1], pattern[2])
@@ -199,7 +199,7 @@ export function is_match_reference(pattern: any): boolean {
     return first_equal_with(pattern, P.ref)
 }
 
-define_generic_procedure_handler(build_matcher_expr, 
+define_generic_procedure_handler(build, 
     (pattern: any[]) => is_match_reference(pattern),
     (pattern: any[]) => {
         return match_reference(pattern[1])
@@ -212,7 +212,7 @@ function is_many(pattern: any): boolean{
     return first_equal_with(pattern, P.many) && pattern.length == 2
 }
 
-define_generic_procedure_handler(build_matcher_expr, is_many, 
+define_generic_procedure_handler(build, is_many, 
     (pattern: any[]) => {
         const matcher = pattern[1]
         console.log(matcher)
@@ -226,7 +226,7 @@ define_generic_procedure_handler(build_matcher_expr, is_many,
                             [P.ref, "repeat"]]]]],
             [P.ref, "repeat"]]
 
-        return build_matcher_expr(expr)
+        return build(expr)
     }
 )
 
@@ -258,7 +258,7 @@ interface MatchResult {
  *          or a MatchFailure object if the match fails.
  */
 export function match(input: any[], matcher_expr: string[]): MatchResult | MatchFailure {
-    const m = build_matcher_expr(matcher_expr);
+    const m = build(matcher_expr);
     const result = run_matcher(m, input, (dict, e) => { return { dict: dict, eaten: e } });
 
     if (matchSuccess(result)) {

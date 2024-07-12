@@ -1,7 +1,7 @@
 
 
 import { test, expect, describe, jest } from "bun:test";
-import { build_matcher_expr, P, run_matcher } from "../MatchBuilder";
+import { build, P, run_matcher } from "../MatchBuilder";
 import { MatchDict, empty_match_dict } from "../MatchDict/MatchDict";
 import type { MatchEnvironment } from "../MatchEnvironment";
 import {  default_match_env } from "../MatchEnvironment";
@@ -13,7 +13,7 @@ import { clearRefHistory } from "../MatchDict/ScopeReference";
 
 describe('MatchBuilder', () => {
     test('should build and match constant patterns correctly', () => {
-        const matcher = build_matcher_expr(["a"]);
+        const matcher = build(["a"]);
         const data = ["a"];
         const succeed = jest.fn((dict, nEaten) => { return {dict, nEaten} });
 
@@ -25,7 +25,7 @@ describe('MatchBuilder', () => {
     });
 
     test('should build and match element patterns correctly', () => {
-        const matcher = build_matcher_expr([P.element, "x"]);
+        const matcher = build([P.element, "x"]);
         const data = ["value"];
         const succeed = jest.fn((dict, nEaten) => {return dict});
 
@@ -40,7 +40,7 @@ describe('MatchBuilder', () => {
     });
 
     test('should build and match segment patterns correctly', () => {
-        const matcher = build_matcher_expr([[P.segment, "seg"], "end"]);
+        const matcher = build([[P.segment, "seg"], "end"]);
         const data = ["seg1", "seg2", "end"];
         const succeed = jest.fn((dict, nEaten) => {return dict});
 
@@ -51,7 +51,7 @@ describe('MatchBuilder', () => {
     });
 
     test('should build and match letrec patterns correctly', () => {
-        const matcher = build_matcher_expr([P.letrec, [["a", [P.constant, "b"]]], [[P.ref, "a"]]]);
+        const matcher = build([P.letrec, [["a", [P.constant, "b"]]], [[P.ref, "a"]]]);
         const data = ["b"];
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
@@ -63,7 +63,7 @@ describe('MatchBuilder', () => {
     });
 
     test('should build and match choose patterns correctly', () => {
-        const matcher = build_matcher_expr([P.choose, [[P.constant, "a"]], [[P.constant, "b"]]]);
+        const matcher = build([P.choose, [[P.constant, "a"]], [[P.constant, "b"]]]);
         const data = ["a"];
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
@@ -76,7 +76,7 @@ describe('MatchBuilder', () => {
 
 
     test('should build and match complex nested patterns correctly', () => {
-        const matcher = build_matcher_expr([P.letrec, [["a", [P.constant, "b"]]], [P.choose, [[P.ref, "a"]], [P.constant, "c"]]]);
+        const matcher = build([P.letrec, [["a", [P.constant, "b"]]], [P.choose, [[P.ref, "a"]], [P.constant, "c"]]]);
         const data = ["b"];
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
@@ -90,7 +90,7 @@ describe('MatchBuilder', () => {
     
 
     test('should return MatchFailure when patterns do not match', () => {
-        const matcher = build_matcher_expr([P.constant, "a"]);
+        const matcher = build([P.constant, "a"]);
         const data = ["b"];
         const succeed = jest.fn();
 
@@ -113,7 +113,7 @@ describe('MatchBuilder', () => {
     // ... existing tests ...
 
     test('should build and match letrec patterns with choose and reference correctly', () => {
-        const test_matcher = build_matcher_expr([P.letrec,
+        const test_matcher = build([P.letrec,
             [["a", [P.choose, [], [ "1", [P.ref, "b"]]]],
             ["b", [P.choose, [], [ "2", [P.ref, "a"]]]]],
             [P.ref, "a"]]
@@ -137,7 +137,7 @@ describe('MatchDict', () => {
 
     describe('Matcher operations', () => {
         test('run_matcher with palindrome pattern', () => {
-            const test_matcher = build_matcher_expr([
+            const test_matcher = build([
                 [P.letrec,
                     [["palindrome",
                     [P.new, ["x"],
@@ -165,7 +165,7 @@ describe('MatchDict', () => {
 test('letrec pattern with repeat', () => {
     clearRefHistory()
 
-    const t = build_matcher_expr(
+    const t = build(
         [P.letrec,
             [["repeat", 
                 [P.new, ["x"],
