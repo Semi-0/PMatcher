@@ -287,9 +287,3 @@ export function try_match(input: any[], matcher_expr: string[]): boolean {
 }
 
 
-// const t = build_matcher_expr(["front", [[P.many, [P.new, ["a", "b"], 
-//                                      [[P.element, "a"], [P.element, "b"]]]] ] ])
-
-// const r = run_matcher(t, ["front", [["1", "2"], ["3", "4"], ["5", "6"]]], (dict, e) => { return dict });
-// console.log(r)
-// console.log(get_dict_value_sequence("b", r as DictValue))
