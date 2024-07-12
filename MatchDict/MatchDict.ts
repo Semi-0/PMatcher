@@ -2,7 +2,7 @@
 import { guard } from "../utility";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import {  inspect } from "bun";
-import { DictValue, is_dict_value, construct_dict_value, get_most_bottom_value, extend_new_value_in_scope } from "./DictValue";
+import { DictValue, is_dict_value, construct_dict_value, get_most_bottom_value, extend_new_value_in_scope, get_value_sequence } from "./DictValue";
 import { get_value, extend } from "./DictInterface";
 
 import { default_ref, is_scope_reference, type ScopeReference } from "./ScopeReference";
@@ -10,7 +10,6 @@ import type { MatchEnvironment } from "../MatchEnvironment";
 import { is_match_env } from "../MatchEnvironment";
 import { default_match_env } from "../MatchEnvironment";
 import { copy } from "../utility"
-
 
 export class MatchDict {
     dict: Map<string, DictValue>
@@ -48,6 +47,16 @@ export function has_key(key: string, match_dict: MatchDict): boolean{
 export function get_raw_entity(key: string, mdict: MatchDict): DictValue | undefined {
     return mdict.dict.get(key)
 
+}
+
+export function get_dict_value_sequence(key: string, mdict: MatchDict): any[] | undefined{
+   const e = get_raw_entity(key, mdict) 
+   if (e !== undefined){
+        return get_value_sequence(e)
+   }
+   else{
+        return undefined
+   }
 }
 
 

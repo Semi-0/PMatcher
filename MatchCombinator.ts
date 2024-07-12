@@ -8,7 +8,7 @@ import { matchSuccess, isMatchFailure } from "./MatchResult";
 import type { MatchFailure } from "./MatchResult";
 import type { ScopeReference } from "./MatchDict/ScopeReference";
 import { extend, get_value } from "./MatchDict/DictInterface";
-import { default_match_env, type MatchEnvironment } from "./MatchEnvironment";
+import { default_match_env, get_current_scope, type MatchEnvironment } from "./MatchEnvironment";
 import { new_ref } from "./MatchDict/ScopeReference";
 import { construct_dict_value } from "./MatchDict/DictValue";
 // match_element match_segment match_compose(match_constant, match_segment))
@@ -165,11 +165,37 @@ export function match_new_var(names: string[], body: matcher_callback): matcher_
                            scopeRef: new_env_ref},
                           acc)
         }, dictionary)
-        console.log("dict:" + inspect(dictionary, {showHidden: true, depth: 10}))
         
         return body(data, extended_dict, new_env, succeed)
     }
 }
 
+// export function match_new_obj(name: string, body: matcher_callback): matcher_callback{
+//     return (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+//         const new_env_ref: ScopeReference = new_ref()
+//         // const new_env = extend(new_env_ref, match_env)
+        
+//         // const extended_dict = names.reduce((acc, name) => {
+//         //     return extend({key: name,
+//         //                    value: will_define,
+//         //                    scopeRef: new_env_ref},
+//         //                   acc)
+//         // }, dictionary)
+        
+//         const result = body(data, new MatchDict(), [new_env_ref], (dict, eaten) => { return {dict, eaten} })
 
+//         if (isMatchFailure(result)){
+//             return result 
+//         }
+//         else{
+//             const {dict, eaten} = result
+//             const extended_dict = extend({key: name, 
+//                                           value: construct_dict_value(dict, 
+//                                                                     get_current_scope(match_env))},
+//                                           dictionary)                      
+//             succeed(extended_dict, eaten)
+//         }
+
+//     }
+// }
 
