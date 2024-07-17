@@ -18,10 +18,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { DictValue, get_value_sequence } from "./MatchDict/DictValue";
 
 
-export const compile_mexpr_to_matcher = "MEXPR_TO_MATCHER" 
 
-export const compile = construct_simple_generic_procedure("compile", 2,
-    (matchers: any[], option: string) => {
+export const compile = construct_simple_generic_procedure("compile", 1,
+    (matchers: any[]) => {
         throw Error(`unrecognized pattern in the build procedure: ${inspect(matchers)}`)
     }
 )
@@ -51,9 +50,9 @@ export const P = { // Stands for Pattern
 
 
 define_generic_procedure_handler(compile, 
-    match_args(isArray, is_mexpr_to_matcher),
-    (pattern: any[], opt) => {
-        return match_array(pattern.map((item: any) => compile(item, opt)))
+    isArray,
+    (pattern: any[]) => {
+        return match_array(pattern.map((item: any) => compile(item)))
     }
 )
 
@@ -286,7 +285,7 @@ interface MatchResult {
  *          or a MatchFailure object if the match fails.
  */
 export function match(input: any[], matcher_expr: any[]): MatchResult | MatchFailure {
-    const m = compile(matcher_expr, compile_mexpr_to_matcher);
+    const m = compile(matcher_expr);
 
     const result = run_matcher(m, input, (dict, e) => { return { dict: dict, eaten: e } });
 
