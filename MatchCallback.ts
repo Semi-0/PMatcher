@@ -39,6 +39,12 @@ export function match_constant(pattern_constant: string): matcher_callback {
     };
 }
 
+export function match_wildcard(): matcher_callback {
+    return (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any  => {
+        return succeed(dictionary, 1);
+    }
+}
+
 export function match_empty(): matcher_callback{
     return (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any  => {
         if (data.length === 0){
@@ -220,4 +226,5 @@ export function match_all_other_element(): matcher_callback {
         return loop(0, data, dictionary, succeed);
     }
 }
+
 

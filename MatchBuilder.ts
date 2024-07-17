@@ -1,7 +1,7 @@
 import type { matcher_callback } from "./MatchCallback";
 import {match_args} from "generic-handler/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
-import { match_constant, match_element, match_empty, match_segment } from "./MatchCallback";
+import { match_constant, match_element, match_empty, match_segment, match_wildcard } from "./MatchCallback";
 import {  match_choose, match_letrec, match_reference, match_new_var, match_compose } from "./MatchCombinator";
 import { empty_match_dict } from "./MatchDict/MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
@@ -45,8 +45,8 @@ export const P = { // Stands for Pattern
     constant: uuidv4(),
     many: uuidv4(),
     compose: uuidv4(),
-    empty: uuidv4()
-    
+    empty: uuidv4(),
+    wildcard: uuidv4()
 }
 
 
@@ -150,10 +150,6 @@ define_generic_procedure_handler(compile,
     }
 )
 
-
-
-
-
 export function is_select(pattern: any): boolean {
     return first_equal_with(pattern, P.choose)
 }
@@ -216,14 +212,12 @@ define_generic_procedure_handler(compile,
 
 
 function is_many(pattern: any): boolean{
-
     return first_equal_with(pattern, P.many) && pattern.length == 2
 }
 
 define_generic_procedure_handler(compile, is_many, 
     (pattern: any[], opt) => {
         const matcher = pattern[1]
-        console.log(matcher)
         
         const expr =  [P.letrec,
             [["repeat", 
@@ -238,6 +232,17 @@ define_generic_procedure_handler(compile, is_many,
     }
 )
 
+function is_wildcard(pattern: any): boolean {
+    return first_equal_with(pattern, P.wildcard)
+}
+
+define_generic_procedure_handler(compile, 
+    (pattern: any[]) => is_wildcard(pattern),
+    (pattern: any[], opt) => {
+        return match_wildcard()
+    }
+)
+
 export function run_matcher(matcher: matcher_callback, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): MatchDict | MatchFailure {
 
     return matcher([data], empty_match_dict(), default_match_env(), (dict, nEaten) => {
@@ -245,6 +250,21 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
     })
 }
 
+
+// const r = match(["a", "b", [], "b", "a"], [P.letrec,
+//     [["repeat", 
+//             [P.choose,
+//                 [],
+//                 [P.compose,
+//                     [P.new, ["a"],
+//                         [P.compose,
+//                          [P.element, "a"],
+//                          [P.ref, "repeat"],
+//                          [P.element, "a"]
+//                         ]]]]
+//                         ]],
+//                     [[P.ref, "repeat"]]])
+// console.log(inspect(r, {showHidden: true, depth: 50}))
 
 //short-hand interface 
 
@@ -265,7 +285,7 @@ interface MatchResult {
  * @returns An object containing the match dictionary and the number of elements consumed if successful,
  *          or a MatchFailure object if the match fails.
  */
-export function match(input: any[], matcher_expr: string[]): MatchResult | MatchFailure {
+export function match(input: any[], matcher_expr: any[]): MatchResult | MatchFailure {
     const m = compile(matcher_expr, compile_mexpr_to_matcher);
 
     const result = run_matcher(m, input, (dict, e) => { return { dict: dict, eaten: e } });
