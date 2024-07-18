@@ -26,6 +26,7 @@ export const compile = construct_simple_generic_procedure("compile", 1,
 )
 
 
+
 export const P = { // Stands for Pattern
     letrec: uuidv4(), 
     choose: uuidv4(), 
@@ -247,7 +248,42 @@ define_generic_procedure_handler(compile,
 
 register_predicate("wildcard?", (pattern: any) => {
     return first_equal_with(pattern, P.wildcard)
-})
+}
+
+/// THIS IS SOOO DUUUMB
+export function extract_var_names(pattern: any[]): string[] {
+
+    return pattern.flatMap((item: any) => {
+        const is = (head: string, value: any) => first_equal_with(head, value);
+        const excluded = Object.keys(P)
+            .filter((key: string) => {return (key == "match_element") || ( key == "match_segment ")})
+            .map((key: string) => {return P[key as keyof typeof P]})
+        const head = first(item)
+        if ((is(head, excluded)) || (is_match_constant(item))){
+            return [];
+        } 
+        else if (is_match_element(item)) {
+            return [item[1]];
+        } else if (is_match_segment(item)) {
+            return [item[1]];
+        } else if (isArray(item)) {
+            return extract_var_names(item);
+        } else {
+            return [];
+        }
+    });
+}
+
+function is_extract_var_names(pattern: any): boolean {
+    return first_equal_with(pattern, P.extract_var_names)
+}
+
+define_generic_procedure_handler(compile, 
+    (pattern: any[]) => is_extract_var_names(pattern),
+    (pattern: any[], opt) => {
+        return extract_var_names(pattern[1])
+    }
+)
 
 define_generic_procedure_handler(compile, 
     "wildcard?",
