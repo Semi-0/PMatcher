@@ -52,7 +52,9 @@ define_generic_procedure_handler(compile,
 )
 
 
-register_predicate("constant?", is_match_constant)
+register_predicate("constant?", (pattern: any) => {
+    return first_equal_with(pattern, P.constant) || isString(pattern)
+})
 
 define_generic_procedure_handler(compile,
     "constant?",
@@ -69,24 +71,17 @@ define_generic_procedure_handler(compile,
     }
 )
 
-register_predicate("match_constant?", is_match_constant)
-
-export function is_match_constant(pattern: any): boolean {
+register_predicate("match_constant?", (pattern: any) => {
     return first_equal_with(pattern, P.constant) || isString(pattern)
-}
-
+})
 
 export function first_equal_with(pattern: any, value: any): boolean {
     return isPair(pattern) && isString(first(pattern)) && first(pattern) === value
 }
 
-
-
-function is_all_other_element(pattern: any): boolean {
+register_predicate("all_other_element?", (pattern: any) => {
     return isString(pattern) && pattern === "..."
-}
-
-register_predicate("all_other_element?", is_all_other_element)
+})
 
 define_generic_procedure_handler(compile, 
     "all_other_element?",
@@ -95,12 +90,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-
-function is_empty(pattern: any): boolean{
-    return  pattern === P.empty
-}
-
-register_predicate("empty_matcher?", is_empty)
+register_predicate("empty_matcher?", (pattern: any) => {
+    return pattern === P.empty
+})
 
 define_generic_procedure_handler(compile,
     "empty_matcher?",
@@ -109,12 +101,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-
-export function is_Letrec(pattern: any): boolean {
+register_predicate("letrec?", (pattern: any) => {
     return first_equal_with(pattern, P.letrec)
-}
-
-register_predicate("letrec?", is_Letrec)
+})
 
 define_generic_procedure_handler(compile, 
     "letrec?",
@@ -133,12 +122,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-
-export function is_compose(pattern: any[]): boolean{
-    return first_equal_with(pattern, P.compose) 
-}
-
-register_predicate("compose?", is_compose)
+register_predicate("compose?", (pattern: any[]) => {
+    return first_equal_with(pattern, P.compose)
+})
 
 define_generic_procedure_handler(compile,
     "compose?",
@@ -148,11 +134,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-export function is_select(pattern: any): boolean {
+register_predicate("select?", (pattern: any) => {
     return first_equal_with(pattern, P.choose)
-}
-
-register_predicate("select?", is_select)
+})
 
 define_generic_procedure_handler(compile, 
     "select?",
@@ -161,12 +145,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-
-export function is_new_var(pattern: any): boolean {
+register_predicate("new_var?", (pattern: any) => {
     return first_equal_with(pattern, P.new)
-}
-
-register_predicate("new_var?", is_new_var)
+})
 
 define_generic_procedure_handler(compile, 
     "new_var?",
@@ -175,12 +156,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-
-function is_match_element(pattern: any): boolean {
-   return first_equal_with(pattern, P.element)
-}
-
-register_predicate("match_element?", is_match_element)
+register_predicate("match_element?", (pattern: any) => {
+    return first_equal_with(pattern, P.element)
+})
 
 define_generic_procedure_handler(compile, 
     "match_element?",
@@ -189,12 +167,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-
-function is_match_segment(pattern: any): boolean {
+register_predicate("match_segment?", (pattern: any) => {
     return first_equal_with(pattern, P.segment)
-}       
-
-register_predicate("match_segment?", is_match_segment)
+})
 
 define_generic_procedure_handler(compile, 
     "match_segment?",
@@ -203,13 +178,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-
-export function is_match_reference(pattern: any): boolean {
-
+register_predicate("match_reference?", (pattern: any) => {
     return first_equal_with(pattern, P.ref)
-}
-
-register_predicate("match_reference?", is_match_reference)
+})
 
 define_generic_procedure_handler(compile, 
     "match_reference?",
@@ -218,12 +189,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-
-function is_many(pattern: any): boolean{
+register_predicate("many?", (pattern: any) => {
     return first_equal_with(pattern, P.many) && pattern.length == 2
-}   
-
-register_predicate("many?", is_many)
+})
 
 define_generic_procedure_handler(compile, 
     "many?",
@@ -242,7 +210,6 @@ define_generic_procedure_handler(compile,
             return compile(expr)
     })
 
-// /// THIS IS SOOO DUUUMB
 export function extract_var_names(pattern: any[]): string[] {
 
     return pattern.flatMap((item: any) => {
@@ -269,11 +236,9 @@ export function extract_var_names(pattern: any[]): string[] {
     });
 }
 
-function is_extract_var_names(pattern: any): boolean {
+register_predicate("extract_var_names?", (pattern: any) => {
     return first_equal_with(pattern, P.extract_var_names)
-}
-
-register_predicate("extract_var_names?", is_extract_var_names)
+})
 
 define_generic_procedure_handler(compile, 
     "extract_var_names?",
@@ -282,11 +247,9 @@ define_generic_procedure_handler(compile,
     }
 )
 
-function is_wildcard(pattern: any): boolean {
+register_predicate("wildcard?", (pattern: any) => {
     return first_equal_with(pattern, P.wildcard)
-}
-
-register_predicate("wildcard?", is_wildcard)
+})
 
 define_generic_procedure_handler(compile, 
     "wildcard?",
