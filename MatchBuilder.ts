@@ -223,9 +223,9 @@ define_generic_procedure_handler(compile, is_many,
                     [P.choose,
                         P.empty,
                         [P.compose,
-                            matcher,
+                            ...matcher,
                             [P.ref, "repeat"]]]]],
-            [P.ref, "repeat"]]
+            [[P.ref, "repeat"]]]
 
         return compile(expr, opt)
     }
@@ -250,22 +250,27 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 }
 
 
-// const r = match(["a", "b", [], "b", "a"], [P.letrec,
+
+// todo: 1 generalize many
+// todo: 2 add begin expression for allowing partial match
+// const expr =  [P.letrec,
 //     [["repeat", 
 //             [P.choose,
-//                 [],
+//                 P.empty,
+//                 [P.new, ["a"],
 //                 [P.compose,
-//                     [P.new, ["a"],
-//                         [P.compose,
-//                          [P.element, "a"],
-//                          [P.ref, "repeat"],
-//                          [P.element, "a"]
-//                         ]]]]
-//                         ]],
-//                     [[P.ref, "repeat"]]])
+//                     "b",
+//                     [P.element, "a"],
+//                     [P.ref, "repeat"]]]]]],
+//     [[P.ref, "repeat"]]]
+
+// const r = match(["b", "a", "b", "c"], expr)
 // console.log(inspect(r, {showHidden: true, depth: 50}))
 
-//short-hand interface 
+const r = match(["b", "a", "b", "a"], [P.many, [ "b" , [P.element, "a"]]])
+console.log(inspect(r, {showHidden: true, depth: 50}))
+
+// short-hand interface 
 
 
 /**

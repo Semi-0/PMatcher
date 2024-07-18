@@ -4,7 +4,7 @@ import { MatchDict, empty_match_dict } from "../MatchDict/MatchDict";
 import type { MatchEnvironment } from "../MatchEnvironment";
 import {  default_match_env } from "../MatchEnvironment";
 import type { MatchFailure } from "../MatchResult";
-import { FailedMatcher, FailedReason, matchSuccess } from "../MatchResult";
+import { FailedMatcher, FailedReason, isMatchFailure, matchSuccess } from "../MatchResult";
 import { inspect } from "util";
 import { get_value } from "../MatchDict/DictInterface";
 import { clearRefHistory } from "../MatchDict/ScopeReference";
@@ -126,6 +126,40 @@ describe('MatchBuilder', () => {
         expect(result).toEqual(succeed.mock.results[0].value);
     });
 
+    test('should build and match many patterns correctly', () => {
+        const matcher = compile([P.many, ["b", [P.element, "a"]]], "MEXPR_TO_MATCHER");
+        const data = ["b", "a", "b", "a"];
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = run_matcher(matcher, data, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        //@ts-ignore
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
+
+    test('should return MatchFailure when many patterns do not match', () => {
+        const matcher = compile([P.many, ["b", [P.element, "a"]]], "MEXPR_TO_MATCHER");
+        const data = ["b", "a", "c"];
+        const succeed = jest.fn();
+
+        const result: MatchFailure | MatchDict = run_matcher(matcher, data, succeed);
+
+        expect(isMatchFailure(result)).toEqual(true);
+        expect(succeed).not.toHaveBeenCalled();
+    });
+
+    test('should build and match wildcard patterns correctly', () => {
+        const matcher = compile([P.wildcard], "MEXPR_TO_MATCHER");
+        const data = ["anything"];
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = run_matcher(matcher, data, succeed);
+
+        expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
+        //@ts-ignore
+        expect(result).toEqual(succeed.mock.results[0].value);
+    });
     // ... existing tests ...
 });
 
@@ -176,7 +210,6 @@ test('letrec pattern with repeat', () => {
 
     const r = run_matcher(t, ["a", "b", "a", "d"], (dict, e) => { return dict });
 
-    console.log(r)
 
     // Expected result
  
