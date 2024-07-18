@@ -11,7 +11,7 @@ import { clearRefHistory } from "../MatchDict/ScopeReference";
 
 describe('MatchBuilder', () => {
     test('should build and match constant patterns correctly', () => {
-        const matcher = compile(["a"], "MEXPR_TO_MATCHER");
+        const matcher = compile(["a"]);
         const data = ["a"];
         const succeed = jest.fn((dict, nEaten) => { return {dict, nEaten} });
 
@@ -23,7 +23,7 @@ describe('MatchBuilder', () => {
     });
 
     test('should build and match element patterns correctly', () => {
-        const matcher = compile([P.element, "x"], "MEXPR_TO_MATCHER");
+        const matcher = compile([P.element, "x"]);
         const data = ["value"];
         const succeed = jest.fn((dict, nEaten) => {return dict});
 
@@ -38,7 +38,7 @@ describe('MatchBuilder', () => {
     });
 
     test('should build and match segment patterns correctly', () => {
-        const matcher = compile([[P.segment, "seg"], "end"], "MEXPR_TO_MATCHER");
+        const matcher = compile([[P.segment, "seg"], "end"]);
         const data = ["seg1", "seg2", "end"];
         const succeed = jest.fn((dict, nEaten) => {return dict});
 
@@ -49,19 +49,19 @@ describe('MatchBuilder', () => {
     });
 
     test('should build and match letrec patterns correctly', () => {
-        const matcher = compile([P.letrec, [["a", [P.constant, "b"]]], [[P.ref, "a"]]], "MEXPR_TO_MATCHER");
+        const matcher = compile([P.letrec, [["a", [P.constant, "b"]]], [[P.ref, "a"]]]);
         const data = ["b"];
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
-
+     
         const result = run_matcher(matcher, data, succeed);
-        
+        console.log("result", result)
         expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
            //@ts-ignore
         expect(result).toEqual(succeed.mock.results[0].value);
     });
 
     test('should build and match choose patterns correctly', () => {
-        const matcher = compile([P.choose, [[P.constant, "a"]], [[P.constant, "b"]]], "MEXPR_TO_MATCHER");
+        const matcher = compile([P.choose, [[P.constant, "a"]], [[P.constant, "b"]]]);
         const data = ["a"];
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 

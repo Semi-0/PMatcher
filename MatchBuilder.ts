@@ -1,5 +1,5 @@
 import type { matcher_callback } from "./MatchCallback";
-import {match_args} from "generic-handler/Predicates"
+import {execute_predicate, filter_predicates, match_args} from "generic-handler/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
 import { match_constant, match_element, match_empty, match_segment, match_wildcard } from "./MatchCallback";
 import {  match_choose, match_letrec, match_reference, match_new_var, match_compose } from "./MatchCombinator";
@@ -16,7 +16,7 @@ import { construct_simple_generic_procedure } from "generic-handler/GenericProce
 import { default_match_env } from "./MatchEnvironment";
 import { v4 as uuidv4 } from 'uuid';
 import { DictValue, get_value_sequence } from "./MatchDict/DictValue";
-
+import { match_preds, register_predicate, search_predicate, display_all_predicates } from "generic-handler/Predicates";
 
 
 export const compile = construct_simple_generic_procedure("compile", 1,
@@ -24,7 +24,6 @@ export const compile = construct_simple_generic_procedure("compile", 1,
         throw Error(`unrecognized pattern in the build procedure: ${inspect(matchers)}`)
     }
 )
-
 
 
 export const P = { // Stands for Pattern
@@ -43,18 +42,21 @@ export const P = { // Stands for Pattern
     extract_var_names: uuidv4()
 }
 
+register_predicate("array?", isArray)
 
 define_generic_procedure_handler(compile, 
-    isArray,
+    "array?",
     (pattern: any[]) => {
         return match_array(pattern.map((item: any) => compile(item)))
     }
 )
 
 
+register_predicate("constant?", is_match_constant)
+
 define_generic_procedure_handler(compile,
-    (pattern: any) => is_match_constant(pattern),
-    (pattern: any, opt) => {
+    "constant?",
+    (pattern: any) => {
         if ((isPair(pattern)) && (pattern.length == 2)){
             return match_constant(pattern[1])
         }
@@ -67,23 +69,12 @@ define_generic_procedure_handler(compile,
     }
 )
 
-// define_generic_procedure_handler(build, 
-//     (pattern: any[]) => is_match_repeated_pattern(pattern),
-//     (pattern: any[]) => {
-//         console.log("matched")
-//         if (pattern.length !== 2) {
-//             throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
-//         }
-//         const built_pattern = build(pattern[1])
-//         console.log("build(pattern[1])", built_pattern.toString() )
-//         return match_repeated_patterns(built_pattern)
-//     }
-// )
-
+register_predicate("match_constant?", is_match_constant)
 
 export function is_match_constant(pattern: any): boolean {
     return first_equal_with(pattern, P.constant) || isString(pattern)
 }
+
 
 export function first_equal_with(pattern: any, value: any): boolean {
     return isPair(pattern) && isString(first(pattern)) && first(pattern) === value
@@ -95,9 +86,11 @@ function is_all_other_element(pattern: any): boolean {
     return isString(pattern) && pattern === "..."
 }
 
+register_predicate("all_other_element?", is_all_other_element)
+
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_all_other_element(pattern),
-    (pattern: any[], opt) => {
+    "all_other_element?",
+    (pattern: any[]) => {
         return match_all_other_element()
     }
 )
@@ -107,9 +100,11 @@ function is_empty(pattern: any): boolean{
     return  pattern === P.empty
 }
 
+register_predicate("empty_matcher?", is_empty)
+
 define_generic_procedure_handler(compile,
-    (pattern: any) => is_empty(pattern),
-    (pattern: any, opt) => {
+    "empty_matcher?",
+    (pattern: any) => {
         return match_empty()
     }
 )
@@ -119,16 +114,22 @@ export function is_Letrec(pattern: any): boolean {
     return first_equal_with(pattern, P.letrec)
 }
 
+register_predicate("letrec?", is_Letrec)
+
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_Letrec(pattern),
-    (pattern: any[], opt) => {
+    "letrec?",
+    (pattern: any[]) => {
+        
+        console.log("executed letrec")
         if (pattern.length !== 3) {
             throw Error(`unrecognized pattern in the letrec procedure: ${inspect(pattern)}`)
         }
 
-        const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: compile(item[1], opt) }));
-
-        return match_letrec(bindings, compile(pattern[2], opt))
+        const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: compile(item[1]) }));
+        console.log("item[1]", inspect(pattern[1], {showHidden: true, depth: 50}))
+        console.log("bindings", inspect(bindings, {showHidden: true, depth: 50})) 
+        console.log("pattern[2]", inspect(pattern[2], {showHidden: true, depth: 50}))
+        return match_letrec(bindings, compile(pattern[2]))
     }
 )
 
@@ -137,10 +138,13 @@ export function is_compose(pattern: any[]): boolean{
     return first_equal_with(pattern, P.compose) 
 }
 
+register_predicate("compose?", is_compose)
+
 define_generic_procedure_handler(compile,
-    (pattern: any[]) => is_compose(pattern),
-    (pattern: any[], opt) => {
-        return match_compose(pattern.slice(1).map((item: any) => compile(item, opt)))
+    "compose?",
+    (pattern: any[]) => {
+        console.log("executed compose")
+        return match_compose(pattern.slice(1).map((item: any) => compile(item)))
     }
 )
 
@@ -148,10 +152,12 @@ export function is_select(pattern: any): boolean {
     return first_equal_with(pattern, P.choose)
 }
 
+register_predicate("select?", is_select)
+
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_select(pattern),
-    (pattern: any[], opt) => {
-        return match_choose(pattern.slice(1).map((item: any) => compile(item, opt)))
+    "select?",
+    (pattern: any[]) => {
+        return match_choose(pattern.slice(1).map((item: any) => compile(item)))
     }
 )
 
@@ -160,10 +166,12 @@ export function is_new_var(pattern: any): boolean {
     return first_equal_with(pattern, P.new)
 }
 
+register_predicate("new_var?", is_new_var)
+
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_new_var(pattern),
-    (pattern: any[], opt) => {
-        return match_new_var(pattern[1], compile(pattern[2], opt))
+    "new_var?",
+    (pattern: any[]) => {
+        return match_new_var(pattern[1], compile(pattern[2]))
     }
 )
 
@@ -172,9 +180,11 @@ function is_match_element(pattern: any): boolean {
    return first_equal_with(pattern, P.element)
 }
 
+register_predicate("match_element?", is_match_element)
+
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_match_element(pattern),
-    (pattern: any[], opt) => {
+    "match_element?",
+    (pattern: any[]) => {
         return match_element(pattern[1], pattern[2])
     }
 )
@@ -182,11 +192,13 @@ define_generic_procedure_handler(compile,
 
 function is_match_segment(pattern: any): boolean {
     return first_equal_with(pattern, P.segment)
-}
+}       
+
+register_predicate("match_segment?", is_match_segment)
 
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_match_segment(pattern),
-    (pattern: any[], opt) => {
+    "match_segment?",
+    (pattern: any[]) => {
         return match_segment(pattern[1], pattern[2])
     }
 )
@@ -197,9 +209,11 @@ export function is_match_reference(pattern: any): boolean {
     return first_equal_with(pattern, P.ref)
 }
 
+register_predicate("match_reference?", is_match_reference)
+
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_match_reference(pattern),
-    (pattern: any[], opt) => {
+    "match_reference?",
+    (pattern: any[]) => {
         return match_reference(pattern[1])
     }
 )
@@ -207,10 +221,13 @@ define_generic_procedure_handler(compile,
 
 function is_many(pattern: any): boolean{
     return first_equal_with(pattern, P.many) && pattern.length == 2
-}
+}   
 
-define_generic_procedure_handler(compile, is_many, 
-    (pattern: any[], opt) => {
+register_predicate("many?", is_many)
+
+define_generic_procedure_handler(compile, 
+    "many?",
+    (pattern: any[]) => {
         const matcher = pattern[1]
         
         const expr =  [P.letrec,
@@ -222,31 +239,29 @@ define_generic_procedure_handler(compile, is_many,
                             [P.ref, "repeat"]]]]],
             [[P.ref, "repeat"]]]
 
-        return compile(expr, opt)
-    }
-)
+            return compile(expr)
+    })
 
-function is_wildcard(pattern: any): boolean {
-    return first_equal_with(pattern, P.wildcard)
-}
-
-/// THIS IS SOOO DUUUMB
+// /// THIS IS SOOO DUUUMB
 export function extract_var_names(pattern: any[]): string[] {
 
     return pattern.flatMap((item: any) => {
-        const is = (head: string, value: any) => first_equal_with(head, value);
-        const excluded = Object.keys(P)
-            .filter((key: string) => {return (key == "match_element") || ( key == "match_segment ")})
-            .map((key: string) => {return P[key as keyof typeof P]})
-        const head = first(item)
-        if ((is(head, excluded)) || (is_match_constant(item))){
+        
+        const is_excluded = filter_predicates((name: string) => 
+            (name == "match_element") || (name == "match_segment")
+        ).some((name: string) => {
+            return execute_predicate(name, item)
+        })
+        
+        
+        if (is_excluded){
             return [];
         } 
-        else if (is_match_element(item)) {
+        else if (execute_predicate("match_element?", item)) {
             return [item[1]];
-        } else if (is_match_segment(item)) {
+        } else if (execute_predicate("match_segment?", item)) {
             return [item[1]];
-        } else if (isArray(item)) {
+        } else if (execute_predicate("array?", item)) {
             return extract_var_names(item);
         } else {
             return [];
@@ -258,16 +273,24 @@ function is_extract_var_names(pattern: any): boolean {
     return first_equal_with(pattern, P.extract_var_names)
 }
 
+register_predicate("extract_var_names?", is_extract_var_names)
+
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_extract_var_names(pattern),
-    (pattern: any[], opt) => {
+    "extract_var_names?",
+    (pattern: any[]) => {
         return extract_var_names(pattern[1])
     }
 )
 
+function is_wildcard(pattern: any): boolean {
+    return first_equal_with(pattern, P.wildcard)
+}
+
+register_predicate("wildcard?", is_wildcard)
+
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_wildcard(pattern),
-    (pattern: any[], opt) => {
+    "wildcard?",
+    (pattern: any[]) => {
         return match_wildcard()
     }
 )
@@ -297,8 +320,8 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 // const r = match(["b", "a", "b", "c"], expr)
 // console.log(inspect(r, {showHidden: true, depth: 50}))
 
-const r = match(["b", "a", "b", "a"], [P.many, [ "b" , [P.element, "a"]]])
-console.log(inspect(r, {showHidden: true, depth: 50}))
+// const r = match(["b", "a", "b", "a"], [P.many, [ "b" , [P.element, "a"]]])
+// console.log(inspect(r, {showHidden: true, depth: 50}))
 
 // short-hand interface 
 
