@@ -109,15 +109,11 @@ define_generic_procedure_handler(compile,
     "letrec?",
     (pattern: any[]) => {
         
-        console.log("executed letrec")
         if (pattern.length !== 3) {
             throw Error(`unrecognized pattern in the letrec procedure: ${inspect(pattern)}`)
         }
 
         const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: compile(item[1]) }));
-        console.log("item[1]", inspect(pattern[1], {showHidden: true, depth: 50}))
-        console.log("bindings", inspect(bindings, {showHidden: true, depth: 50})) 
-        console.log("pattern[2]", inspect(pattern[2], {showHidden: true, depth: 50}))
         return match_letrec(bindings, compile(pattern[2]))
     }
 )
