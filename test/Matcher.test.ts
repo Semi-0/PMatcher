@@ -264,3 +264,60 @@ test('get_value_sequence returns all values in the map as an array', () => {
     const result = get_value_sequence(dictValue);
     expect(result).toEqual([value1, value2]);
 });
+
+import { extract_var_names } from "../MatchBuilder";
+
+describe('extract_var_names', () => {
+    test('should extract variable names from match elements and segments', () => {
+        const pattern = [
+            [P.element, "x"],
+            [P.segment, "y"],
+            [P.constant, "a"],
+            [P.letrec, [["a", [P.constant, "b"]]], [[P.ref, "a"]]],
+            [P.choose, [[P.constant, "a"]], [[P.constant, "b"]]],
+            [P.new, ["z"]],
+            [P.ref, "a"],
+            [P.compose, [P.constant, "a"]],
+            P.empty,
+            P.wildcard,
+            ["nested", [P.element, "nestedVar"]]
+        ];
+
+        const result = extract_var_names(pattern);
+        expect(result).toEqual(["x", "y", "nestedVar"]);
+    });
+
+    test('should return an empty array when there are no variable names', () => {
+        const pattern = [
+            [P.constant, "a"],
+            [P.letrec, [["a", [P.constant, "b"]]], [[P.ref, "a"]]],
+            [P.choose, [[P.constant, "a"]], [[P.constant, "b"]]],
+            [P.new, ["z"]],
+            [P.ref, "a"],
+            [P.compose, [P.constant, "a"]],
+            P.empty,
+            P.wildcard
+        ];
+
+        const result = extract_var_names(pattern);
+        expect(result).toEqual([]);
+    });
+
+    test('should handle nested arrays correctly', () => {
+        const pattern = [
+            [P.element, "x"],
+            ["nested", [P.element, "nestedVar"]],
+            ["deeply", ["nested", [P.element, "deepVar"]]]
+        ];
+
+        const result = extract_var_names(pattern);
+        expect(result).toEqual(["x", "nestedVar", "deepVar"]);
+    });
+
+    test('should handle empty patterns', () => {
+        const pattern: any[] = [];
+
+        const result = extract_var_names(pattern);
+        expect(result).toEqual([]);
+    });
+});
