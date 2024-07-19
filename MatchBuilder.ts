@@ -209,9 +209,8 @@ define_generic_procedure_handler(compile,
 export function extract_var_names(pattern: any[]): string[] {
 
     return pattern.flatMap((item: any) => {
-        
         const is_excluded = filter_predicates((name: string) => 
-            (name == "match_element") || (name == "match_segment")
+            (name == "match_element") || (name == "match_segment") || (name == "array?")
         ).some((name: string) => {
             return execute_predicate(name, item)
         })
@@ -222,11 +221,14 @@ export function extract_var_names(pattern: any[]): string[] {
         } 
         else if (execute_predicate("match_element?", item)) {
             return [item[1]];
-        } else if (execute_predicate("match_segment?", item)) {
+        } 
+        else if (execute_predicate("match_segment?", item)) {
             return [item[1]];
-        } else if (execute_predicate("array?", item)) {
+        } 
+        else if (execute_predicate("array?", item)) {
             return extract_var_names(item);
-        } else {
+        } 
+        else {
             return [];
         }
     });

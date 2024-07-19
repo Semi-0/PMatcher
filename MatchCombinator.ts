@@ -47,7 +47,6 @@ export function match_compose(matchers: matcher_callback[]) : matcher_callback{
                 return handleMatchError(result, matchers.findIndex((m) => m === matcher));
             }
             else if (isPair(data_list)){
-                console.log("data list unconsumed!:", data_list)
                return createMatchFailure(FailedMatcher.Compose, 
                                          FailedReason.UnConsumedInput, 
                                          data_list, 0, null)  
