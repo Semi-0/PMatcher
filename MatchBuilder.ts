@@ -10,7 +10,7 @@ import { inspect } from "util";
 import { matchSuccess, type MatchFailure } from "./MatchResult";
 import { match_all_other_element } from "./MatchCallback";
 
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { define_generic_procedure_handler, get_all_critics } from "generic-handler/GenericProcedure";
 
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
 import { default_match_env } from "./MatchEnvironment";
@@ -58,8 +58,8 @@ register_predicate("constant?", (pattern: any) => {
 })
 
 define_generic_procedure_handler(compile,
-    "constant?",
-    (pattern: any) => {
+    is_match_constant,
+    (pattern: any, opt) => {
         if ((isPair(pattern)) && (pattern.length == 2)){
             return match_constant(pattern[1])
         }
@@ -85,8 +85,8 @@ register_predicate("all_other_element?", (pattern: any) => {
 })
 
 define_generic_procedure_handler(compile, 
-    "all_other_element?",
-    (pattern: any[]) => {
+    is_all_other_element,
+    (pattern: any[], opt) => {
         return match_all_other_element()
     }
 )
@@ -96,8 +96,8 @@ register_predicate("empty_matcher?", (pattern: any) => {
 })
 
 define_generic_procedure_handler(compile,
-    "empty_matcher?",
-    (pattern: any) => {
+    is_empty,
+    (pattern: any, opt) => {
         return match_empty()
     }
 )
@@ -107,9 +107,8 @@ register_predicate("letrec?", (pattern: any) => {
 })
 
 define_generic_procedure_handler(compile, 
-    "letrec?",
-    (pattern: any[]) => {
-        
+    is_Letrec,
+    (pattern: any[], opt) => {
         if (pattern.length !== 3) {
             throw Error(`unrecognized pattern in the letrec procedure: ${inspect(pattern)}`)
         }
@@ -124,10 +123,9 @@ register_predicate("compose?", (pattern: any[]) => {
 })
 
 define_generic_procedure_handler(compile,
-    "compose?",
-    (pattern: any[]) => {
-        console.log("executed compose")
-        return match_compose(pattern.slice(1).map((item: any) => compile(item)))
+    is_compose,
+    (pattern: any[], opt) => {
+        return match_compose(pattern.slice(1).map((item: any) => compile(item, opt)))
     }
 )
 
@@ -136,9 +134,9 @@ register_predicate("select?", (pattern: any) => {
 })
 
 define_generic_procedure_handler(compile, 
-    "select?",
-    (pattern: any[]) => {
-        return match_choose(pattern.slice(1).map((item: any) => compile(item)))
+    is_select,
+    (pattern: any[], opt) => {
+        return match_choose(pattern.slice(1).map((item: any) => compile(item, opt)))
     }
 )
 
@@ -147,9 +145,9 @@ register_predicate("new_var?", (pattern: any) => {
 })
 
 define_generic_procedure_handler(compile, 
-    "new_var?",
-    (pattern: any[]) => {
-        return match_new_var(pattern[1], compile(pattern[2]))
+    is_new_var,
+    (pattern: any[], opt) => {
+        return match_new_var(pattern[1], compile(pattern[2], opt))
     }
 )
 
@@ -158,8 +156,8 @@ register_predicate("match_element?", (pattern: any) => {
 })
 
 define_generic_procedure_handler(compile, 
-    "match_element?",
-    (pattern: any[]) => {
+    is_match_element,
+    (pattern: any[], opt) => {
         return match_element(pattern[1], pattern[2])
     }
 )
@@ -169,8 +167,8 @@ register_predicate("match_segment?", (pattern: any) => {
 })
 
 define_generic_procedure_handler(compile, 
-    "match_segment?",
-    (pattern: any[]) => {
+    is_match_segment,
+    (pattern: any[], opt) => {
         return match_segment(pattern[1], pattern[2])
     }
 )
@@ -180,8 +178,8 @@ register_predicate("match_reference?", (pattern: any) => {
 })
 
 define_generic_procedure_handler(compile, 
-    "match_reference?",
-    (pattern: any[]) => {
+    is_match_reference,
+    (pattern: any[], opt) => {
         return match_reference(pattern[1])
     }
 )
@@ -254,12 +252,12 @@ register_predicate("wildcard?", (pattern: any) => {
 export function extract_var_names(pattern: any[]): string[] {
 
     return pattern.flatMap((item: any) => {
-        const is = (head: string, value: any) => first_equal_with(head, value);
-        const excluded = Object.keys(P)
-            .filter((key: string) => {return (key == "match_element") || ( key == "match_segment ")})
-            .map((key: string) => {return P[key as keyof typeof P]})
-        const head = first(item)
-        if ((is(head, excluded)) || (is_match_constant(item))){
+        const excluded = get_all_critics(compile).filter((pred: (arg: any) => Boolean) => {
+            return pred !== is_match_element && pred !== is_match_segment && pred !== isArray
+        }).some((pred: (arg: any) => Boolean) => {
+            return pred(item)
+        })
+        if (excluded){
             return [];
         } 
         else if (is_match_element(item)) {
