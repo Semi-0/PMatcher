@@ -1,4 +1,6 @@
 import type { MatchDict } from "../MatchDict/MatchDict";
+import { get_value } from "../MatchDict/DictInterface";
+
 
 export class MatchResult{
     public readonly dictionary: MatchDict;
@@ -11,10 +13,7 @@ export class MatchResult{
         }
 
     safeGet(key: string) : any{
-        if (!this.dictionary.dict.has(key)){
-            throw new Error(`Key ${key} not found in dictionary`)
-        }
-        return this.dictionary.dict.get(key)
+        return get_value(key, this.dictionary)
     }
 
     apply(callback: (...args: any) => any, ...args: string[]) : any{

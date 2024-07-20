@@ -1,6 +1,6 @@
 {
   "name": "pmatcher",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "module": "index.ts",
   "devDependencies": {
     "@types/bun": "latest"

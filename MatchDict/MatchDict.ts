@@ -115,7 +115,12 @@ define_generic_procedure_handler(get_value,
         const v = dict.dict.get(key)
 
         if ((v !== undefined) && (v !== null)){
-            return get_most_bottom_value(v)
+            if (v.referenced_definition.size > 1){
+                return get_value_sequence(v)
+            }
+            else{
+                return get_most_bottom_value(v)
+            }
         }
         else{
             throw Error("try to get default value when it is not bounded, key = " + inspect(key) + " dict = " + inspect(dict))
