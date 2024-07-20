@@ -19,6 +19,7 @@ import { construct_simple_generic_procedure } from "generic-handler/GenericProce
 import { default_match_env } from "./MatchEnvironment";
 import { v4 as uuidv4 } from 'uuid';
 import { DictValue, get_value_sequence } from "./MatchDict/DictValue";
+import type { MatchPartialSuccess } from "./MatchResult/PartialSuccess";
 
 
 
@@ -220,9 +221,7 @@ define_generic_procedure_handler(compile, is_many,
     }
 )
 
-function is_wildcard(pattern: any): boolean {
-    return first_equal_with(pattern, P.wildcard)
-}
+
 
 /// THIS IS SOOO DUUUMB
 export function extract_var_names(pattern: any[]): string[] {
@@ -259,6 +258,11 @@ define_generic_procedure_handler(compile,
     }
 )
 
+
+function is_wildcard(pattern: any): boolean {
+    return pattern === P.wildcard 
+}
+
 define_generic_procedure_handler(compile, 
     is_wildcard,
     (pattern: any[]) => {
@@ -277,35 +281,15 @@ define_generic_procedure_handler(compile,
     }
 )
 
-export function run_matcher(matcher: matcher_instance, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): MatchDict | MatchFailure {
+
+
+export function run_matcher(matcher: matcher_instance, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): any | MatchResult | MatchPartialSuccess | MatchFailure {
 
     return internal_match(matcher, [data], empty_match_dict(), default_match_env(), (dict, nEaten) => {
         return succeed(dict, nEaten)
     })
 }
 
-
-
-
-
-// todo: 1 generalize many
-// todo: 2 add begin expression for allowing partial match
-// const expr =  [P.letrec,
-//     [["repeat", 
-//             [P.choose,
-//                 P.empty,
-//                 [P.new, ["a"],
-//                 [P.compose,
-//                     "b",
-//                     [P.element, "a"],
-//                     [P.ref, "repeat"]]]]]],
-//     [[P.ref, "repeat"]]]
-
-// const r = match(["b", "a", "b", "c"], expr)
-// console.log(inspect(r, {showHidden: true, depth: 50}))
-
-const r = match(["b", "a", "b", "c", "b", "e"], [P.many, [ "b" , [P.element, "a"]]])
-console.log(inspect(r, {showHidden: true, depth: 50}))
 
 // short-hand interface 
 
@@ -319,7 +303,7 @@ console.log(inspect(r, {showHidden: true, depth: 50}))
  * @returns An object containing the match dictionary and the number of elements consumed if successful,
  *          or a MatchFailure object if the match fails.
  */
-export function match(input: any[], matcher_expr: any[]): MatchResult | MatchFailure {
+export function match(input: any[], matcher_expr: any[]): any | MatchResult | MatchPartialSuccess | MatchFailure {
     const m = compile(matcher_expr);
 
     const result = internal_match(m, input, empty_match_dict(), default_match_env(), (dict, e) => { return new MatchResult(dict, e) });

@@ -20,6 +20,11 @@ define_generic_procedure_handler(isFailed,
    (x: MatchFailure) => true
 )
 
+
+export const isPartialSuccess = construct_simple_generic_procedure("partialSuccess", 1, (x: any) => {
+    return isMatchPartialSuccess(x)
+})
+
 export const isSucceed = construct_simple_generic_procedure("succeed", 1, (x: any) => {
     if (typeof x === "boolean") {
         return x

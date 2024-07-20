@@ -36,7 +36,9 @@ export function match_constant(pattern_constant: string): matcher_instance {
                                       [data[0], pattern_constant], null);
         }
     };
-    return createMatcherInstance(MatcherName.Constant, proc)
+    return createMatcherInstance(MatcherName.Constant, proc, new Map<string, any>([
+        ["constant", pattern_constant]
+    ]))
 }
 
 export function match_wildcard(): matcher_instance {
@@ -341,41 +343,37 @@ export function match_choose(matchers: matcher_instance[]): matcher_instance {
 
 // match_begin is a special matcher that match with several submatcher, however the return value is much nuanced
 // if some of the matcher failed, it returns matchPartialSuccess with information about success matcher and failed matcher
-
-export function match_begin(matchers: matcher_instance[]): matcher_instance{
+export function match_begin(matchers: matcher_instance[]): matcher_instance {
     const proc = (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        
         const loop = (remain_matchers: matcher_instance[], succeedResult: any[]): any => {
-            if (isEmptyArray(remain_matchers)){
-                return createMatchFailure(MatcherName.Begin, FailedReason.UnexpectedEmptyInput, data, null)
+            if (isEmptyArray(remain_matchers)) {
+                return createMatchFailure(MatcherName.Begin, FailedReason.UnexpectedEmptyInput, data, null);
             }
-            else if (remain_matchers.length == 1){
-                return internal_match(remain_matchers[0], data, dictionary, match_env, succeed)
-            }
-            else{
-                const matcher = first(remain_matchers)
-                const result = internal_match(matcher, data, dictionary, match_env, succeed)
-                if (isSucceed(result)){
-                    return loop(rest(remain_matchers), [...succeedResult, result])
+
+            const matcher = first(remain_matchers);
+            const result = internal_match(matcher, data, dictionary, match_env, succeed);
+
+            if (isSucceed(result)) {
+                if (remain_matchers.length === 1) {
+                    return result;
                 }
                 else{
-                    if (succeedResult.length == 0){
-                        return createMatchFailure(MatcherName.Begin, FailedReason.NonOfTheMatcherSucceed, data, result)
-                    }
-                    else{
-                        return createMatchPartialSuccess(matchers.slice(0, succeedResult.length).map((m) => internal_get_name(m)), 
-                                                                           succeedResult.length, 
-                                                                           succeedResult, 
-                                                                           result)
-                    }
+                    return loop(rest(remain_matchers), [...succeedResult, result]);
+                }
+            } else {
+                if (succeedResult.length === 0) {
+                    return createMatchFailure(MatcherName.Begin, FailedReason.NonOfTheMatcherSucceed, [data, ["matchers:", matchers]], result);
+                }
+                else{
+                    return createMatchPartialSuccess(matchers.slice(0, succeedResult.length), succeedResult.length, succeedResult, result);
                 }
             }
-        }
-        return loop(matchers, [])
-    }
+        };
+        return loop(matchers, []);
+    };
     return createMatcherInstance(MatcherName.Begin, proc, new Map<string, any>([
         ["matchers", matchers]
-    ]))
+    ]));
 }
 
 export function match_reference(reference_symbol: string): matcher_instance{

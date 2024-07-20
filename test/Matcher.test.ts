@@ -9,6 +9,7 @@ import { inspect } from "util";
 import { get_value } from "../MatchDict/DictInterface";
 import { clearRefHistory } from "../MatchDict/ScopeReference";
 import { MatcherName } from "../NameDict";
+import {getSucceedMatchersNames} from "../MatchResult/PartialSuccess"
 
 describe('MatchBuilder', () => {
     test('should build and match constant patterns correctly', () => {
@@ -266,7 +267,7 @@ test('get_value_sequence returns all values in the map as an array', () => {
 });
 
 import { extract_var_names } from "../MatchBuilder";
-import { isFailed, isSucceed } from "../predicates";
+import { isFailed, isPartialSuccess, isSucceed } from "../predicates";
 
 describe('extract_var_names', () => {
     test('should extract variable names from match elements and segments', () => {
@@ -320,5 +321,38 @@ describe('extract_var_names', () => {
 
         const result = extract_var_names(pattern);
         expect(result).toEqual([]);
+    });
+});
+
+describe('match_begin', () => {
+    const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+    test('should succeed when all matchers succeed', () => {
+        const matcher = compile([P.begin, ["a", P.wildcard, P.wildcard], ["a", [P.element, "x"], "b"]]);
+        const data = ["a", 42, "b"];
+        const result = run_matcher(matcher, data, succeed);
+        expect(isSucceed(result)).toBe(true);
+      
+    });
+
+    test('should return partial success when some matchers succeed', () => {
+        const matcher = compile([P.begin, ["a", P.wildcard, P.wildcard], ["a", [P.element, "x"], "c"]]);
+        const data = ["a", 42, "b"];
+        const result = run_matcher(matcher, data, succeed);
+
+        console.log("result =", result)
+        expect(isPartialSuccess(result)).toBe(true);
+        expect(getSucceedMatchersNames(result)).toEqual([MatcherName.Array]);
+        expect(result.succeedCount).toEqual(1);
+    });
+
+    test('should fail when all matchers fail', () => {
+        const matcher = compile([P.begin, "x", "y", "z"]);
+        const data = ["a", "b", "c"];
+        const result = run_matcher(matcher, data, succeed);
+
+        expect(isFailed(result)).toBe(true);
+        expect(result.reason).toBe(FailedReason.NonOfTheMatcherSucceed);
+        expect(result.partialSuccess).toBeUndefined();
     });
 });
