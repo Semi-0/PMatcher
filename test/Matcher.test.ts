@@ -127,7 +127,7 @@ describe('MatchBuilder', () => {
     });
 
     test('should build and match many patterns correctly', () => {
-        const matcher = compile([P.many, ["b", [P.element, "a"]]], "MEXPR_TO_MATCHER");
+        const matcher = compile([P.many, ["b", [P.element, "a"]]]);
         const data = ["b", "a", "b", "a"];
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
@@ -139,7 +139,7 @@ describe('MatchBuilder', () => {
     });
 
     test('should return MatchFailure when many patterns do not match', () => {
-        const matcher = compile([P.many, ["b", [P.element, "a"]]], "MEXPR_TO_MATCHER");
+        const matcher = compile([P.many, ["b", [P.element, "a"]]] );
         const data = ["b", "a", "c"];
         const succeed = jest.fn();
 

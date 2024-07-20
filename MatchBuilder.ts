@@ -282,6 +282,8 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 
 
 
+
+
 // todo: 1 generalize many
 // todo: 2 add begin expression for allowing partial match
 // const expr =  [P.letrec,
@@ -298,8 +300,8 @@ export function run_matcher(matcher: matcher_callback, data: any[], succeed: (di
 // const r = match(["b", "a", "b", "c"], expr)
 // console.log(inspect(r, {showHidden: true, depth: 50}))
 
-// const r = match(["b", "a", "b", "a"], [P.many, [ "b" , [P.element, "a"]]])
-// console.log(inspect(r, {showHidden: true, depth: 50}))
+const r = match(["b", "a", "b", "c", "b", "e"], [P.many, [ "b" , [P.element, "a"]]])
+console.log(inspect(r, {showHidden: true, depth: 50}))
 
 // short-hand interface 
 
