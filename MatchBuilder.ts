@@ -1,14 +1,17 @@
-import type { matcher_callback } from "./MatchCallback";
+import type { matcher_callback, matcher_instance } from "./MatchCallback";
 import {match_args} from "generic-handler/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
-import { match_constant, match_element, match_empty, match_segment, match_wildcard } from "./MatchCallback";
-import {  match_choose, match_letrec, match_reference, match_new_var, match_compose } from "./MatchCombinator";
+
+import {  match_choose, match_letrec, match_reference, match_new_var, match_compose, match_empty,
+    match_element, match_segment, match_wildcard,  match_constant, match_all_other_element, match_begin, match_segment_independently} from "./MatchCombinator";
 import { empty_match_dict } from "./MatchDict/MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
 import { inspect } from "util";
-import { matchSuccess, type MatchFailure } from "./MatchResult";
-import { match_all_other_element } from "./MatchCallback";
+import { internal_get_args, internal_get_name, internal_match } from "./MatchCallback";
+import { MatchResult } from "./MatchResult/MatchResult"
+import { MatchFailure } from "./MatchResult/MatchFailure"; 
+import { isSucceed, isFailed } from "./predicates";
 
 import { define_generic_procedure_handler, get_all_critics } from "generic-handler/GenericProcedure";
 
@@ -40,7 +43,8 @@ export const P = { // Stands for Pattern
     compose: uuidv4(),
     empty: uuidv4(),
     wildcard: uuidv4(),
-    extract_var_names: uuidv4()
+    extract_var_names: uuidv4(),
+    begin: uuidv4()
 }
 
 
@@ -67,18 +71,7 @@ define_generic_procedure_handler(compile,
     }
 )
 
-// define_generic_procedure_handler(build, 
-//     (pattern: any[]) => is_match_repeated_pattern(pattern),
-//     (pattern: any[]) => {
-//         console.log("matched")
-//         if (pattern.length !== 2) {
-//             throw Error(`unrecognized pattern in the repeated procedure: ${inspect(pattern)}`)
-//         }
-//         const built_pattern = build(pattern[1])
-//         console.log("build(pattern[1])", built_pattern.toString() )
-//         return match_repeated_patterns(built_pattern)
-//     }
-// )
+
 
 
 export function is_match_constant(pattern: any): boolean {
@@ -260,22 +253,33 @@ function is_extract_var_names(pattern: any): boolean {
 }
 
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_extract_var_names(pattern),
-    (pattern: any[], opt) => {
+     is_extract_var_names,
+    (pattern: any[]) => {
         return extract_var_names(pattern[1])
     }
 )
 
 define_generic_procedure_handler(compile, 
-    (pattern: any[]) => is_wildcard(pattern),
-    (pattern: any[], opt) => {
+    is_wildcard,
+    (pattern: any[]) => {
         return match_wildcard()
     }
 )
 
-export function run_matcher(matcher: matcher_callback, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): MatchDict | MatchFailure {
+function is_begin(pattern: any): boolean {
+    return first_equal_with(pattern, P.begin)
+}
 
-    return matcher([data], empty_match_dict(), default_match_env(), (dict, nEaten) => {
+define_generic_procedure_handler(compile,
+    is_begin,
+    (pattern: any[]) => {
+        return match_begin(pattern.slice(1).map((item: any) => compile(item)))
+    }
+)
+
+export function run_matcher(matcher: matcher_instance, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): MatchDict | MatchFailure {
+
+    return internal_match(matcher, [data], empty_match_dict(), default_match_env(), (dict, nEaten) => {
         return succeed(dict, nEaten)
     })
 }
@@ -306,13 +310,6 @@ console.log(inspect(r, {showHidden: true, depth: 50}))
 // short-hand interface 
 
 
-/**
- * Interface representing the result of a successful match.
- */
-interface MatchResult {
-    dict: MatchDict;  // The dictionary containing matched values.
-    eaten: number;    // The number of elements consumed in the match.
-}
 
 /**
  * Attempts to match the input array against the provided matcher expression.
@@ -325,9 +322,9 @@ interface MatchResult {
 export function match(input: any[], matcher_expr: any[]): MatchResult | MatchFailure {
     const m = compile(matcher_expr);
 
-    const result = run_matcher(m, input, (dict, e) => { return { dict: dict, eaten: e } });
+    const result = internal_match(m, input, empty_match_dict(), default_match_env(), (dict, e) => { return new MatchResult(dict, e) });
 
-    if (matchSuccess(result)) {
+    if (isSucceed(result)) {
         // @ts-ignore
         return result as MatchResult;
     } else {
@@ -345,7 +342,7 @@ export function match(input: any[], matcher_expr: any[]): MatchResult | MatchFai
  */
 export function try_match(input: any[], matcher_expr: string[]): boolean {
     const result = match(input, matcher_expr);
-    if (matchSuccess(result)) {
+    if (isSucceed(result)) {
         return true;
     } else {
         return false;

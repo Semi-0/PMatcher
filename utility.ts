@@ -1,7 +1,7 @@
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
-import type { MatchFailure } from "./MatchResult"
-import { isMatchFailure } from "./MatchResult"
+import type { MatchFailure } from "./MatchResultO"
+import { isMatchFailure } from "./MatchResultO"
 
 export const equal = construct_simple_generic_procedure("equal", 2,
     (A: any, B: any) => A === B

@@ -3,11 +3,12 @@ import { compile, P, run_matcher } from "../MatchBuilder";
 import { MatchDict, empty_match_dict } from "../MatchDict/MatchDict";
 import type { MatchEnvironment } from "../MatchEnvironment";
 import {  default_match_env } from "../MatchEnvironment";
-import type { MatchFailure } from "../MatchResult";
-import { FailedMatcher, FailedReason, isMatchFailure, matchSuccess } from "../MatchResult";
+import { MatchFailure, FailedReason } from "../MatchResult/MatchFailure";
+import { MatchResult } from "../MatchResult/MatchResult";
 import { inspect } from "util";
 import { get_value } from "../MatchDict/DictInterface";
 import { clearRefHistory } from "../MatchDict/ScopeReference";
+import { MatcherName } from "../NameDict";
 
 describe('MatchBuilder', () => {
     test('should build and match constant patterns correctly', () => {
@@ -16,7 +17,7 @@ describe('MatchBuilder', () => {
         const succeed = jest.fn((dict, nEaten) => { return {dict, nEaten} });
 
         const result = run_matcher(matcher, data, succeed);
-
+        console.log(result)
         expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
         //@ts-ignore
         expect(result).toEqual(succeed.mock.results[0].value);
@@ -95,9 +96,8 @@ describe('MatchBuilder', () => {
         const result: MatchFailure | MatchDict = run_matcher(matcher, data, succeed);
 
         expect(result).toEqual(expect.objectContaining({
-            matcher: FailedMatcher.Constant,
-            reason: FailedReason.UnexpectedInput,
-            position: 0
+            matcher: MatcherName.Constant,
+            reason: FailedReason.UnexpectedInput
         }));
         expect(succeed).not.toHaveBeenCalled();
     });
@@ -145,7 +145,7 @@ describe('MatchBuilder', () => {
 
         const result: MatchFailure | MatchDict = run_matcher(matcher, data, succeed);
 
-        expect(isMatchFailure(result)).toEqual(true);
+        expect(isFailed(result)).toEqual(true);
         expect(succeed).not.toHaveBeenCalled();
     });
 
@@ -186,7 +186,7 @@ describe('MatchDict', () => {
             });
 
       
-            expect(matchSuccess(result)).toBe(true)
+            expect(isSucceed(result)).toBe(true)
 
         });
     });
@@ -213,7 +213,7 @@ test('letrec pattern with repeat', () => {
 
     // Expected result
  
-    expect(matchSuccess(r)).toEqual(true);
+    expect(isSucceed(r)).toEqual(true);
 });
 
 
@@ -266,6 +266,7 @@ test('get_value_sequence returns all values in the map as an array', () => {
 });
 
 import { extract_var_names } from "../MatchBuilder";
+import { isFailed, isSucceed } from "../predicates";
 
 describe('extract_var_names', () => {
     test('should extract variable names from match elements and segments', () => {
