@@ -21,10 +21,15 @@ export type matcher_instance = {
     name: MatcherName,
     args: Map<string, any> | null, 
     procedure: matcher_callback
+    index: string | null // for tracing matchindex
+} 
+
+export function is_match_instance(matcher: any) : matcher is matcher_instance{
+    return matcher && typeof matcher === "object" && typeof matcher.name === "string" && typeof matcher.procedure === "function"
 }
 
-export function createMatcherInstance(name: MatcherName, procedure: matcher_callback, args : null | Map<string, any> = null): matcher_instance {
-    return {name, args, procedure}
+export function createMatcherInstance(name: MatcherName, procedure: matcher_callback, args : null | Map<string, any> = null, index: string | null = null): matcher_instance {
+    return {name, args, procedure, index}
 }
 
 export function internal_get_vars(matcher_instance: matcher_instance): Map<string, any> | null {

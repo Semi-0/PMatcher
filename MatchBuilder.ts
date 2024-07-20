@@ -1,7 +1,7 @@
 import type { matcher_callback, matcher_instance } from "./MatchCallback";
 import {match_args} from "generic-handler/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
-
+import { is_match_instance } from "./MatchCallback";
 import {  match_choose, match_letrec, match_reference, match_new_var, match_compose, match_empty,
     match_element, match_segment, match_wildcard,  match_constant, match_all_other_element, match_begin, match_segment_independently, match_extract_matcher} from "./MatchCombinator";
 import { empty_match_dict } from "./MatchDict/MatchDict";
@@ -304,6 +304,13 @@ define_generic_procedure_handler(compile,
         const matcher_name = pattern[1]
         const matcher_expr = pattern[2]
         return match_extract_matcher(matcher_name, compile(matcher_expr))
+    }
+)
+
+define_generic_procedure_handler(compile,
+    is_match_instance,
+    (pattern: any[]) => {
+        return pattern
     }
 )
 
