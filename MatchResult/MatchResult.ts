@@ -9,16 +9,17 @@ export class MatchResult{
             this.dictionary = _dictionary;
             this.nEaten = _nEaten;
         }
-    
-    public operation(callback: (...args: any[]) => any) : any{
-         const keys = Array.from(this.dictionary.dict.keys())
-         const values = keys.map((key) => this.dictionary.dict.get(key))
-         return callback(...values)
+
+    safeGet(key: string) : any{
+        if (!this.dictionary.dict.has(key)){
+            throw new Error(`Key ${key} not found in dictionary`)
+        }
+        return this.dictionary.dict.get(key)
     }
 
-    public do(callback: (...args: any[]) => any) : any{
-        // short for operation
-        return this.operation(callback)
+    apply(callback: (...args: any) => any, ...args: string[]) : any{
+        const vs = args.map(arg => this.safeGet(arg))
+        return callback(...vs)
     }
 }
 
