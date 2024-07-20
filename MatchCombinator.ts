@@ -1,7 +1,7 @@
 import { MatchDict, empty_match_dict, get_raw_entity } from "./MatchDict/MatchDict";
 import type { matcher_callback } from "./MatchCallback";
 import { inspect } from "util";
-import { first, rest, isPair, isEmptyArray } from "./utility";
+import { first, rest, isPair, isEmptyArray, isArray } from "./utility";
 import type { ScopeReference } from "./MatchDict/ScopeReference";
 import { extend, get_value } from "./MatchDict/DictInterface";
 import { default_match_env, get_current_scope, type MatchEnvironment } from "./MatchEnvironment";
@@ -11,7 +11,7 @@ import { construct_dict_value } from "./MatchDict/DictValue";
 import { is_will_define, will_define } from "./MatchDict/DictValue";
 import type { matcher_instance } from "./MatchCallback";
 import { createMatchFailure } from "./MatchResult/MatchFailure";
-import { createMatcherInstance, internal_match, internal_get_name } from "./MatchCallback";
+import { createMatcherInstance, internal_match, internal_get_name, internal_get_args } from "./MatchCallback";
 import { MatcherName } from "./NameDict";
 import { FailedReason } from "./MatchResult/MatchFailure";
 import { equal } from "./utility";
@@ -442,3 +442,34 @@ export function match_new_var(names: string[], body: matcher_instance): matcher_
     ]))
 }
 
+
+
+export function match_extract_matcher(matcher_name: string, matcher_expr: matcher_instance): matcher_instance {
+    return createMatcherInstance(MatcherName.ExtractMatcher, (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        
+        const loop = (instance: matcher_instance): any => {
+            const name = internal_get_name(instance)
+            if (name === MatcherName.Array) {
+                const result: any[] = internal_get_args(instance, "matchers")
+                if (isArray(result)) {
+                    return match_array(result.map((matcher) => loop(matcher)))
+                }
+                else {
+                    return createMatchFailure(MatcherName.ExtractMatcher, FailedReason.UnexpectedEnd, result, null)
+                }
+            }
+            else if (name === matcher_name) {
+                return instance
+            }
+            else {
+                return match_wildcard()
+            }
+        }
+        
+        return internal_match(loop(matcher_expr), data, dictionary, match_env, succeed)
+    
+    }, new Map<string, any>([
+        ["matcher_name", matcher_name],
+        ["matcher_expr", matcher_expr]
+    ]))
+}

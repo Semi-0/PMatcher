@@ -10,6 +10,7 @@ import { get_value } from "../MatchDict/DictInterface";
 import { clearRefHistory } from "../MatchDict/ScopeReference";
 import { MatcherName } from "../NameDict";
 import {getSucceedMatchersNames} from "../MatchResult/PartialSuccess"
+import {internal_get_name, internal_get_args, internal_get_vars} from "../MatchCallback"
 
 describe('MatchBuilder', () => {
     test('should build and match constant patterns correctly', () => {
@@ -354,5 +355,31 @@ describe('match_begin', () => {
         expect(isFailed(result)).toBe(true);
         expect(result.reason).toBe(FailedReason.NonOfTheMatcherSucceed);
         expect(result.partialSuccess).toBeUndefined();
+    });
+});
+
+describe('extract_matcher', () => {
+    test('should extract matcher correctly', () => {
+        const matcher = compile([P.extract_matcher, MatcherName.Constant, [[P.constant, "a"], [P.element, "x"], [P.constant, "b"]]]);
+        const data = ["a", "value", "b"];
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = run_matcher(matcher, data, succeed);
+
+        expect(isSucceed(result)).toBe(true);
+    });
+
+      test('should handle nested matchers', () => {
+        // when extract the array, it compare the structure solely
+        const matcher = compile([P.extract_matcher, MatcherName.Array, [[P.constant, "a"],  [[P.element, "x"], [P.constant, "b"]], [P.constant, "c"]]]);
+        const data = ["e", ["c", "f"], "g"];
+
+        const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
+
+        const result = run_matcher(matcher, data, succeed);
+ 
+
+        expect(isSucceed(result)).toBe(true);
+
     });
 });

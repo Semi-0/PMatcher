@@ -18,5 +18,6 @@ export enum MatcherName {
     Begin = "match_begin",
     Letrec = "match_letrec",
     NewVar = "match_new_var",
-    Reference = "match_reference"
+    Reference = "match_reference",
+    ExtractMatcher = "match_extract_matcher"
 }

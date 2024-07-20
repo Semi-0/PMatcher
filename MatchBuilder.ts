@@ -3,7 +3,7 @@ import {match_args} from "generic-handler/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
 
 import {  match_choose, match_letrec, match_reference, match_new_var, match_compose, match_empty,
-    match_element, match_segment, match_wildcard,  match_constant, match_all_other_element, match_begin, match_segment_independently} from "./MatchCombinator";
+    match_element, match_segment, match_wildcard,  match_constant, match_all_other_element, match_begin, match_segment_independently, match_extract_matcher} from "./MatchCombinator";
 import { empty_match_dict } from "./MatchDict/MatchDict";
 import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
@@ -38,6 +38,7 @@ export const P = { // Stands for Pattern
     new_obj: uuidv4(),
     element: uuidv4(),
     segment: uuidv4(),
+    segment_independently: uuidv4(),
     ref: uuidv4(),
     constant: uuidv4(),
     many: uuidv4(),
@@ -45,7 +46,8 @@ export const P = { // Stands for Pattern
     empty: uuidv4(),
     wildcard: uuidv4(),
     extract_var_names: uuidv4(),
-    begin: uuidv4()
+    begin: uuidv4(),
+    extract_matcher: uuidv4()
 }
 
 
@@ -185,6 +187,17 @@ define_generic_procedure_handler(compile,
     }
 )
 
+function is_segment_independently(pattern: any): boolean {
+    return first_equal_with(pattern, P.segment_independently)
+}
+
+define_generic_procedure_handler(compile, 
+    is_segment_independently,
+    (pattern: any[], opt) => {
+        return match_segment_independently(pattern[1], pattern[2])
+    }
+)
+
 
 export function is_match_reference(pattern: any): boolean {
 
@@ -281,10 +294,23 @@ define_generic_procedure_handler(compile,
     }
 )
 
+function is_extract_matcher(pattern: any): boolean {
+    return first_equal_with(pattern, P.extract_matcher) && pattern.length === 3
+}
+
+define_generic_procedure_handler(compile,
+    is_extract_matcher,
+    (pattern: any[]) => {
+        const matcher_name = pattern[1]
+        const matcher_expr = pattern[2]
+        return match_extract_matcher(matcher_name, compile(matcher_expr))
+    }
+)
+
+
 
 
 export function run_matcher(matcher: matcher_instance, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): any | MatchResult | MatchPartialSuccess | MatchFailure {
-
     return internal_match(matcher, [data], empty_match_dict(), default_match_env(), (dict, nEaten) => {
         return succeed(dict, nEaten)
     })
