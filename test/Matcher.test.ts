@@ -383,3 +383,76 @@ describe('extract_matcher', () => {
 
     });
 });
+
+
+import { get_element, set_element, get_length, isArray } from "../GenericArray";
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+
+// ... existing imports and tests ...
+
+describe('CustomArray with MatchBuilder', () => {
+    class CustomArray<T> {
+        constructor(private items: T[]) {}
+        
+        get(index: number): T {
+            return this.items[index];
+        }
+        
+        set(index: number, value: T): void {
+            this.items[index] = value;
+        }
+        
+        get length(): number {
+            return this.items.length;
+        }
+    }
+
+    // Extend generic procedures for CustomArray
+    define_generic_procedure_handler(get_element,
+        (obj: any): obj is CustomArray<any> => obj instanceof CustomArray,
+        <T>(array: CustomArray<T>, index: number): T => array.get(index)
+    );
+
+    define_generic_procedure_handler(set_element,
+        (obj: any): obj is CustomArray<any> => obj instanceof CustomArray,
+        <T>(array: CustomArray<T>, index: number, value: T): CustomArray<T> => {
+            array.set(index, value);
+            return array;
+        }
+    );
+
+    define_generic_procedure_handler(get_length,
+        (obj: any): obj is CustomArray<any> => obj instanceof CustomArray,
+        <T>(array: CustomArray<T>): number => array.length
+    );
+
+    define_generic_procedure_handler(isArray,
+        (obj: any): obj is CustomArray<any> => obj instanceof CustomArray,
+        <T>(obj: any): obj is CustomArray<T> => obj instanceof CustomArray
+    );
+
+    function createCustomArray<T>(...items: T[]): CustomArray<T> {
+        return new CustomArray(items);
+    }
+
+    test('should match CustomArray with MatchBuilder', () => {
+        const customArray = createCustomArray(1, 2, 3, 4, 5);
+
+        const matcherExpr = [
+            [P.element, "first"],
+            [P.segment, "middle"],
+            [P.element, "last"]
+        ];
+
+        const result = run_matcher(compile(matcherExpr), customArray, (dict, eaten) => new MatchResult(dict, eaten));
+
+        expect(isSucceed(result)).toBe(true);
+        if (isSucceed(result)) {
+            console.log("Match succeeded!");
+            console.log(inspect(result, {showHidden: true, depth: 10}));
+            
+            // Add more specific assertions here
+            expect(isSucceed(result)).toBe(true);
+        }
+    });
+});

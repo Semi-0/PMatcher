@@ -5,14 +5,14 @@ import { is_match_instance } from "./MatchCallback";
 import {  match_choose, match_letrec, match_reference, match_new_var, match_compose, match_empty,
     match_element, match_segment, match_wildcard,  match_constant, match_all_other_element, match_begin, match_segment_independently, match_extract_matcher} from "./MatchCombinator";
 import { empty_match_dict } from "./MatchDict/MatchDict";
-import { first, rest, isPair, isEmptyArray, isArray, isString, isMatcher } from "./utility";
+import {  isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
 import { inspect } from "util";
 import { internal_get_args, internal_get_name, internal_match } from "./MatchCallback";
 import { MatchResult } from "./MatchResult/MatchResult"
 import { MatchFailure } from "./MatchResult/MatchFailure"; 
 import { isSucceed, isFailed } from "./predicates";
-
+import { first, rest, isPair, isEmpty, isArray } from "./GenericArray";
 import { define_generic_procedure_handler, get_all_critics } from "generic-handler/GenericProcedure";
 
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
@@ -61,7 +61,7 @@ define_generic_procedure_handler(compile,
 
 define_generic_procedure_handler(compile,
     is_match_constant,
-    (pattern: any, opt) => {
+    (pattern: any) => {
         if ((isPair(pattern)) && (pattern.length == 2)){
             return match_constant(pattern[1])
         }
@@ -317,7 +317,7 @@ define_generic_procedure_handler(compile,
 
 
 
-export function run_matcher(matcher: matcher_instance, data: any[], succeed: (dict: MatchDict, nEaten: number) => any): any | MatchResult | MatchPartialSuccess | MatchFailure {
+export function run_matcher(matcher: matcher_instance, data: any, succeed: (dict: MatchDict, nEaten: number) => any): any | MatchResult | MatchPartialSuccess | MatchFailure {
     return internal_match(matcher, [data], empty_match_dict(), default_match_env(), (dict, nEaten) => {
         return succeed(dict, nEaten)
     })

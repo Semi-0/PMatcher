@@ -5,7 +5,7 @@ import { extend } from "./MatchDict/DictInterface"
 import { is_scope_reference } from "./MatchDict/ScopeReference"
 export type MatchEnvironment = ScopeReference[]
 // MatchEnvironment is a record of the address of scope reference
-import { first } from "./utility"
+import { first } from "./GenericArray"
 export function is_match_env(A: any): boolean{
     return Array.isArray(A)
         && A.every((item) => {

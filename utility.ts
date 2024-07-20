@@ -1,7 +1,4 @@
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
-import type { MatchFailure } from "./MatchResultO"
-import { isMatchFailure } from "./MatchResultO"
 
 export const equal = construct_simple_generic_procedure("equal", 2,
     (A: any, B: any) => A === B
@@ -20,29 +17,11 @@ export function guard(predicate: () => boolean, failure: () => any): void {
     }
 }
 
-export function first(array: any[]): any {
-    return array[0]
-}
+export const get_length = construct_simple_generic_procedure("get_length", 1,
+    (array: any[]) => array.length
+)
 
-export function rest(array: any[]): any[] {
-    return array.slice(1)
-}
 
-export function construct(item: any, ...rest: any[]): any {
-    return [item, ...rest]
-}
-
-export function isPair(array: any[]): boolean {
-    return isArray(array) && array.length !== 0 && array !== null && array !== undefined
-}
-
-export function isEmptyArray(array: any[]): boolean {
-    return array.length === 0
-}
-
-export function isArray(obj: any): boolean {
-    return Array.isArray(obj)
-}
 
 export function isString(obj: any): boolean {
     return typeof obj === "string"
