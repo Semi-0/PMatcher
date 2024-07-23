@@ -245,16 +245,7 @@ export function match_compose(matchers: matcher_instance[]) : matcher_instance{
             if (isPair(matchers)){
                 const matcher = first(matchers)
                 const result = internal_match(matcher, data_list, dictionary, match_env, (new_dict: MatchDict, nEaten: number) => {
-          
-                    const remain_data = slice(data_list, nEaten)
-                    if ((get_length(remain_data) == 0) && (get_length(rest(matchers)) == 0)){
-                        return succeed(new_dict, eaten + nEaten)
-                    }
-                    else{
-                        const result = loop(remain_data, rest(matchers), new_dict, eaten + nEaten);
-              
-                        return result
-                    }
+                    return loop(slice(data_list, nEaten), rest(matchers), new_dict, eaten + nEaten);
                 });
   
                 return handleMatchError(result);
