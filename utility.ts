@@ -11,9 +11,9 @@ export const copy = construct_simple_generic_procedure("copy", 1,
     }
 )
 
-export function guard(predicate: () => boolean, failure: () => any): void {
+export function guard(predicate: () => boolean, failure: () => any): any {
     if (!predicate()) {
-        return failure();
+        throw failure();
     }
 }
 

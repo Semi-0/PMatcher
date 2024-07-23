@@ -13,7 +13,7 @@ import { createMatchFailure } from "./MatchResult/MatchFailure";
 import { createMatcherInstance, internal_match, internal_get_name, internal_get_args } from "./MatchCallback";
 import { MatcherName } from "./NameDict";
 import { FailedReason } from "./MatchResult/MatchFailure";
-import { equal, guard } from "./utility";
+import { equal } from "./utility";
 import { isFailed, isSucceed } from "./Predicates";
 import { createMatchPartialSuccess } from "./MatchResult/PartialSuccess";
 import { MatchResult } from "./MatchResult/MatchResult";
@@ -125,22 +125,25 @@ export function match_segment(variable: string, restriction: (value: any) => boo
     };
 
     const proc = (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        
+        const current_env = get_current_scope(match_env)
 
         const loop = (index: number): any => {
-            guard(() => index < get_length(data), () => {
+            
+            if (index > get_length(data)) {
                 return createMatchFailure(MatcherName.Segment, 
                                         FailedReason.IndexOutOfBound, 
                                         [data, ["index", index], ["dict", dictionary]], null);
-            })
+            }
 
-            guard(() => restriction(get_element(data, index)), () => {
+            if (!restriction(get_element(data, index))){
                 return createMatchFailure(MatcherName.Segment, 
                                         FailedReason.RestrictionUnmatched, 
                                         get_element(data, index), null);
-            })
+            }
 
             const data_to_extend = slice(data, 0, index)
-            const result = succeed(extend({key: variable, value: data_to_extend, scopeRef: get_current_scope(match_env)}, dictionary), index);
+            const result = succeed(extend({key: variable, value: data_to_extend, scopeRef: current_env}, dictionary), index);
 
             if (isSucceed(result)) {
                 return result;
@@ -156,11 +159,11 @@ export function match_segment(variable: string, restriction: (value: any) => boo
                                       data, null);
         }
 
+
         const binding = get_value({key: variable, 
                                    matchEnv: match_env},
                                    dictionary);
 
-        const current_env = get_current_scope(match_env)
 
         if (binding === undefined || binding === null || is_will_define(binding, current_env)) {
             return loop(0);
