@@ -59,15 +59,12 @@ describe('MatchDict', () => {
     describe('MatchDict operations', () => {
         test('extend and get_value', () => {
             const new_dict = extend({key: 'test', value: 'value'}, matchDict);
-            console.log(matchDict)
             expect(get_value('test', new_dict)).toBe('value');
-            console.log("pA")
             const dict = construct_dict_value("default", 0)
 
             const complexValue = extend_new_value_in_scope( 'complex', new_ref(), dict);
             const extended = extend({key: 'complex', value: complexValue}, matchDict);
             expect(get_value({key: 'complex', scopeRef: 1}, extended)).toBe('complex');
-            console.log("pB")
         });
 
         test('has_key', () => {

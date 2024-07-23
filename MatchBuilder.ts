@@ -241,7 +241,6 @@ define_generic_procedure_handler(compile, is_many,
     (pattern: any[]) => {
         const matcher = pattern[1]
         const vars = extract_var_names(matcher)
-        console.log("vars", vars)
         const expr =  [P.letrec,
             [["repeat", 
                 [P.new, vars,
@@ -251,7 +250,6 @@ define_generic_procedure_handler(compile, is_many,
                             ...matcher,
                             [P.ref, "repeat"]]]]]],
             [[P.ref, "repeat"]]]
-        console.log(translate(expr))
         return compile(expr)
     }
 )
@@ -265,37 +263,27 @@ export function extract_var_names(pattern: any[]): string[] {
             return pred !== is_match_element && pred !== is_match_segment && pred !== isArray && pred !== is_select && pred !== is_transform
         }).some((pred: (arg: any) => Boolean) => {
             if (pred(item)){
-                console.log("excluded true", translate([item]))
             }
             return pred(item)
         })
         if (excluded){
-            console.log("excluded", translate([item]))
             return [];
         } 
         else if (is_match_element(item)) {
-            console.log("is_match_element", item)
             return [item[1]];
         } else if (is_match_segment(item)) {
-            console.log("is_match_segment", item)
             return [item[1]];
         } else if (is_select(item)){
-            console.log("is select")
             const select_item = item.slice(1).flatMap((clause: any[]) => extract_var_names(clause))
-            console.log(select_item)
             return select_item
         }
         else if (is_transform(item)){
-            console.log("is_transformed!:",translate(item[2]))
-            console.log("is_select?", is_select(item[2]))
             return extract_var_names([item[2]])
         }
         
         else if (isArray(item)) {
-            console.log("is_array", item)
             return extract_var_names(item);
         } else {
-            console.log("is_other", item)
             return [];
         }
     });

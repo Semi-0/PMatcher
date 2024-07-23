@@ -19,7 +19,6 @@ describe('MatchBuilder', () => {
         const succeed = jest.fn((dict, nEaten) => { return {dict, nEaten} });
 
         const result = run_matcher(matcher, data, succeed);
-        console.log(result)
         expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
         //@ts-ignore
         expect(result).toEqual(succeed.mock.results[0].value);
@@ -31,7 +30,6 @@ describe('MatchBuilder', () => {
         const succeed = jest.fn((dict, nEaten) => {return dict});
 
         const result = run_matcher(matcher, data, succeed);
-        console.log(result)
         
         expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
         //@ts-ignore
@@ -57,7 +55,6 @@ describe('MatchBuilder', () => {
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
      
         const result = run_matcher(matcher, data, succeed);
-        console.log("result", result)
         expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
            //@ts-ignore
         expect(result).toEqual(succeed.mock.results[0].value);
@@ -69,7 +66,6 @@ describe('MatchBuilder', () => {
         const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
 
         const result = run_matcher(matcher, data, succeed);
-        console.log(result)
         expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
            //@ts-ignore
         expect(result).toEqual(succeed.mock.results[0].value);
@@ -341,7 +337,6 @@ describe('match_begin', () => {
         const data = ["a", 42, "b"];
         const result = run_matcher(matcher, data, succeed);
 
-        console.log("result =", result)
         expect(isPartialSuccess(result)).toBe(true);
         expect(getSucceedMatchersNames(result)).toEqual([MatcherName.Array]);
         expect(result.succeedCount).toEqual(1);
