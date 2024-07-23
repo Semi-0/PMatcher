@@ -1,0 +1,2 @@
+(map (segment c) (with (c) 
+     (compose (constant a) (constant b))))

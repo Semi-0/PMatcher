@@ -62,6 +62,11 @@ export const first = <T>(array: T[]): T => get_element(array, 0)
 
 export const rest = <T>(array: T[]): T[] => slice(array, 1, get_length(array))
 
+
+export const second = <T>(array: T[]): T => get_element(array, 1)
+
+export const third = <T>(array: T[]): T => get_element(array, 2)
+
 export const construct = <T>(item: T, ...rest: T[]): T[] => {
     let result: T[] = [item];
     for (let i = 0; i < get_length(rest); i++) {

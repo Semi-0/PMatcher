@@ -1,7 +1,7 @@
 import { MatchDict, empty_match_dict, get_raw_entity } from "./MatchDict/MatchDict";
 import type { matcher_callback } from "./MatchCallback";
 import { inspect } from "util";
-import { first, rest, isPair, isEmpty, isArray, get_length, get_element, slice, set_element, construct, map, filter, reduce } from "./GenericArray";
+import { first, rest, isPair, isEmpty, isArray, get_length, get_element, slice, set_element, construct, map, filter, reduce, second } from "./GenericArray";
 import type { ScopeReference } from "./MatchDict/ScopeReference";
 import { extend, get_value } from "./MatchDict/DictInterface";
 import { default_match_env, get_current_scope, type MatchEnvironment } from "./MatchEnvironment";
@@ -14,9 +14,10 @@ import { createMatcherInstance, internal_match, internal_get_name, internal_get_
 import { MatcherName } from "./NameDict";
 import { FailedReason } from "./MatchResult/MatchFailure";
 import { equal } from "./utility";
-import { isFailed, isSucceed } from "./predicates";
+import { isFailed, isSucceed } from "./Predicates";
 import { createMatchPartialSuccess } from "./MatchResult/PartialSuccess";
-
+import { MatchResult } from "./MatchResult/MatchResult";
+import { get_dict, get_eaten } from "./MatchResult/MatchResult";
 export function match_constant(pattern_constant: string): matcher_instance {
     const proc =  (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any  => {
         if (data === undefined || data === null || isEmpty(data)) {
@@ -106,7 +107,7 @@ export function match_element(variable: string, restriction: (value: any) => boo
 
 export function match_segment(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_instance {
     const loop = (index: number, data: any[], dictionary: MatchDict, extend_method: (data: any) => MatchDict,  succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        if (index >= get_length(data)) {
+        if (index > get_length(data)) {
             return createMatchFailure(MatcherName.Segment, 
                                       FailedReason.IndexOutOfBound, 
                                       data, null);
@@ -117,7 +118,7 @@ export function match_segment(variable: string, restriction: (value: any) => boo
                                       get_element(data, index), null);
         }
 
-        const result = succeed(extend_method(slice(data, 0, index + 1)), index + 1);
+        const result = succeed(extend_method(slice(data, 0, index)), index);
 
         if (isSucceed(result)) {
             return result;
@@ -248,11 +249,14 @@ export function match_compose(matchers: matcher_instance[]) : matcher_instance{
         
         
         const loop = (data_list: any[], matchers: matcher_instance[], dictionary: MatchDict, eaten: number): any => {
-
+            console.log("compose list:",data_list)
+            console.log("matchers:", matchers)
             if (isPair(matchers)){
 
                 const matcher = first(matchers)
                 const result = internal_match(matcher, data_list, dictionary, match_env, (new_dict: MatchDict, nEaten: number) => {
+                    console.log("nEaten:", nEaten)
+                    console.log("data_list:", data_list)
                     return loop(slice(data_list, nEaten), rest(matchers), new_dict, eaten + nEaten);
                 });
   
@@ -283,6 +287,7 @@ export function match_compose(matchers: matcher_instance[]) : matcher_instance{
 
 export function match_array(all_matchers: matcher_instance[]) : matcher_instance {
     const proc = (data: any[], dictionary: MatchDict , match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        console.log("array:", data)
         const compose_matcher = match_compose(all_matchers)
 
         if (data === undefined || data === null) {
@@ -292,10 +297,12 @@ export function match_array(all_matchers: matcher_instance[]) : matcher_instance
             return succeed(dictionary, 0)
         }
         else{
-            const result = internal_match(compose_matcher, first(data), dictionary, match_env, (dict: MatchDict, nEaten: number) => {return dict})
+            const result = internal_match(compose_matcher, first(data), dictionary, match_env, (dict: MatchDict, nEaten: number) => {return new MatchResult(dict, nEaten)})
        
             if (isSucceed(result)){
-                return succeed(result,1)
+                const dict = get_dict(result)
+         
+                return succeed(dict, 1)
             }
             else{
                 return createMatchFailure(MatcherName.Array, FailedReason.UnexpectedEnd, data, result)
@@ -463,4 +470,69 @@ export function match_extract_matcher(matcher_name: string, matcher_expr: matche
         ["matcher_name", matcher_name],
         ["matcher_expr", matcher_expr]
     ]))
+}
+
+
+export function match_map(matcher: matcher_instance, func: matcher_instance): matcher_instance {
+    return createMatcherInstance(MatcherName.Map, (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        const result = internal_match(matcher, data, dictionary, match_env, (dict: MatchDict, nEaten: number) => {
+            const result = succeed(dict, nEaten)
+            console.log("matcher succeed", result)
+            if (isSucceed(result)){
+                const fdict: MatchDict = get_dict(result)
+                const fnEaten: number = get_eaten(result)
+                return internal_match(func, slice(data, 0, fnEaten), fdict, match_env, succeed)
+            }
+            else{
+                return result
+            }
+        })
+        return result
+    })
+}
+
+export function match_transform(transformer: (data: any) => any,  matcher: matcher_instance): matcher_instance {
+    return createMatcherInstance(MatcherName.Transform, (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        if (data === undefined || data === null) {
+            return createMatchFailure(MatcherName.Transform, FailedReason.UnexpectedEnd, data, null)
+        }
+        else if (isArray(data)){
+            if (data.length === 0){
+                return createMatchFailure(MatcherName.Transform, FailedReason.UnexpectedEmptyInput, data, null)
+            }
+            else{
+                const transformed_data = map(data, (d) => transformer(d))
+                return internal_match(matcher, transformed_data, dictionary, match_env, succeed)
+            }
+        }
+        else{
+            return createMatchFailure(MatcherName.Transform, FailedReason.UnexpectedInput, data, null)
+        }
+        
+        // const transformed_data = transformer(data)
+        // const result = internal_match(matcher, transformed_data, dictionary, match_env, succeed)
+        // if (isSucceed(result)){
+        //     const dict = get_dict(result)
+        //     const eaten = get_eaten(result)
+        //     console.log("eaten", eaten)
+        //     console.log("transformed_data", transformed_data)
+        //     console.log("real_eaten", eaten / (transformed_data.length))
+        //     return succeed(dict, 1)
+        // }
+        // else{
+        //     return result
+        // }
+    })
+}
+
+export function match_with(variable: string, matcher: matcher_instance): matcher_instance {
+    return createMatcherInstance(MatcherName.With, (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+        // console.log("with!!")
+        const v = get_value({key: variable, matchEnv: match_env}, dictionary)
+        // console.log("match_with", v)
+        if (v === undefined || v === null) {
+            return createMatchFailure(MatcherName.With, FailedReason.UnexpectedEnd, data, null)
+        }
+        return internal_match(matcher, [v], dictionary, match_env, succeed)
+    })
 }

@@ -268,7 +268,7 @@ test('get_value_sequence returns all values in the map as an array', () => {
 });
 
 import { extract_var_names } from "../MatchBuilder";
-import { isFailed, isPartialSuccess, isSucceed } from "../predicates";
+import { isFailed, isPartialSuccess, isSucceed } from "../Predicates";
 
 describe('extract_var_names', () => {
     test('should extract variable names from match elements and segments', () => {

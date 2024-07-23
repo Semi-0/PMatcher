@@ -8,7 +8,7 @@ import { extend } from "./MatchDict/DictInterface"
 import { get_current_scope, type MatchEnvironment } from "./MatchEnvironment";
 import { isElementAccessExpression } from "typescript";
 import { equal } from "./utility";
-import { isSucceed, isFailed } from "./predicates";
+import { isSucceed, isFailed } from "./Predicates";
 import { MatcherName } from "./NameDict"
 export type matcher_callback =  (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any) => any
 // needs more precise error handler

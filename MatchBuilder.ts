@@ -3,7 +3,10 @@ import {match_args} from "generic-handler/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
 import { is_match_instance } from "./MatchCallback";
 import {  match_choose, match_letrec, match_reference, match_new_var, match_compose, match_empty,
-    match_element, match_segment, match_wildcard,  match_constant, match_all_other_element, match_begin, match_segment_independently, match_extract_matcher} from "./MatchCombinator";
+    match_element, match_segment, match_wildcard,  match_constant, match_all_other_element, match_begin, match_segment_independently, match_extract_matcher,
+    match_map,
+    match_with,
+    match_transform} from "./MatchCombinator";
 import { empty_match_dict } from "./MatchDict/MatchDict";
 import {  isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
@@ -11,8 +14,8 @@ import { inspect } from "util";
 import { internal_get_args, internal_get_name, internal_match } from "./MatchCallback";
 import { MatchResult } from "./MatchResult/MatchResult"
 import { MatchFailure } from "./MatchResult/MatchFailure"; 
-import { isSucceed, isFailed } from "./predicates";
-import { first, rest, isPair, isEmpty, isArray } from "./GenericArray";
+import { isSucceed, isFailed } from "./Predicates";
+import { first, rest, isPair, isEmpty, isArray, second, third } from "./GenericArray";
 import { define_generic_procedure_handler, get_all_critics } from "generic-handler/GenericProcedure";
 
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
@@ -20,6 +23,7 @@ import { default_match_env } from "./MatchEnvironment";
 import { v4 as uuidv4 } from 'uuid';
 import { DictValue, get_value_sequence } from "./MatchDict/DictValue";
 import type { MatchPartialSuccess } from "./MatchResult/PartialSuccess";
+import { transform } from "typescript";
 
 
 
@@ -47,7 +51,24 @@ export const P = { // Stands for Pattern
     wildcard: uuidv4(),
     extract_var_names: uuidv4(),
     begin: uuidv4(),
-    extract_matcher: uuidv4()
+    extract_matcher: uuidv4(),
+    map: uuidv4(),
+    with: uuidv4(),
+    transform: uuidv4()
+
+}
+
+function translate(array: any[]): any[] {
+    const uuidToMatcher = new Map(Object.entries(P).map(([key, value]) => [value, key]));
+
+    return array.map(item => {
+        if (Array.isArray(item)) {
+            return translate(item);
+        } else if (typeof item === 'string' && uuidToMatcher.has(item)) {
+            return uuidToMatcher.get(item);
+        }
+        return item;
+    });
 }
 
 
@@ -93,7 +114,7 @@ function is_all_other_element(pattern: any): boolean {
 
 define_generic_procedure_handler(compile, 
     is_all_other_element,
-    (pattern: any[], opt) => {
+    (pattern: any[]) => {
         return match_all_other_element()
     }
 )
@@ -105,7 +126,7 @@ function is_empty(pattern: any): boolean{
 
 define_generic_procedure_handler(compile,
     is_empty,
-    (pattern: any, opt) => {
+    (pattern: any) => {
         return match_empty()
     }
 )
@@ -117,14 +138,14 @@ export function is_Letrec(pattern: any): boolean {
 
 define_generic_procedure_handler(compile, 
     is_Letrec,
-    (pattern: any[], opt) => {
+    (pattern: any[]) => {
         if (pattern.length !== 3) {
             throw Error(`unrecognized pattern in the letrec procedure: ${inspect(pattern)}`)
         }
 
-        const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: compile(item[1], opt) }));
+        const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: compile(item[1]) }));
 
-        return match_letrec(bindings, compile(pattern[2], opt))
+        return match_letrec(bindings, compile(pattern[2]))
     }
 )
 
@@ -135,8 +156,8 @@ export function is_compose(pattern: any[]): boolean{
 
 define_generic_procedure_handler(compile,
     is_compose,
-    (pattern: any[], opt) => {
-        return match_compose(pattern.slice(1).map((item: any) => compile(item, opt)))
+    (pattern: any[]) => {
+        return match_compose(pattern.slice(1).map((item: any) => compile(item)))
     }
 )
 
@@ -146,8 +167,8 @@ export function is_select(pattern: any): boolean {
 
 define_generic_procedure_handler(compile, 
     is_select,
-    (pattern: any[], opt) => {
-        return match_choose(pattern.slice(1).map((item: any) => compile(item, opt)))
+    (pattern: any[]) => {
+        return match_choose(pattern.slice(1).map((item: any) => compile(item)))
     }
 )
 
@@ -158,8 +179,8 @@ export function is_new_var(pattern: any): boolean {
 
 define_generic_procedure_handler(compile, 
     is_new_var,
-    (pattern: any[], opt) => {
-        return match_new_var(pattern[1], compile(pattern[2], opt))
+    (pattern: any[]) => {
+        return match_new_var(pattern[1], compile(pattern[2]))
     }
 )
 
@@ -170,7 +191,7 @@ function is_match_element(pattern: any): boolean {
 
 define_generic_procedure_handler(compile, 
     is_match_element,
-    (pattern: any[], opt) => {
+    (pattern: any[]) => {
         return match_element(pattern[1], pattern[2])
     }
 )
@@ -182,7 +203,7 @@ function is_match_segment(pattern: any): boolean {
 
 define_generic_procedure_handler(compile, 
     is_match_segment,
-    (pattern: any[], opt) => {
+    (pattern: any[]) => {
         return match_segment(pattern[1], pattern[2])
     }
 )
@@ -193,7 +214,7 @@ function is_segment_independently(pattern: any): boolean {
 
 define_generic_procedure_handler(compile, 
     is_segment_independently,
-    (pattern: any[], opt) => {
+    (pattern: any[]) => {
         return match_segment_independently(pattern[1], pattern[2])
     }
 )
@@ -206,7 +227,7 @@ export function is_match_reference(pattern: any): boolean {
 
 define_generic_procedure_handler(compile, 
     is_match_reference,
-    (pattern: any[], opt) => {
+    (pattern: any[]) => {
         return match_reference(pattern[1])
     }
 )
@@ -217,9 +238,10 @@ function is_many(pattern: any): boolean{
 }
 
 define_generic_procedure_handler(compile, is_many, 
-    (pattern: any[], opt) => {
+    (pattern: any[]) => {
         const matcher = pattern[1]
         const vars = extract_var_names(matcher)
+        console.log("vars", vars)
         const expr =  [P.letrec,
             [["repeat", 
                 [P.new, vars,
@@ -229,8 +251,8 @@ define_generic_procedure_handler(compile, is_many,
                             ...matcher,
                             [P.ref, "repeat"]]]]]],
             [[P.ref, "repeat"]]]
-
-        return compile(expr, opt)
+        console.log(translate(expr))
+        return compile(expr)
     }
 )
 
@@ -238,26 +260,48 @@ define_generic_procedure_handler(compile, is_many,
 
 /// THIS IS SOOO DUUUMB
 export function extract_var_names(pattern: any[]): string[] {
-
-    return pattern.flatMap((item: any) => {
+    const names = pattern.flatMap((item: any) => {
         const excluded = get_all_critics(compile).filter((pred: (arg: any) => Boolean) => {
-            return pred !== is_match_element && pred !== is_match_segment && pred !== isArray
+            return pred !== is_match_element && pred !== is_match_segment && pred !== isArray && pred !== is_select && pred !== is_transform
         }).some((pred: (arg: any) => Boolean) => {
+            if (pred(item)){
+                console.log("excluded true", translate([item]))
+            }
             return pred(item)
         })
         if (excluded){
+            console.log("excluded", translate([item]))
             return [];
         } 
         else if (is_match_element(item)) {
+            console.log("is_match_element", item)
             return [item[1]];
         } else if (is_match_segment(item)) {
+            console.log("is_match_segment", item)
             return [item[1]];
-        } else if (isArray(item)) {
+        } else if (is_select(item)){
+            console.log("is select")
+            const select_item = item.slice(1).flatMap((clause: any[]) => extract_var_names(clause))
+            console.log(select_item)
+            return select_item
+        }
+        else if (is_transform(item)){
+            console.log("is_transformed!:",translate(item[2]))
+            console.log("is_select?", is_select(item[2]))
+            return extract_var_names([item[2]])
+        }
+        
+        else if (isArray(item)) {
+            console.log("is_array", item)
             return extract_var_names(item);
         } else {
+            console.log("is_other", item)
             return [];
         }
     });
+
+    // Remove duplicates using Set
+    return [...new Set(names)];
 }
 
 function is_extract_var_names(pattern: any): boolean {
@@ -314,9 +358,45 @@ define_generic_procedure_handler(compile,
     }
 )
 
+function is_map(pattern: any): boolean {
+    return first_equal_with(pattern, P.map) && pattern.length === 3
+}
 
+define_generic_procedure_handler(compile,
+    is_map,
+    (pattern: any[]) => {
+        return match_map(compile(pattern[1]), compile(pattern[2]))
+    }
+)
 
+function is_with(pattern: any): boolean {
+    return first_equal_with(pattern, P.with) && pattern.length === 3 && isArray(pattern[1])
+}
 
+define_generic_procedure_handler(compile,
+    is_with,
+    (pattern: any[]) => {
+        return match_with(first(second(pattern)), compile(third(pattern)))
+    }
+)
+
+function is_transform(pattern: any): boolean {
+    // console.log(pattern)
+    // if (first(pattern) == P.transform){
+    //     console.log(pattern)
+    // }
+    return first_equal_with(pattern, P.transform) && pattern.length === 3
+}
+
+define_generic_procedure_handler(compile,
+    is_transform,
+    (pattern: any[]) => {
+        console.log("t success")
+        return match_transform(pattern[1], compile(pattern[2]))
+    }
+)
+
+// WARNING!!! THIS METHOD IS ONLY FOR USE INTERNALLY, IF CALL FROM OUTSIDE PLEASE USE MATCH FUNCTION INSTEAD
 export function run_matcher(matcher: matcher_instance, data: any, succeed: (dict: MatchDict, nEaten: number) => any): any | MatchResult | MatchPartialSuccess | MatchFailure {
     return internal_match(matcher, [data], empty_match_dict(), default_match_env(), (dict, nEaten) => {
         return succeed(dict, nEaten)
@@ -340,8 +420,8 @@ export function run_matcher(matcher: matcher_instance, data: any, succeed: (dict
  */
 export function match(input: any[], matcher_expr: any[]): any | MatchResult | MatchPartialSuccess | MatchFailure {
     const m = compile(matcher_expr);
-
-    const result = internal_match(m, input, empty_match_dict(), default_match_env(), (dict, e) => { return new MatchResult(dict, e) });
+    const result = run_matcher(m, input, (dict, e) => { return new MatchResult(dict, e) });
+    // const result = internal_match(m, input, empty_match_dict(), default_match_env(), (dict, e) => { return new MatchResult(dict, e) });
 
     if (isSucceed(result)) {
         // @ts-ignore
@@ -367,3 +447,64 @@ export function try_match(input: any[], matcher_expr: string[]): boolean {
         return false;
     }
 }
+
+
+
+// const result = match(["a", "b", "c"], [P.map, ["a", [P.segment, "rest"]], [P.with, ["rest"], 
+//     [P.new, ["x"], [[P.element, "x"], "c"]]]])
+// console.log(inspect(result, {showHidden: true, colors: true, depth: 10}))
+
+
+// const plaindrome = match(["a", "b", "b", "a"], 
+//     [P.letrec, [["palindrome",   
+//                             [P.choose, 
+//                                 [P.new, ["x"], 
+//                                     [P.compose, 
+//                                             [P.element, "x"], 
+//                                             [P.choose,
+//                                                 [P.map, [P.segment, "rest"],
+//                                                     [P.with, ["rest"], [[P.ref, "palindrome"]]]],
+//                                                 [],
+//                                                 P.empty],
+//                                             [P.element, "x"]]], 
+//                                 P.empty,
+//                                 []]]],
+                                       
+//         [[P.ref, "palindrome"]]]
+//     // [[P.element, "x"], [P.segment, "rest"], [P.element, "x"]]
+//     )
+
+// console.log(inspect(plaindrome, {showHidden: true, colors: true, depth: 30}))
+
+// const tst_func = (test: number, arg3: number, arg2: number) => {
+//     return test + 1
+// }
+
+// const func_str = tst_func.toString().split(" ")
+
+// const pattern1 =  ["(", [P.segment, "param"], ","] 
+// const pattern2 = [[P.segment, "param"], ","]
+// const pattern3 =  [[P.segment, "param"], ")"]
+
+// const result : MatchResult = match(func_str, [P.map, [[P.segment, "params"], "=>", "..."], 
+//                                                 [P.with, 
+//                                                     ["params"], 
+//                                                         [P.many, 
+//                                                             [[P.transform, 
+//                                                                 (str: string) => {return str.split("")},
+//                                                                 [P.choose, pattern1, pattern2, pattern3]]]]]])
+
+// console.log(inspect(result.safeGet("param").map((item: any) => item.join("")), {showHidden: true, colors: true, depth: 30}))
+
+// const param_name = params.forEach((item: string) => {
+//     const chars = item.split("")
+
+//     const pattern1 =  ["(", [P.segment, "param"], ","] 
+//     const pattern2 = [[P.segment, "param"], ","]
+//     const pattern3 =  [[P.segment, "param"], ")"]
+
+
+//     console.log(match(chars, [P.choose, pattern1, pattern2, pattern3]).safeGet("param").join(""))
+// })
+
+// console.log(inspect(params, {showHidden: true, colors: true, depth: 10}))
