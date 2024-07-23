@@ -18,6 +18,7 @@ import { isFailed, isSucceed } from "./Predicates";
 import { createMatchPartialSuccess } from "./MatchResult/PartialSuccess";
 import { MatchResult } from "./MatchResult/MatchResult";
 import { get_dict, get_eaten } from "./MatchResult/MatchResult";
+
 export function match_constant(pattern_constant: string): matcher_instance {
     const proc =  (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any  => {
         if (data === undefined || data === null || isEmpty(data)) {
@@ -125,7 +126,7 @@ export function match_segment(variable: string, restriction: (value: any) => boo
     };
 
     const proc = (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        
+
         const current_env = get_current_scope(match_env)
 
         const loop = (index: number): any => {
@@ -246,7 +247,7 @@ export function match_compose(matchers: matcher_instance[]) : matcher_instance{
                 const result = internal_match(matcher, data_list, dictionary, match_env, (new_dict: MatchDict, nEaten: number) => {
           
                     const remain_data = slice(data_list, nEaten)
-                    if ((remain_data.length == 0) && (rest(matchers).length == 0)){
+                    if ((get_length(remain_data) == 0) && (get_length(rest(matchers)) == 0)){
                         return succeed(new_dict, eaten + nEaten)
                     }
                     else{
@@ -261,7 +262,7 @@ export function match_compose(matchers: matcher_instance[]) : matcher_instance{
             else if (isPair(data_list)){
                return createMatchFailure(MatcherName.Compose, 
                                          FailedReason.UnConsumedInput, 
-                                         [data_list, data_list.length],  null)  
+                                         [data_list, get_length(data_list)],  null)  
             } 
             else if (isEmpty(data_list)){
                 return succeed(dictionary, eaten)
@@ -494,7 +495,7 @@ export function match_transform(transformer: (data: any) => any,  matcher: match
             return createMatchFailure(MatcherName.Transform, FailedReason.UnexpectedEnd, data, null)
         }
         else if (isArray(data)){
-            if (data.length === 0){
+            if (isEmpty(data)){
                 return createMatchFailure(MatcherName.Transform, FailedReason.UnexpectedEmptyInput, data, null)
             }
             else{
