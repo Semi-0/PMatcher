@@ -15,6 +15,11 @@ import {test, expect, describe, beforeEach} from "bun:test";
 import { default_match_env, type MatchEnvironment } from '../MatchEnvironment';
 import { is_key_and_match_env } from '../MatchDict/MatchDict';
 import { get_args } from '../MatchResult/MatchGenericProcs'; // Import the get_args function
+import { match } from "../MatchBuilder";
+import { P } from "../MatchBuilder";
+import { isSucceed } from "../Predicates";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { MatchResult, is_match_result } from "../MatchResult/MatchResult";
 
 describe('MatchDict', () => {
     let dictValue: DictValue;
@@ -126,6 +131,7 @@ describe('MatchDict', () => {
 // ... existing imports ...
 import type { KeyAndScopeIndex } from '../MatchDict/MatchDict';
 import { is_key_and_scoped_index } from '../MatchDict/MatchDict';
+import { match_args } from 'generic-handler/Predicates';
 
 describe('MatchDict', () => {
     // ... existing test suites ...
@@ -216,9 +222,26 @@ describe('MatchDict', () => {
             function regular_func(a: number, b: number, c: number) {
                 return a + b + c;
             }
-      
             const params = get_args(regular_func);
             expect(params).toEqual(["a", "b", "c"]);
+        });
+    });
+
+    // New test suite for apply
+    describe('apply', () => {
+        const apply = construct_simple_generic_procedure("apply", 2, (a: any, b: any) => { throw new Error("Not implemented") });
+
+        define_generic_procedure_handler(apply, match_args((x: any) => true, is_match_result), (a: (...args: any[]) => any, b: MatchResult) => {
+            return a(...get_args(a).map((arg: any) => {
+                const value = b.safeGet(arg);
+                return Array.isArray(value) ? value.map(v => Number(v)) : Number(value);
+            }));
+        });
+
+        test('should apply function with matched arguments', () => {
+            const result = match([1, "b", 3], [[P.segment, "a"], "b", [P.segment, "c"]]);
+            const output = apply((a: string, c: string) => { return Number(a) + Number(c); }, result);
+            expect(output).toBe(4);
         });
     });
 });

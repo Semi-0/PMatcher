@@ -4,7 +4,8 @@ import { match } from "../MatchBuilder"
 import { isFailed, isSucceed } from "../Predicates"
 import type { MatchFailure } from "./MatchFailure"
 import { define_generic_procedure_handler, construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
-
+import { MatchResult, is_match_result } from "./MatchResult"
+import { match_args } from "generic-handler/Predicates"
 
 const param = [P.segment, "param"]
 
@@ -57,7 +58,7 @@ export function get_function_expr2(): any[] {
 
 export function get_args(func: (...args: any) => any): any[] {
     const func_str = func.toString()
-    console.log("func_str", func_str)
+
     const result = match(func_str.split(" "), [P.choose, get_callback_expr(), get_function_expr(), get_function_expr2()])
     if (isSucceed(result)){
         return result.safeGet("param").map((item: any) => item.join(""))
@@ -67,12 +68,23 @@ export function get_args(func: (...args: any) => any): any[] {
     }
 }
 
-function regular_func(a: number, b: number, c: number) {
-    return a + b + c;
-}
 
-console.log(get_args(regular_func))
+export const apply = construct_simple_generic_procedure("apply", 2, (a: any, b: any) => { throw new Error("Not implemented")})
 
-// const test_func = (x: number, c: number, z: number) => {  return x + c + z }
+define_generic_procedure_handler(apply, match_args((x: any) => true, is_match_result), (a: (...args: any[]) => any, b: MatchResult) => {
+    return a(...get_args(a).map((arg: any) => b.safeGet(arg)))
+})
+
+const result = match([1, "b", 3], [[P.segment, "a"], "b", [P.segment, "c"]])
+console.log(apply((a: string, c: string) => {return Number(a) + Number(c)}, result))
+
+
+// function regular_func(a: number, b: number, c: number) {
+//     return a + b + c;
+// }
+
+// console.log(get_args(regular_func))
+
+// // const test_func = (x: number, c: number, z: number) => {  return x + c + z }
 
 // console.log(get_args(test_func))
