@@ -45,9 +45,20 @@ export function get_function_expr(): any[] {
     ];
 }
 
+
+export function get_function_expr2(): any[] {
+    return [
+        P.map, 
+        ["function", [P.segment, "params"], "{\n", "..."], 
+        [P.with, ["params"], get_param_matcher(true)]
+    ];
+}
+
+
 export function get_args(func: (...args: any) => any): any[] {
     const func_str = func.toString()
-    const result = match(func_str.split(" "), [P.choose, get_callback_expr(), get_function_expr()])
+    console.log("func_str", func_str)
+    const result = match(func_str.split(" "), [P.choose, get_callback_expr(), get_function_expr(), get_function_expr2()])
     if (isSucceed(result)){
         return result.safeGet("param").map((item: any) => item.join(""))
     }
@@ -56,9 +67,12 @@ export function get_args(func: (...args: any) => any): any[] {
     }
 }
 
+function regular_func(a: number, b: number, c: number) {
+    return a + b + c;
+}
 
+console.log(get_args(regular_func))
 
+// const test_func = (x: number, c: number, z: number) => {  return x + c + z }
 
-const test_func = (x: number, c: number, z: number) => {  return x + c + z }
-
-console.log(get_args(test_func))
+// console.log(get_args(test_func))

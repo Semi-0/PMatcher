@@ -14,7 +14,7 @@ import  { new_ref , default_ref, clearRefHistory, is_scope_reference } from '../
 import {test, expect, describe, beforeEach} from "bun:test";
 import { default_match_env, type MatchEnvironment } from '../MatchEnvironment';
 import { is_key_and_match_env } from '../MatchDict/MatchDict';
-
+import { get_args } from '../MatchResult/MatchGenericProcs'; // Import the get_args function
 
 describe('MatchDict', () => {
     let dictValue: DictValue;
@@ -204,7 +204,21 @@ describe('MatchDict', () => {
         });
     });
 
-    
+    // New test suite for get_args
+    describe('get_args', () => {
+        test('should return parameter names for an arrow function', () => {
+            const test_func = (x: number, c: number, z: number) => { return x + c + z; };
+            const params = get_args(test_func);
+            expect(params).toEqual(["x", "c", "z"]);
+        });
+
+        test('should return parameter names for a regular function', () => {
+            function regular_func(a: number, b: number, c: number) {
+                return a + b + c;
+            }
+      
+            const params = get_args(regular_func);
+            expect(params).toEqual(["a", "b", "c"]);
+        });
+    });
 });
-
-
