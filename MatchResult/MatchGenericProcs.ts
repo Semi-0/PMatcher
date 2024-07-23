@@ -75,8 +75,7 @@ define_generic_procedure_handler(apply, match_args((x: any) => true, is_match_re
     return a(...get_args(a).map((arg: any) => b.safeGet(arg)))
 })
 
-const result = match([1, "b", 3], [[P.segment, "a"], "b", [P.segment, "c"]])
-console.log(apply((a: string, c: string) => {return Number(a) + Number(c)}, result))
+
 
 
 // function regular_func(a: number, b: number, c: number) {

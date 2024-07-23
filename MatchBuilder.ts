@@ -379,7 +379,6 @@ function is_transform(pattern: any): boolean {
 define_generic_procedure_handler(compile,
     is_transform,
     (pattern: any[]) => {
-        console.log("t success")
         return match_transform(pattern[1], compile(pattern[2]))
     }
 )
@@ -443,26 +442,23 @@ export function try_match(input: any[], matcher_expr: string[]): boolean {
 // console.log(inspect(result, {showHidden: true, colors: true, depth: 10}))
 
 
-// const plaindrome = match(["a", "b", "b", "a"], 
-//     [P.letrec, [["palindrome",   
-//                             [P.choose, 
-//                                 [P.new, ["x"], 
-//                                     [P.compose, 
-//                                             [P.element, "x"], 
-//                                             [P.choose,
-//                                                 [P.map, [P.segment, "rest"],
-//                                                     [P.with, ["rest"], [[P.ref, "palindrome"]]]],
-//                                                 [],
-//                                                 P.empty],
-//                                             [P.element, "x"]]], 
-//                                 P.empty,
-//                                 []]]],
+const plaindrome = match(["a", "b", "b", "a"], 
+    [P.letrec, [["palindrome",   
+                            [P.choose, 
+                                [P.new, ["x", "rest"], 
+                                            [P.map, [P.compose, [P.element, "x"], 
+                                                    [P.segment, "rest"], 
+                                                    [P.element, "x"]],
+                                                [P.with, ["rest"], [[P.ref, "palindrome"]]]],
+                                            ], 
+                                P.empty,
+                                []]]],
                                        
-//         [[P.ref, "palindrome"]]]
+        [[P.ref, "palindrome"]]]
 //     // [[P.element, "x"], [P.segment, "rest"], [P.element, "x"]]
-//     )
+    )
 
-// console.log(inspect(plaindrome, {showHidden: true, colors: true, depth: 30}))
+console.log(inspect(plaindrome, {showHidden: true, colors: true, depth: 30}))
 
 // const tst_func = (test: number, arg3: number, arg2: number) => {
 //     return test + 1

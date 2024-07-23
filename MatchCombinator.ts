@@ -13,7 +13,7 @@ import { createMatchFailure } from "./MatchResult/MatchFailure";
 import { createMatcherInstance, internal_match, internal_get_name, internal_get_args } from "./MatchCallback";
 import { MatcherName } from "./NameDict";
 import { FailedReason } from "./MatchResult/MatchFailure";
-import { equal } from "./utility";
+import { equal, guard } from "./utility";
 import { isFailed, isSucceed } from "./Predicates";
 import { createMatchPartialSuccess } from "./MatchResult/PartialSuccess";
 import { MatchResult } from "./MatchResult/MatchResult";
@@ -106,25 +106,7 @@ export function match_element(variable: string, restriction: (value: any) => boo
 }
 
 export function match_segment(variable: string, restriction: (value: any) => boolean = (value: any) => true): matcher_instance {
-    const loop = (index: number, data: any[], dictionary: MatchDict, extend_method: (data: any) => MatchDict,  succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        if (index > get_length(data)) {
-            return createMatchFailure(MatcherName.Segment, 
-                                      FailedReason.IndexOutOfBound, 
-                                      data, null);
-        }
-        if (!restriction(get_element(data, index))){
-            return createMatchFailure(MatcherName.Segment, 
-                                      FailedReason.RestrictionUnmatched, 
-                                      get_element(data, index), null);
-        }
-
-        const result = succeed(extend_method(slice(data, 0, index)), index);
-
-        if (isSucceed(result)) {
-            return result;
-        }
-        return loop(index + 1, data, dictionary, extend_method, succeed);
-    };
+    
 
     const match_segment_equal = (data: any[], value: any[], ok: (i: number) => any): any => {
         for (let i = 0; i < get_length(data); i++) {
@@ -143,6 +125,31 @@ export function match_segment(variable: string, restriction: (value: any) => boo
     };
 
     const proc = (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
+
+        const loop = (index: number): any => {
+            guard(() => index < get_length(data), () => {
+                return createMatchFailure(MatcherName.Segment, 
+                                        FailedReason.IndexOutOfBound, 
+                                        [data, ["index", index], ["dict", dictionary]], null);
+            })
+
+            guard(() => restriction(get_element(data, index)), () => {
+                return createMatchFailure(MatcherName.Segment, 
+                                        FailedReason.RestrictionUnmatched, 
+                                        get_element(data, index), null);
+            })
+
+            const data_to_extend = slice(data, 0, index)
+            const result = succeed(extend({key: variable, value: data_to_extend, scopeRef: get_current_scope(match_env)}, dictionary), index);
+
+            if (isSucceed(result)) {
+                return result;
+            }
+            else{
+                return loop(index + 1);
+            }
+        };
+
         if (data === undefined || data === null || isEmpty(data)) {
             return createMatchFailure(MatcherName.Segment, 
                                       FailedReason.UnexpectedEnd, 
@@ -154,30 +161,11 @@ export function match_segment(variable: string, restriction: (value: any) => boo
                                    dictionary);
 
         const current_env = get_current_scope(match_env)
-        if (binding === undefined || binding === null) {
-            return loop(0, 
-                        data, 
-                        dictionary, 
-                        (data: any) => {
-                            return extend({key: variable,
-                                           value: data,
-                                           scopeRef: current_env},
-                                           dictionary)
-                        },
-                        succeed);
+
+        if (binding === undefined || binding === null || is_will_define(binding, current_env)) {
+            return loop(0);
         } 
-        else if (is_will_define(binding, current_env)){
-            return loop(1, 
-                        data, 
-                        dictionary, 
-                        (data: any) => {
-                            return extend({key: variable,
-                                           value: data,
-                                           scopeRef: current_env},
-                                           dictionary)
-                        },
-                        succeed);
-        } 
+   
         else {
             return match_segment_equal(data, binding, (i) => succeed(dictionary, i));
         }
@@ -249,15 +237,20 @@ export function match_compose(matchers: matcher_instance[]) : matcher_instance{
         
         
         const loop = (data_list: any[], matchers: matcher_instance[], dictionary: MatchDict, eaten: number): any => {
-            console.log("compose list:",data_list)
-            console.log("matchers:", matchers)
+ 
             if (isPair(matchers)){
-
                 const matcher = first(matchers)
                 const result = internal_match(matcher, data_list, dictionary, match_env, (new_dict: MatchDict, nEaten: number) => {
-                    console.log("nEaten:", nEaten)
-                    console.log("data_list:", data_list)
-                    return loop(slice(data_list, nEaten), rest(matchers), new_dict, eaten + nEaten);
+          
+                    const remain_data = slice(data_list, nEaten)
+                    if ((remain_data.length == 0) && (rest(matchers).length == 0)){
+                        return succeed(new_dict, eaten + nEaten)
+                    }
+                    else{
+                        const result = loop(remain_data, rest(matchers), new_dict, eaten + nEaten);
+              
+                        return result
+                    }
                 });
   
                 return handleMatchError(result);
@@ -265,7 +258,7 @@ export function match_compose(matchers: matcher_instance[]) : matcher_instance{
             else if (isPair(data_list)){
                return createMatchFailure(MatcherName.Compose, 
                                          FailedReason.UnConsumedInput, 
-                                         data_list,  null)  
+                                         [data_list, data_list.length],  null)  
             } 
             else if (isEmpty(data_list)){
                 return succeed(dictionary, eaten)
@@ -287,7 +280,6 @@ export function match_compose(matchers: matcher_instance[]) : matcher_instance{
 
 export function match_array(all_matchers: matcher_instance[]) : matcher_instance {
     const proc = (data: any[], dictionary: MatchDict , match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        console.log("array:", data)
         const compose_matcher = match_compose(all_matchers)
 
         if (data === undefined || data === null) {
@@ -318,9 +310,11 @@ export function match_array(all_matchers: matcher_instance[]) : matcher_instance
 export function match_choose(matchers: matcher_instance[]): matcher_instance {
     const proc = (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         var failures = []
+        console.log("choose:", matchers.map(m => internal_get_name(m)))
         for (const matcher of matchers) {
+            console.log("choosed", internal_get_name(matcher))
             const result = internal_match(matcher, data, dictionary, match_env, succeed)
-          
+            console.log("result", result)
             if (isSucceed(result)) {
                 return result
             }
@@ -423,6 +417,7 @@ export function match_new_var(names: string[], body: matcher_instance): matcher_
     return createMatcherInstance(MatcherName.NewVar, (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         const new_env_ref: ScopeReference = new_ref()
         const new_env = extend(new_env_ref, match_env)
+        console.log("new_env", new_env)
         //@ts-ignore
         const extended_dict = reduce(names, (acc, name) => {
             return extend({key: name,
@@ -477,7 +472,6 @@ export function match_map(matcher: matcher_instance, func: matcher_instance): ma
     return createMatcherInstance(MatcherName.Map, (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         const result = internal_match(matcher, data, dictionary, match_env, (dict: MatchDict, nEaten: number) => {
             const result = succeed(dict, nEaten)
-            console.log("matcher succeed", result)
             if (isSucceed(result)){
                 const fdict: MatchDict = get_dict(result)
                 const fnEaten: number = get_eaten(result)
@@ -509,27 +503,13 @@ export function match_transform(transformer: (data: any) => any,  matcher: match
             return createMatchFailure(MatcherName.Transform, FailedReason.UnexpectedInput, data, null)
         }
         
-        // const transformed_data = transformer(data)
-        // const result = internal_match(matcher, transformed_data, dictionary, match_env, succeed)
-        // if (isSucceed(result)){
-        //     const dict = get_dict(result)
-        //     const eaten = get_eaten(result)
-        //     console.log("eaten", eaten)
-        //     console.log("transformed_data", transformed_data)
-        //     console.log("real_eaten", eaten / (transformed_data.length))
-        //     return succeed(dict, 1)
-        // }
-        // else{
-        //     return result
-        // }
+
     })
 }
 
 export function match_with(variable: string, matcher: matcher_instance): matcher_instance {
     return createMatcherInstance(MatcherName.With, (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
-        // console.log("with!!")
         const v = get_value({key: variable, matchEnv: match_env}, dictionary)
-        // console.log("match_with", v)
         if (v === undefined || v === null) {
             return createMatchFailure(MatcherName.With, FailedReason.UnexpectedEnd, data, null)
         }
