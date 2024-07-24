@@ -154,7 +154,7 @@ export function match_segment(variable: string, critics: (value: any) => boolean
             }
         };
 
-        if (data === undefined || data === null || isEmpty(data)) {
+        if (data === undefined || data === null ) {
             return createMatchFailure(MatcherName.Segment, 
                                       FailedReason.UnexpectedEnd, 
                                       data, null);

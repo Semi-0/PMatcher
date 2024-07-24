@@ -71,7 +71,7 @@ export function get_args(func: (...args: any) => any): any[] {
 }
 
 
-export const apply = construct_simple_generic_procedure("apply", 2, (a: any, b: any) => { throw new Error("Not implemented")})
+export const apply = construct_simple_generic_procedure("apply", 2, (a: any, b: any) => { throw new Error("Not implemented" + inspect(a, {depth: 20}) + inspect(b, {depth: 20}))})
 
 define_generic_procedure_handler(apply, match_args((x: any) => true, is_match_result), (a: (...args: any[]) => any, b: MatchResult) => {
     return a(...get_args(a).map((arg: any) => b.safeGet(arg)))
