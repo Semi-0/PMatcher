@@ -29,7 +29,7 @@ import { transform } from "typescript";
 
 export const compile = construct_simple_generic_procedure("compile", 1,
     (matchers: any[]) => {
-        throw Error(`unrecognized pattern in the build procedure: ${inspect(matchers)}`)
+        throw Error(`unrecognized pattern in the build procedure: ${inspect(matchers, {showHidden:true, depth:10})}`)
     }
 )
 

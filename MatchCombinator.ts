@@ -57,7 +57,7 @@ export function match_empty(): matcher_instance{
     return createMatcherInstance(MatcherName.Empty, proc)
 }
 
-export function match_element(variable: string, restriction: (value: any) => boolean = (value: any) => false): matcher_instance {
+export function match_element(variable: string, critics: (value: any) => boolean = (value: any) => false): matcher_instance {
     const proc = (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (environment: MatchDict, nEaten: number) => any): any => {
         if (data === undefined || data === null || isEmpty(data)) {
             return createMatchFailure(MatcherName.Element, 
@@ -67,7 +67,7 @@ export function match_element(variable: string, restriction: (value: any) => boo
         const binding_value = get_value({key: variable, matchEnv: matchEnv}, dictionary)
         const current_scope_ref = get_current_scope(matchEnv)
         const head = first(data)
-        if (restriction(head)){
+        if (!critics(head)){
             return createMatchFailure(MatcherName.Element, 
                                       FailedReason.RestrictionUnmatched, 
                                       head, null);
@@ -102,11 +102,11 @@ export function match_element(variable: string, restriction: (value: any) => boo
     };
     return createMatcherInstance(MatcherName.Element, proc, new Map<string, string | ((value: any) => boolean)>([
         ["var", variable],
-        ["restriction", restriction]
+        ["restriction", critics]
     ]))
 }
 
-export function match_segment(variable: string, restriction: (value: any) => boolean = (value: any) => false): matcher_instance {
+export function match_segment(variable: string, critics: (value: any) => boolean = (value: any) => false): matcher_instance {
     
 
     const match_segment_equal = (data: any[], value: any[], ok: (i: number) => any): any => {
@@ -116,7 +116,7 @@ export function match_segment(variable: string, restriction: (value: any) => boo
                                           FailedReason.BindingValueUnmatched, 
                                           get_element(data, i), null);
             }
-            if (!restriction(get_element(data, i))){
+            if (!critics(get_element(data, i))){
                 return createMatchFailure(MatcherName.Segment, 
                                           FailedReason.RestrictionUnmatched, 
                                           get_element(data, i), null);
@@ -137,7 +137,7 @@ export function match_segment(variable: string, restriction: (value: any) => boo
                                         [data, ["index", index], ["dict", dictionary]], null);
             }
 
-            if (restriction(get_element(data, index))){
+            if (critics(get_element(data, index))){
                 return createMatchFailure(MatcherName.Segment, 
                                         FailedReason.RestrictionUnmatched, 
                                         get_element(data, index), null);
@@ -177,7 +177,7 @@ export function match_segment(variable: string, restriction: (value: any) => boo
 
     return createMatcherInstance(MatcherName.Segment, proc, new Map<string, string | ((value: any) => boolean)>([
         ["var", variable],
-        ["restriction", restriction]
+        ["restriction", critics]
     ]))
 }
 
