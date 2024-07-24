@@ -57,7 +57,7 @@ export function match_empty(): matcher_instance{
     return createMatcherInstance(MatcherName.Empty, proc)
 }
 
-export function match_element(variable: string, critics: (value: any) => boolean = (value: any) => false): matcher_instance {
+export function match_element(variable: string, critics: (value: any) => boolean = (value: any) => true): matcher_instance {
     const proc = (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (environment: MatchDict, nEaten: number) => any): any => {
         if (data === undefined || data === null || isEmpty(data)) {
             return createMatchFailure(MatcherName.Element, 
@@ -106,7 +106,7 @@ export function match_element(variable: string, critics: (value: any) => boolean
     ]))
 }
 
-export function match_segment(variable: string, critics: (value: any) => boolean = (value: any) => false): matcher_instance {
+export function match_segment(variable: string, critics: (value: any) => boolean = (value: any) => true): matcher_instance {
     
 
     const match_segment_equal = (data: any[], value: any[], ok: (i: number) => any): any => {
@@ -137,7 +137,7 @@ export function match_segment(variable: string, critics: (value: any) => boolean
                                         [data, ["index", index], ["dict", dictionary]], null);
             }
 
-            if (critics(get_element(data, index))){
+            if (!critics(get_element(data, index))){
                 return createMatchFailure(MatcherName.Segment, 
                                         FailedReason.RestrictionUnmatched, 
                                         get_element(data, index), null);

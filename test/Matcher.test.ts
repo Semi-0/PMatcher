@@ -44,6 +44,7 @@ describe('MatchBuilder', () => {
         const succeed = jest.fn((dict, nEaten) => {return dict});
 
         const result = run_matcher(matcher, data, succeed);
+        console.log(result)
         expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
         expect(result).toEqual(succeed.mock.results[0].value);
         expect(get_value("seg", result)).toEqual(["seg1", "seg2"]);
