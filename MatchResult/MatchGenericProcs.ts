@@ -12,11 +12,13 @@ const param = [P.segment, "param"]
 function get_param_matcher(filterFunctionKeyword: boolean): any[] {
     const patterns = filterFunctionKeyword
         ? [
+            ["(", param, ")"],
             ["...", "(", param, ","],
             [param, ","],
             [param, ")"]
         ]
         : [
+            ["(", param, ")"],
             ["(", param, ","],
             [param, ","],
             [param, ")"]
