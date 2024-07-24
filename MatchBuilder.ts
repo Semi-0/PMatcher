@@ -405,7 +405,7 @@ export function run_matcher(matcher: matcher_instance, data: any, succeed: (dict
  * @returns An object containing the match dictionary and the number of elements consumed if successful,
  *          or a MatchFailure object if the match fails.
  */
-export function match(input: any[], matcher_expr: any[]): any | MatchResult | MatchPartialSuccess | MatchFailure {
+export function match(input: any, matcher_expr: any[]): any | MatchResult | MatchPartialSuccess | MatchFailure {
     const m = compile(matcher_expr);
     const result = run_matcher(m, input, (dict, e) => { return new MatchResult(dict, e) });
     // const result = internal_match(m, input, empty_match_dict(), default_match_env(), (dict, e) => { return new MatchResult(dict, e) });
@@ -426,7 +426,7 @@ export function match(input: any[], matcher_expr: any[]): any | MatchResult | Ma
  * @param matcher_expr - The matcher expression defining the pattern to match against.
  * @returns True if the match is successful, otherwise false.
  */
-export function try_match(input: any[], matcher_expr: string[]): boolean {
+export function try_match(input: any, matcher_expr: string[]): boolean {
     const result = match(input, matcher_expr);
     if (isSucceed(result)) {
         return true;
