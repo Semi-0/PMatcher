@@ -305,11 +305,11 @@ export function match_array(all_matchers: matcher_instance[]) : matcher_instance
 export function match_choose(matchers: matcher_instance[]): matcher_instance {
     const proc = (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         var failures = []
-        console.log("choose:", matchers.map(m => internal_get_name(m)))
+     
         for (const matcher of matchers) {
-            console.log("choosed", internal_get_name(matcher))
+         
             const result = internal_match(matcher, data, dictionary, match_env, succeed)
-            console.log("result", result)
+           
             if (isSucceed(result)) {
                 return result
             }
@@ -412,7 +412,7 @@ export function match_new_var(names: string[], body: matcher_instance): matcher_
     return createMatcherInstance(MatcherName.NewVar, (data: any[], dictionary: MatchDict, match_env: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any): any => {
         const new_env_ref: ScopeReference = new_ref()
         const new_env = extend(new_env_ref, match_env)
-        console.log("new_env", new_env)
+     
         //@ts-ignore
         const extended_dict = reduce(names, (acc, name) => {
             return extend({key: name,

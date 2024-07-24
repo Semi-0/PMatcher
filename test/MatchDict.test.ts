@@ -47,7 +47,7 @@ describe('MatchDict', () => {
         });
 
         test('has_multi_scope_definition', () => {
-            console.log("start test 3")
+            // console.log("start test 3")
             dictValue = construct_dict_value("a", 0);
             expect(has_multi_scope_definition(dictValue)).toBe(false);
 

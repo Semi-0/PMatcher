@@ -442,23 +442,23 @@ export function try_match(input: any[], matcher_expr: string[]): boolean {
 // console.log(inspect(result, {showHidden: true, colors: true, depth: 10}))
 
 
-const plaindrome = match(["a", "b", "b", "a"], 
-    [P.letrec, [["palindrome",   
-                            [P.choose, 
-                                [P.new, ["x", "rest"], 
-                                            [P.map, [P.compose, [P.element, "x"], 
-                                                    [P.segment, "rest"], 
-                                                    [P.element, "x"]],
-                                                [P.with, ["rest"], [[P.ref, "palindrome"]]]],
-                                            ], 
-                                P.empty,
-                                []]]],
+// const plaindrome = match(["a", "b", "b", "a"], 
+//     [P.letrec, [["palindrome",   
+//                             [P.choose, 
+//                                 [P.new, ["x", "rest"], 
+//                                             [P.map, [P.compose, [P.element, "x"], 
+//                                                     [P.segment, "rest"], 
+//                                                     [P.element, "x"]],
+//                                                 [P.with, ["rest"], [[P.ref, "palindrome"]]]],
+//                                             ], 
+//                                 P.empty,
+//                                 []]]],
                                        
-        [[P.ref, "palindrome"]]]
-//     // [[P.element, "x"], [P.segment, "rest"], [P.element, "x"]]
-    )
+//         [[P.ref, "palindrome"]]]
+// //     // [[P.element, "x"], [P.segment, "rest"], [P.element, "x"]]
+//     )
 
-console.log(inspect(plaindrome, {showHidden: true, colors: true, depth: 30}))
+// console.log(inspect(plaindrome, {showHidden: true, colors: true, depth: 30}))
 
 // const tst_func = (test: number, arg3: number, arg2: number) => {
 //     return test + 1

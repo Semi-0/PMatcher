@@ -80,11 +80,12 @@ define_generic_procedure_handler(apply, match_args((x: any) => true, is_match_re
 
 
 
-// function regular_func(a: number, b: number, c: number) {
-//     return a + b + c;
+// function regular_func(a: number) {
+//     return a
 // }
 
-// console.log(get_args(regular_func))
+// console.log(regular_func.toString())
+// console.log(get_args((a: number) => {a}))
 
 // // const test_func = (x: number, c: number, z: number) => {  return x + c + z }
 
