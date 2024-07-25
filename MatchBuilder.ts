@@ -58,7 +58,7 @@ export const P = { // Stands for Pattern
 
 }
 
-function translate(array: any[]): any[] {
+export function translate(array: any[]): any[] {
     const uuidToMatcher = new Map(Object.entries(P).map(([key, value]) => [value, key]));
 
     return array.map(item => {
@@ -234,12 +234,12 @@ define_generic_procedure_handler(compile,
 
 
 function is_many(pattern: any): boolean{
-    return first_equal_with(pattern, P.many) && pattern.length == 2
+    return first_equal_with(pattern, P.many)
 }
 
 define_generic_procedure_handler(compile, is_many, 
     (pattern: any[]) => {
-        const matcher = pattern[1]
+        const matcher = pattern.slice(1)
         const vars = extract_var_names(matcher)
         const expr =  [P.letrec,
             [["repeat", 
@@ -249,7 +249,7 @@ define_generic_procedure_handler(compile, is_many,
                         [P.compose,
                             ...matcher,
                             [P.ref, "repeat"]]]]]],
-            [[P.ref, "repeat"]]]
+            [P.ref, "repeat"]]
         return compile(expr)
     }
 )
@@ -435,6 +435,9 @@ export function try_match(input: any, matcher_expr: string[]): boolean {
     }
 }
 
+const result = match(["let", [["a", "1"], ["b", "2"]], ["+", "a", "b"]], 
+        ["let", [[P.many, [[P.element, "n"], [P.element, "v"]]]], [P.segment, "body"]] )
+console.log(inspect(result, {showHidden: true, colors: true, depth: 10}))
 
 
 // const result = match(["a", "b", "c"], [P.map, ["a", [P.segment, "rest"]], [P.with, ["rest"], 

@@ -126,7 +126,7 @@ describe('MatchBuilder', () => {
     });
 
     test('should build and match many patterns correctly', () => {
-        const matcher = compile([P.many, ["b", [P.element, "a"]]]);
+        const matcher = compile([[P.many, "b", [P.element, "a"]]]);
         const data = ["b", "a", "b", "v"];
         const succeed = jest.fn((dict, nEaten) => {return new MatchResult(dict, nEaten)});
 

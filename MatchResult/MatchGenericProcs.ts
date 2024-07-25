@@ -24,7 +24,7 @@ function get_param_matcher(filterFunctionKeyword: boolean): any[] {
             [param, ")"]
         ];
 
-    return [P.many, [
+    return [[P.many, 
         [P.transform, 
             (str: string) => str.split(""),
             [P.choose, ...patterns]
