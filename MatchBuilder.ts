@@ -1,5 +1,5 @@
 import type { matcher_callback, matcher_instance } from "./MatchCallback";
-import {match_args} from "generic-handler/Predicates"
+import { match_args } from "generic-handler/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
 import { is_match_instance } from "./MatchCallback";
 import {  match_choose, match_letrec, match_reference, match_new_var, match_compose, match_empty,
@@ -435,9 +435,9 @@ export function try_match(input: any, matcher_expr: string[]): boolean {
     }
 }
 
-const result = match(["let", [["a", "1"], ["b", "2"]], ["+", "a", "b"]], 
-        ["let", [[P.many, [[P.element, "n"], [P.element, "v"]]]], [P.segment, "body"]] )
-console.log(inspect(result, {showHidden: true, colors: true, depth: 10}))
+// const result = match(["let", [["a", "1"], ["b", "2"]], ["+", "a", "b"]], 
+//         ["let", [[P.many, [[P.element, "n"], [P.element, "v"]]]], [P.segment, "body"]] )
+// console.log(inspect(result, {showHidden: true, colors: true, depth: 10}))
 
 
 // const result = match(["a", "b", "c"], [P.map, ["a", [P.segment, "rest"]], [P.with, ["rest"], 
