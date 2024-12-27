@@ -1,8 +1,5 @@
 var referenceCount = 0
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
-import { extend } from "./DictInterface"
-import { copy } from "../utility"
-// WARNING ONLY FOR TEST!!!
+
 export function clearRefHistory(){
     referenceCount = 0
 }

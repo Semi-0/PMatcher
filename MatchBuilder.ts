@@ -24,6 +24,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { DictValue, get_value_sequence } from "./MatchDict/DictValue";
 import type { MatchPartialSuccess } from "./MatchResult/PartialSuccess";
 import { transform } from "typescript";
+import { apply } from "./MatchResult/MatchGenericProcs";
 
 
 
@@ -435,63 +436,67 @@ export function try_match(input: any, matcher_expr: string[]): boolean {
     }
 }
 
-// const result = match(["let", [["a", "1"], ["b", "2"]], ["+", "a", "b"]], 
-//         ["let", [[P.many, [[P.element, "n"], [P.element, "v"]]]], [P.segment, "body"]] )
-// console.log(inspect(result, {showHidden: true, colors: true, depth: 10}))
+export function match_pair(expr: any[], exec: (...args: any[]) => any): any[] {
+    return [expr, exec]
+}
+
+export function get_pair_exec(expr: any[]): (...args: any[]) => any {
+    return expr[1]
+} 
+
+export function get_pair_expr(expr: any[]): any[] {
+    return expr[0]
+}
 
 
-// const result = match(["a", "b", "c"], [P.map, ["a", [P.segment, "rest"]], [P.with, ["rest"], 
-//     [P.new, ["x"], [[P.element, "x"], "c"]]]])
-// console.log(inspect(result, {showHidden: true, colors: true, depth: 10}))
+interface MatchBuilder {
+    input: any
+    match_pairs: any[]
+    else(exec: (...args: any[]) => any): any
+    exhausted(): any[]
+    match(expr: any[], exec: (...args: any[]) => any): MatchBuilder
+}
+
+export function match_builder(input: any, match_pairs: any[]): MatchBuilder {
+    function matching(){
+        for (const pair of match_pairs){
+            const result = match(input, get_pair_expr(pair))
+            if (isSucceed(result)){
+                return apply(get_pair_exec(pair), result)
+            }
+        }
+        return false 
+    }
+
+    const self = {
+        input,
+        match_pairs,
+        else(exec: (...args: any[]) => any): any[] {
+            const result = matching()
+            if (result){
+                return result
+            }
+            else{
+                return exec(input)
+            }
+        },
+        exhausted() {
+            const result = matching()
+            if (result){
+                return result
+            }
+            else{
+                throw new Error("No match found")
+            }
+        },
+        match(expr: any[], exec: (...args: any[]) => any): MatchBuilder {
+            const copy = match_pairs.slice()
+            copy.push(match_pair(expr, exec))
+            return match_builder(input, copy)
+        }
+    }
+
+    return self
+}
 
 
-// const plaindrome = match(["a", "b", "b", "a"], 
-//     [P.letrec, [["palindrome",   
-//                             [P.choose, 
-//                                 [P.new, ["x", "rest"], 
-//                                             [P.map, [P.compose, [P.element, "x"], 
-//                                                     [P.segment, "rest"], 
-//                                                     [P.element, "x"]],
-//                                                 [P.with, ["rest"], [[P.ref, "palindrome"]]]],
-//                                             ], 
-//                                 P.empty,
-//                                 []]]],
-                                       
-//         [[P.ref, "palindrome"]]]
-// //     // [[P.element, "x"], [P.segment, "rest"], [P.element, "x"]]
-//     )
-
-// console.log(inspect(plaindrome, {showHidden: true, colors: true, depth: 30}))
-
-// const tst_func = (test: number, arg3: number, arg2: number) => {
-//     return test + 1
-// }
-
-// const func_str = tst_func.toString().split(" ")
-
-// const pattern1 =  ["(", [P.segment, "param"], ","] 
-// const pattern2 = [[P.segment, "param"], ","]
-// const pattern3 =  [[P.segment, "param"], ")"]
-
-// const result : MatchResult = match(func_str, [P.map, [[P.segment, "params"], "=>", "..."], 
-//                                                 [P.with, 
-//                                                     ["params"], 
-//                                                         [P.many, 
-//                                                             [[P.transform, 
-//                                                                 (str: string) => {return str.split("")},
-//                                                                 [P.choose, pattern1, pattern2, pattern3]]]]]])
-
-// console.log(inspect(result.safeGet("param").map((item: any) => item.join("")), {showHidden: true, colors: true, depth: 30}))
-
-// const param_name = params.forEach((item: string) => {
-//     const chars = item.split("")
-
-//     const pattern1 =  ["(", [P.segment, "param"], ","] 
-//     const pattern2 = [[P.segment, "param"], ","]
-//     const pattern3 =  [[P.segment, "param"], ")"]
-
-
-//     console.log(match(chars, [P.choose, pattern1, pattern2, pattern3]).safeGet("param").join(""))
-// })
-
-// console.log(inspect(params, {showHidden: true, colors: true, depth: 10}))
