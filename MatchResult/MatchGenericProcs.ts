@@ -1,4 +1,4 @@
-import { inspect } from "bun"
+
 import { P } from "../MatchBuilder"
 import { match } from "../MatchBuilder"
 import { isFailed, isSucceed } from "../Predicates"
@@ -66,12 +66,12 @@ export function get_args(func: (...args: any) => any): any[] {
         return result.safeGet("param").map((item: any) => item.join(""))
     }
     else{
-        throw new Error("Function string is not valid" + inspect(result, {depth: 20}))
+        throw new Error("Function string is not valid" + result)
     }
 }
 
 
-export const apply = construct_simple_generic_procedure("apply", 2, (a: any, b: any) => { throw new Error("Not implemented" + inspect(a, {depth: 20}) + inspect(b, {depth: 20}))})
+export const apply = construct_simple_generic_procedure("apply", 2, (a: any, b: any) => { throw new Error("Not implemented" + a + b)})
 
 define_generic_procedure_handler(apply, match_args((x: any) => true, is_match_result), (a: (...args: any[]) => any, b: MatchResult) => {
     return a(...get_args(a).map((arg: any) => b.safeGet(arg)))

@@ -1,7 +1,7 @@
 
 import { guard } from "../utility";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import {  inspect } from "bun";
+
 import { DictValue, is_dict_value, construct_dict_value, get_most_bottom_value, extend_new_value_in_scope, get_value_sequence } from "./DictValue";
 import { get_value, extend } from "./DictInterface";
 
@@ -96,7 +96,7 @@ define_generic_procedure_handler(extend,
             return c
         }
         else{
-            throw Error("captured empty when setting up dict value, match_dict:" + inspect(match_dict))
+            throw Error("captured empty when setting up dict value, match_dict:" + match_dict)
         }
     }
 )
@@ -123,7 +123,7 @@ define_generic_procedure_handler(get_value,
             }
         }
         else{
-            throw Error("try to get default value when it is not bounded, key = " + inspect(key) + " dict = " + inspect(dict))
+            throw Error("try to get default value when it is not bounded, key = " + key + " dict = " + dict)
         }
     }
 )
@@ -261,11 +261,11 @@ define_generic_procedure_handler(get_value,
                 return entries[kasi.scopeIndex][1]
             }
             else{
-                throw Error("attempt to get scope index exceeds from the value size, kasi: " + inspect(kasi) + " dict: " + inspect(mdict) )
+                throw Error("attempt to get scope index exceeds from the value size, kasi: " + (kasi) + " dict: " + mdict) 
             }
         }
         else{
-            throw Error("attempt to get the scope value from a undefined index, kasi: " + inspect(kasi) + " dict: " + inspect(mdict) )
+            throw Error("attempt to get the scope value from a undefined index, kasi: " + kasi + " dict: " + mdict)
         }
     }
 )

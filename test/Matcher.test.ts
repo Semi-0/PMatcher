@@ -5,7 +5,7 @@ import type { MatchEnvironment } from "../MatchEnvironment";
 import {  default_match_env } from "../MatchEnvironment";
 import { MatchFailure, FailedReason } from "../MatchResult/MatchFailure";
 import { MatchResult } from "../MatchResult/MatchResult";
-import { inspect } from "util";
+
 import { get_value } from "../MatchDict/DictInterface";
 import { clearRefHistory } from "../MatchDict/ScopeReference";
 import { MatcherName } from "../NameDict";

@@ -10,7 +10,7 @@ import {  match_choose, match_letrec, match_reference, match_new_var, match_comp
 import { empty_match_dict } from "./MatchDict/MatchDict";
 import {  isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
-import { inspect } from "util";
+
 import { internal_get_args, internal_get_name, internal_match } from "./MatchCallback";
 import { MatchResult } from "./MatchResult/MatchResult"
 import { MatchFailure } from "./MatchResult/MatchFailure"; 
@@ -24,13 +24,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { DictValue, get_value_sequence } from "./MatchDict/DictValue";
 import type { MatchPartialSuccess } from "./MatchResult/PartialSuccess";
 import { transform } from "typescript";
-import { apply } from "./MatchResult/MatchGenericProcs";
+
+
 
 
 
 export const compile = construct_simple_generic_procedure("compile", 1,
     (matchers: any[]) => {
-        throw Error(`unrecognized pattern in the build procedure: ${inspect(matchers, {showHidden:true, depth:10})}`)
+        throw Error(`unrecognized pattern in the build procedure: ${matchers}`)
     }
 )
 
@@ -91,7 +92,7 @@ define_generic_procedure_handler(compile,
             return match_constant(pattern)
         }
         else{
-            throw Error(`unrecognized constant pattern in the build procedure: ${inspect(pattern)}`)
+            throw Error(`unrecognized constant pattern in the build procedure: ${pattern}`)
         }
     }
 )
@@ -141,7 +142,7 @@ define_generic_procedure_handler(compile,
     is_Letrec,
     (pattern: any[]) => {
         if (pattern.length !== 3) {
-            throw Error(`unrecognized pattern in the letrec procedure: ${inspect(pattern)}`)
+            throw Error(`unrecognized pattern in the letrec procedure: ${pattern}`)
         }
 
         const bindings = pattern[1].map((item: any[]) => ({ key: item[0], value: compile(item[1]) }));
@@ -449,54 +450,5 @@ export function get_pair_expr(expr: any[]): any[] {
 }
 
 
-interface MatchBuilder {
-    input: any
-    match_pairs: any[]
-    else(exec: (...args: any[]) => any): any
-    exhausted(): any[]
-    match(expr: any[], exec: (...args: any[]) => any): MatchBuilder
-}
-
-export function match_builder(input: any, match_pairs: any[]): MatchBuilder {
-    function matching(){
-        for (const pair of match_pairs){
-            const result = match(input, get_pair_expr(pair))
-            if (isSucceed(result)){
-                return apply(get_pair_exec(pair), result)
-            }
-        }
-        return false 
-    }
-
-    const self = {
-        input,
-        match_pairs,
-        else(exec: (...args: any[]) => any): any[] {
-            const result = matching()
-            if (result){
-                return result
-            }
-            else{
-                return exec(input)
-            }
-        },
-        exhausted() {
-            const result = matching()
-            if (result){
-                return result
-            }
-            else{
-                throw new Error("No match found")
-            }
-        },
-        match(expr: any[], exec: (...args: any[]) => any): MatchBuilder {
-            const copy = match_pairs.slice()
-            copy.push(match_pair(expr, exec))
-            return match_builder(input, copy)
-        }
-    }
-
-    return self
-}
 
 

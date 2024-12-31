@@ -1,6 +1,6 @@
 import { guard } from "../utility";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import {  inspect } from "bun";
+
 import { get_value, extend } from "./DictInterface";
 import {  default_ref, is_scope_reference, new_ref } from "./ScopeReference";
 import type { ScopeReference } from "./ScopeReference";
@@ -119,14 +119,14 @@ define_generic_procedure_handler(get_value,
      (env: MatchEnvironment, value: DictValue) => {
 
         guard(() => {return env.length !== 0}, () => {
-            throw Error("error try to get value from a empty env, env: " + inspect(env))
+            throw Error("error try to get value from a empty env, env: " + env)
         })
 
         for (var index = 0; index < env.length; index++){
             const ref: ScopeReference = env[index]
             
             guard(() => {return value.referenced_definition.size !== 0}, () =>{
-                throw Error("error try to get value from a empty dict, dict: " + inspect(value))
+                throw Error("error try to get value from a empty dict, dict: " + value)
             })
             const result = value.referenced_definition.get(ref)
 

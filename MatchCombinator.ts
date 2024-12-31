@@ -1,6 +1,6 @@
 import { MatchDict, empty_match_dict, get_raw_entity } from "./MatchDict/MatchDict";
 import type { matcher_callback } from "./MatchCallback";
-import { inspect } from "util";
+
 import { first, rest, isPair, isEmpty, isArray, get_length, get_element, slice, set_element, construct, map, filter, reduce, second } from "./GenericArray";
 import type { ScopeReference } from "./MatchDict/ScopeReference";
 import { extend, get_value } from "./MatchDict/DictInterface";
