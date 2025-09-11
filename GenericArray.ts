@@ -1,4 +1,4 @@
-import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
+import { construct_simple_generic_procedure } from "generic-procedure/GenericProcedure"
 // only need to extend this four method to support map over custom array type
 export const get_element = construct_simple_generic_procedure("get_element", 2,
     <T>(array: T[], index: number): T => array[index]

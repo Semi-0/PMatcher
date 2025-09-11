@@ -1,4 +1,4 @@
-import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
+import { construct_simple_generic_procedure } from "generic-procedure/GenericProcedure"
 
 export const equal = construct_simple_generic_procedure("equal", 2,
     (A: any, B: any) => A === B

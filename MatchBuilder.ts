@@ -1,5 +1,5 @@
 import type { matcher_callback, matcher_instance } from "./MatchCallback";
-import { match_args } from "generic-handler/Predicates"
+import { match_args } from "generic-procedure/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
 import { is_match_instance } from "./MatchCallback";
 import {  match_choose, match_letrec, match_reference, match_new_var, match_compose, match_empty,
@@ -16,11 +16,18 @@ import { MatchResult } from "./MatchResult/MatchResult"
 import { MatchFailure } from "./MatchResult/MatchFailure"; 
 import { isSucceed, isFailed } from "./Predicates";
 import { first, rest, isPair, isEmpty, isArray, second, third } from "./GenericArray";
-import { define_generic_procedure_handler, get_all_critics } from "generic-handler/GenericProcedure";
+import { define_generic_procedure_handler, get_all_critics } from "generic-procedure/GenericProcedure";
 
-import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure } from "generic-procedure/GenericProcedure";
 import { default_match_env } from "./MatchEnvironment";
-import { v4 as uuidv4 } from 'uuid';
+function uuidv4(): string {
+    // Simple UUID v4 generator (non-crypto)
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
 import { DictValue, get_value_sequence } from "./MatchDict/DictValue";
 import type { MatchPartialSuccess } from "./MatchResult/PartialSuccess";
 import { transform } from "typescript";

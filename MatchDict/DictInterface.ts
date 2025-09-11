@@ -1,5 +1,5 @@
 import { guard } from "../utility";
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-procedure/GenericProcedure";
 
 
 export const get_value = construct_simple_generic_procedure("get_value", 2, 

@@ -3,9 +3,9 @@ import { P } from "../MatchBuilder"
 import { match } from "../MatchBuilder"
 import { isFailed, isSucceed } from "../Predicates"
 import type { MatchFailure } from "./MatchFailure"
-import { define_generic_procedure_handler, construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
+import { define_generic_procedure_handler, construct_simple_generic_procedure } from "generic-procedure/GenericProcedure"
 import { MatchResult, is_match_result } from "./MatchResult"
-import { match_args } from "generic-handler/Predicates"
+import { match_args } from "generic-procedure/Predicates"
 
 const param = [P.segment, "param"]
 
