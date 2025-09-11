@@ -1,5 +1,5 @@
 import type { ScopeReference } from "./MatchDict/ScopeReference"
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
+import { define_generic_procedure_handler } from "generic-procedure/GenericProcedure"
 import { copy } from "./utility"
 import { extend } from "./MatchDict/DictInterface"
 import { is_scope_reference } from "./MatchDict/ScopeReference"

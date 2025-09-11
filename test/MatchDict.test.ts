@@ -18,7 +18,7 @@ import { get_args } from '../MatchResult/MatchGenericProcs'; // Import the get_a
 import { match } from "../MatchBuilder";
 import { P } from "../MatchBuilder";
 import { isSucceed } from "../Predicates";
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-procedure/GenericProcedure";
 import { MatchResult, is_match_result } from "../MatchResult/MatchResult";
 
 describe('MatchDict', () => {
@@ -128,7 +128,7 @@ describe('MatchDict', () => {
 // ... existing imports ...
 import type { KeyAndScopeIndex } from '../MatchDict/MatchDict';
 import { is_key_and_scoped_index } from '../MatchDict/MatchDict';
-import { match_args } from 'generic-handler/Predicates';
+import { match_args } from 'generic-procedure/Predicates';
 
 describe('MatchDict', () => {
     // ... existing test suites ...

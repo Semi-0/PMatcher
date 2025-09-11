@@ -1,6 +1,6 @@
 import type { MatchFailure } from "./MatchResult/MatchFailure";
 import type { MatchPartialSuccess } from "./MatchResult/PartialSuccess";
-import { define_generic_procedure_handler, construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+import { define_generic_procedure_handler, construct_simple_generic_procedure } from "generic-procedure/GenericProcedure";
 import { isMatchFailure } from "./MatchResult/MatchFailure";
 import { isMatchPartialSuccess } from "./MatchResult/PartialSuccess";
 import { is_match_dict, MatchDict } from "./MatchDict/MatchDict";

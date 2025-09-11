@@ -382,7 +382,8 @@ describe('extract_matcher', () => {
 
 
 import { get_element, set_element, get_length, isArray } from "../GenericArray";
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { define_generic_procedure_handler } from "generic-procedure/GenericProcedure";
+import { pmatch } from "../Shorthand";
 
 // ... existing imports and tests ...
 
@@ -452,3 +453,18 @@ describe('CustomArray with MatchBuilder', () => {
         }
     });
 });
+
+describe('pmatch ergonomic API', () => {
+    test('matches and provides dict fetcher', () => {
+        const out = pmatch(["test", "X"]) 
+            .with(["test", [P.element, "a"]], d => d("a") + "!")
+            .exhaustive()
+        expect(out).toBe("X!")
+    })
+
+    test('throws when key missing', () => {
+        expect(() => pmatch(["test", "X"]) 
+            .with(["test", [P.element, "a"]], d => d("b"))
+            .exhaustive()).toThrow(/try to get default value/)
+    })
+})

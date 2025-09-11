@@ -1,6 +1,6 @@
 
 import { guard } from "../utility";
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-procedure/GenericProcedure";
 
 import { DictValue, is_dict_value, construct_dict_value, get_most_bottom_value, extend_new_value_in_scope, get_value_sequence } from "./DictValue";
 import { get_value, extend } from "./DictInterface";

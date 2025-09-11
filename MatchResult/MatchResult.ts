@@ -1,8 +1,8 @@
 import { is_match_dict, type MatchDict } from "../MatchDict/MatchDict";
 import { get_value } from "../MatchDict/DictInterface";
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-procedure/GenericProcedure";
 
-import { match_args } from "generic-handler/Predicates";
+import { match_args } from "generic-procedure/Predicates";
 import { is_match_env } from "../MatchEnvironment";
 import { match, P } from "../MatchBuilder";
 // import { get_args } from "./MatchGenericProcs";
