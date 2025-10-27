@@ -2,7 +2,7 @@ import { is_match_dict, type MatchDict } from "../MatchDict/MatchDict";
 import { get_value } from "../MatchDict/DictInterface";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 
-import { match_args } from "generic-handler/Predicates";
+import { match_args, register_predicate } from "generic-handler/Predicates";
 import { is_match_env } from "../MatchEnvironment";
 import { match, P } from "../MatchBuilder";
 // import { get_args } from "./MatchGenericProcs";
@@ -28,6 +28,10 @@ export class MatchResult{
     // }
 }
 
+export const is_match_result = register_predicate("is_match_result", (x: any): x is MatchResult => {
+    return x instanceof MatchResult
+})
+
 
 
 export const get_dict = construct_simple_generic_procedure("get_dict", 1, (x: any) => {
@@ -44,21 +48,17 @@ export const get_eaten = construct_simple_generic_procedure("get_eaten", 1, (x: 
 //     return env.apply(callback)
 // })
 
-define_generic_procedure_handler(get_dict, is_match_result, (x: MatchResult) => {
+define_generic_procedure_handler(get_dict, match_args(is_match_result), (x: MatchResult) => {
     return x.dictionary
 })
 
-define_generic_procedure_handler(get_dict, is_match_dict, (x: MatchDict) => {
+define_generic_procedure_handler(get_dict, match_args(is_match_dict), (x: MatchDict) => {
     return x
 })
 
-define_generic_procedure_handler(get_eaten, is_match_result, (x: MatchResult) => {
+define_generic_procedure_handler(get_eaten, match_args(is_match_result), (x: MatchResult) => {
     return x.nEaten
 })
-
-export function is_match_result(x: any): x is MatchResult {
-    return x instanceof MatchResult
-}
 
 
 // const env = match([1, "a", 2], [[P.element, "a"], "a", [P.element, "b"]])

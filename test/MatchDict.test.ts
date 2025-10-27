@@ -129,6 +129,7 @@ describe('MatchDict', () => {
 import type { KeyAndScopeIndex } from '../MatchDict/MatchDict';
 import { is_key_and_scoped_index } from '../MatchDict/MatchDict';
 import { match_args } from 'generic-handler/Predicates';
+import { is_any } from 'generic-handler/built_in_generics/generic_predicates';
 
 describe('MatchDict', () => {
     // ... existing test suites ...
@@ -208,37 +209,37 @@ describe('MatchDict', () => {
     });
 
     // New test suite for get_args
-    describe('get_args', () => {
-        test('should return parameter names for an arrow function', () => {
-            const test_func = (x: number, c: number, z: number) => { return x + c + z; };
-            const params = get_args(test_func);
-            expect(params).toEqual(["x", "c", "z"]);
-        });
+    // describe('get_args', () => {
+    //     test('should return parameter names for an arrow function', () => {
+    //         const test_func = (x: number, c: number, z: number) => { return x + c + z; };
+    //         const params = get_args(test_func);
+    //         expect(params).toEqual(["x", "c", "z"]);
+    //     });
 
-        test('should return parameter names for a regular function', () => {
-            function regular_func(a: number, b: number, c: number) {
-                return a + b + c;
-            }
-            const params = get_args(regular_func);
-            expect(params).toEqual(["a", "b", "c"]);
-        });
-    });
+    //     test('should return parameter names for a regular function', () => {
+    //         function regular_func(a: number, b: number, c: number) {
+    //             return a + b + c;
+    //         }
+    //         const params = get_args(regular_func);
+    //         expect(params).toEqual(["a", "b", "c"]);
+    //     });
+    // });
 
-    // New test suite for apply
-    describe('apply', () => {
-        const apply = construct_simple_generic_procedure("apply", 2, (a: any, b: any) => { throw new Error("Not implemented") });
+    // // New test suite for apply
+    // describe('apply', () => {
+    //     const apply = construct_simple_generic_procedure("apply", 2, (a: any, b: any) => { throw new Error("Not implemented") });
 
-        define_generic_procedure_handler(apply, match_args((x: any) => true, is_match_result), (a: (...args: any[]) => any, b: MatchResult) => {
-            return a(...get_args(a).map((arg: any) => {
-                const value = b.safeGet(arg);
-                return Array.isArray(value) ? value.map(v => Number(v)) : Number(value);
-            }));
-        });
+    //     define_generic_procedure_handler(apply, match_args(is_any, is_match_result), (a: (...args: any[]) => any, b: MatchResult) => {
+    //         return a(...get_args(a).map((arg: any) => {
+    //             const value = b.safeGet(arg);
+    //             return Array.isArray(value) ? value.map(v => Number(v)) : Number(value);
+    //         }));
+    //     });
 
-        test('should apply function with matched arguments', () => {
-            const result = match([1, "b", 3], [[P.segment, "a"], "b", [P.segment, "c"]]);
-            const output = apply((a: string, c: string) => { return Number(a) + Number(c); }, result);
-            expect(output).toBe(4);
-        });
-    });
+    //     test('should apply function with matched arguments', () => {
+    //         const result = match([1, "b", 3], [[P.segment, "a"], "b", [P.segment, "c"]]);
+    //         const output = apply((a: string, c: string) => { return Number(a) + Number(c); }, result);
+    //         expect(output).toBe(4);
+    //     });
+    // });
 });

@@ -4,9 +4,17 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { get_value, extend } from "./DictInterface";
 import {  default_ref, is_scope_reference, new_ref } from "./ScopeReference";
 import type { ScopeReference } from "./ScopeReference";
-import { copy } from "../utility"
-import { is_match_env, type MatchEnvironment } from "../MatchEnvironment";
+
 import {v4 as uuidv4} from 'uuid'
+import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
+
+
+export const copy = construct_simple_generic_procedure("copy", 1,
+    (A: any) => {
+        throw Error("unknown object to copy, A: " + A)
+
+    }
+)
 
 export class DictValue{
     referenced_definition: Map<ScopeReference, any>
@@ -19,11 +27,11 @@ export class DictValue{
 ////WARNINF!!!!
 export const will_define =  uuidv4()
 
+export const is_dict_value = register_predicate("is_dict_value", (item: any): boolean => {
+    return item instanceof DictValue
+})
 
-
-define_generic_procedure_handler(copy, (A: any) => {
-    return is_dict_value(A)
-}, (dict: DictValue) => {
+define_generic_procedure_handler(copy, match_args(is_dict_value), (dict: DictValue) => {
     const copy = new DictValue()
     copy.referenced_definition = new Map(dict.referenced_definition)
     return copy
@@ -39,9 +47,7 @@ export function get_value_sequence(value: DictValue): any[] {
     return result;
 }
 
-export function is_dict_value(item: any): boolean{
-    return item instanceof DictValue
-}
+
 
 export function empty_dict_value(): DictValue{
     return new DictValue
@@ -99,9 +105,7 @@ export function has_scope_reference(ref: ScopeReference, item: DictValue): boole
 }
 
 define_generic_procedure_handler(get_value,
-    (A: any, B: any) => {
-        return is_scope_reference(A) && is_dict_value(B)
-    },
+    match_args(is_scope_reference, is_dict_value),
     (scope_ref: ScopeReference, value: DictValue) => {
         // interface for precise get_value
         guard(() => {return has_scope_reference(scope_ref, value)},() => {
@@ -112,41 +116,10 @@ define_generic_procedure_handler(get_value,
     }
 )
 
-define_generic_procedure_handler(get_value,
-    (A: any, B: any) => {
-        return is_match_env(A) && is_dict_value(B)
-    },
-     (env: MatchEnvironment, value: DictValue) => {
-
-        guard(() => {return env.length !== 0}, () => {
-            throw Error("error try to get value from a empty env, env: " + env)
-        })
-
-        for (var index = 0; index < env.length; index++){
-            const ref: ScopeReference = env[index]
-            
-            guard(() => {return value.referenced_definition.size !== 0}, () =>{
-                throw Error("error try to get value from a empty dict, dict: " + value)
-            })
-            const result = value.referenced_definition.get(ref)
-
-             if ((result != undefined) && (result != null)){
-                return result
-            }
-            else{
-                continue
-            }
-        }
-        return undefined
-    }
-)
-
 
 define_generic_procedure_handler(extend,
     // extending default value
-    (A: any, B: any) => {
-        return is_dict_value(B)
-    },
+    all_match(is_dict_value),
     (default_value: any, item: DictValue) => {
         guard(() => {return has_default_value(item)}, () => {
             throw Error("error! dict item already has a default value")
@@ -162,19 +135,17 @@ export type NestedValue = {
     scopeRef: ScopeReference
 }
 
-function is_nested_value(A: any): A is NestedValue {
+export const is_nested_value = register_predicate("is_nested_value", (A: any): A is NestedValue => {
     return typeof A === 'object' 
         && A !== null 
         && 'value' in A 
         && 'scopeRef' in A 
-        && is_scope_reference(A.scopeRef);
-}
+        && is_scope_reference(A.scopeRef)
+})
 
 
 define_generic_procedure_handler(extend, 
-    (A: any, B: any) => {
-        return is_nested_value(A) && is_dict_value(B)
-    },
+    match_args(is_nested_value, is_dict_value),
     (nested_value: NestedValue, item: DictValue) => {
         const c = copy(item)
         c.referenced_definition.set(nested_value.scopeRef, nested_value.value)

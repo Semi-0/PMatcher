@@ -9,8 +9,8 @@ import { default_ref, is_scope_reference, type ScopeReference } from "./ScopeRef
 import type { MatchEnvironment } from "../MatchEnvironment";
 import { is_match_env } from "../MatchEnvironment";
 import { default_match_env } from "../MatchEnvironment";
-import { copy } from "../utility"
-
+import { copy } from "./DictValue"
+import { match_args, register_predicate } from "generic-handler/Predicates";
 export class MatchDict {
     dict: Map<string, DictValue>
 
@@ -19,7 +19,11 @@ export class MatchDict {
     }
 }
 
-define_generic_procedure_handler(copy, ( A:any ) => { return is_match_dict(A)}, 
+export const is_match_dict = register_predicate("is_match_dict", (a: any): a is MatchDict => {
+    return a instanceof MatchDict
+})
+
+define_generic_procedure_handler(copy, match_args(is_match_dict), 
     (dict: MatchDict) => {
         const copy = new MatchDict()
         copy.dict = new Map(dict.dict)
@@ -32,17 +36,15 @@ export function empty_match_dict(): MatchDict{
     return new MatchDict()
 }
 
-export function is_match_key(a: any): boolean{
+export const is_match_key = register_predicate("is_match_key", (a: any): a is string => {
     return typeof a === "string"
-}
+})
 
-export function is_match_dict(a: any): boolean{
-    return a instanceof MatchDict
-}
 
-export function has_key(key: string, match_dict: MatchDict): boolean{
-    return match_dict.dict.has(key);
-}
+
+export const has_key = register_predicate("has_key", (key: string, match_dict: MatchDict): boolean => {
+    return match_dict.dict.has(key)
+})
 
 export function get_raw_entity(key: string, mdict: MatchDict): DictValue | undefined {
     return mdict.dict.get(key)
@@ -73,16 +75,14 @@ export function format_match_dict_item(A: any) : boolean{
         && 'value' in A  
 }
 
-export function is_dict_item(A: any) : boolean{
+export const is_dict_item = register_predicate("is_dict_item", (A: any) : A is DictItem => {
     return format_match_dict_item(A) 
-}
+})
 
 
 
 define_generic_procedure_handler(extend,
-    (A: any, B: any) => {
-        return  is_dict_item(A) && is_match_dict(B)
-    },
+    match_args(is_dict_item, is_match_dict),
     (A: any, match_dict: MatchDict) => {
         const c = copy(match_dict)
         // empty dict value is also included
@@ -102,15 +102,13 @@ define_generic_procedure_handler(extend,
 )
 
 
-export function is_dict_key(A: any): boolean{
+export const is_dict_key = register_predicate("is_dict_key", (A: any): A is string => {
     return typeof A === "string"
-}
+})
 
 // normal getting value: instead of getting the referenced value, get the default value
 define_generic_procedure_handler(get_value,
-    (A: any, B: any) => {
-        return is_dict_key(A) && is_match_dict(B)
-    },
+    match_args(is_dict_key, is_match_dict),
     (key: string, dict: MatchDict) => {
         const v = dict.dict.get(key)
 
@@ -134,18 +132,16 @@ export type KeyAndMatchEnv ={
     matchEnv: MatchEnvironment
 }
 
-export function is_key_and_match_env(A: any){
+export const is_key_and_match_env = register_predicate("is_key_and_match_env", (A: any) => {
     return typeof A === 'object'
         && A !== null 
         && 'key' in A 
         && 'matchEnv' in A 
         && is_match_env(A.matchEnv) 
-}
+})
 
 define_generic_procedure_handler(get_value, 
-    (A: any, B: any) => {
-        return is_key_and_match_env(A) && is_match_dict(B)
-    }, (kae: KeyAndMatchEnv, mdict: MatchDict) => {
+    match_args(is_key_and_match_env, is_match_dict), (kae: KeyAndMatchEnv, mdict: MatchDict) => {
         const item = mdict.dict.get(kae.key)
 
         if ((item != undefined) && (item != null)){
@@ -165,19 +161,17 @@ export type bindingAndScopeRef = {
     scopeRef: ScopeReference
 }
 
-export function is_binding_and_scope_ref(A: any){
+export const is_binding_and_scope_ref = register_predicate("is_binding_and_scope_ref", (A: any): A is bindingAndScopeRef => {
     return typeof A === 'object'
         && A !== null 
         && 'key' in A 
         && 'value' in A
         && 'scopeRef' in A 
         && is_scope_reference(A.scopeRef) 
-}
+})
 
 define_generic_procedure_handler(extend,
-    (A: any, B: any) => {
-        return is_binding_and_scope_ref(A) && is_match_dict(B)
-    },
+    match_args(is_binding_and_scope_ref, is_match_dict),
     (bas: bindingAndScopeRef, mdict: MatchDict) => {
         const existed = get_raw_entity(bas.key, mdict)
 
@@ -209,18 +203,16 @@ export type KeyAndScopeRef = {
     scopeRef: ScopeReference 
 }
 
-export function is_key_and_scope_ref(A: any){
+export const is_key_and_scope_ref = register_predicate("is_key_and_scope_ref", (A: any): A is KeyAndScopeRef => {
     return typeof A === 'object'
         && A !== null 
         && 'key' in A 
         && 'scopeRef' in A 
         && is_scope_reference(A.scopeRef)
-}
+})
 
 define_generic_procedure_handler(get_value,
-    (A: any, B: any) => {
-        return is_key_and_scope_ref(A) && is_match_dict(B)
-    }, 
+    match_args(is_key_and_scope_ref, is_match_dict),
     (kasf: KeyAndScopeRef, mdict: MatchDict) => {
         const item = mdict.dict.get(kasf.key)
         
@@ -241,17 +233,15 @@ export type KeyAndScopeIndex = {
     scopeIndex : number
 }
 
-export function is_key_and_scoped_index(A: any) : boolean{
+export const is_key_and_scoped_index = register_predicate("is_key_and_scoped_index", (A: any): A is KeyAndScopeIndex => {
     return typeof A === 'object'
          && A !== null 
         && 'key' in A 
         && 'scopeIndex' in A 
-}
+})
 
 define_generic_procedure_handler(get_value,
-    (A: any, B: any) => {
-        return  is_key_and_scoped_index(A) && is_match_dict(B)
-    },
+    match_args(is_key_and_scoped_index, is_match_dict),
     (kasi: KeyAndScopeIndex, mdict: MatchDict) => {
         const item = mdict.dict.get(kasi.key)
 

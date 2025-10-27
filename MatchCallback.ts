@@ -10,6 +10,7 @@ import { isElementAccessExpression } from "typescript";
 import { equal } from "./utility";
 import { isSucceed, isFailed } from "./Predicates";
 import { MatcherName } from "./NameDict"
+import { register_predicate } from "generic-handler/Predicates";
 export type matcher_callback =  (data: any[], dictionary: MatchDict, matchEnv: MatchEnvironment, succeed: (dictionary: MatchDict, nEaten: number) => any) => any
 // needs more precise error handler
 // TODO: Support Any Type Done  
@@ -24,9 +25,9 @@ export type matcher_instance = {
     index: string | null // for tracing matchindex
 } 
 
-export function is_match_instance(matcher: any) : matcher is matcher_instance{
+export const is_match_instance = register_predicate("is_match_instance", (matcher: any) : matcher is matcher_instance => {
     return matcher && typeof matcher === "object" && typeof matcher.name === "string" && typeof matcher.procedure === "function"
-}
+})
 
 export function createMatcherInstance(name: MatcherName, procedure: matcher_callback, args : null | Map<string, any> = null, index: string | null = null): matcher_instance {
     return {name, args, procedure, index}

@@ -1,3 +1,4 @@
+import { register_predicate } from "generic-handler/Predicates"
 import type { MatcherName } from "../NameDict"
 
 export class MatchFailure {
@@ -13,9 +14,9 @@ export function createMatchFailure(matcher: string, reason: FailedReason, data: 
     return new MatchFailure(matcher, reason, data, subFailure)
 }
 
-export function isMatchFailure(x: any): boolean{
+export const is_match_failure = register_predicate("is_match_failure", (x: any): x is MatchFailure => {
     return x instanceof MatchFailure
-}
+})
 
 export function getFailedMatcher(matchFailure: MatchFailure) : string{
     return matchFailure.matcher

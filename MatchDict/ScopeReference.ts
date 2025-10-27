@@ -1,3 +1,5 @@
+import { register_predicate } from "generic-handler/Predicates"
+
 var referenceCount = 0
 
 export function clearRefHistory(){
@@ -16,7 +18,7 @@ export function new_ref(): ScopeReference{
     return referenceCount
 }
 
-export function is_scope_reference(A: any): boolean{
-    return typeof A === "number"
-}
+export const is_scope_reference = register_predicate("is_scope_reference", (A: any): boolean => {
+    return typeof A === "number" && A >= 0
+})
 

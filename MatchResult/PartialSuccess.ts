@@ -1,3 +1,4 @@
+import { register_predicate } from "generic-handler/Predicates";
 import type { matcher_callback, matcher_instance } from "../MatchCallback";
 import type { MatchFailure } from "../MatchResult/MatchFailure";
 
@@ -8,9 +9,9 @@ export type MatchPartialSuccess = {
     failure: MatchFailure | null;
 }
 
-export function isMatchPartialSuccess(x: any) : boolean{
+export const is_match_partial_success = register_predicate("is_match_partial_success", (x: any): x is MatchPartialSuccess => {
     return x && typeof x === "object" && "succeedMatchers" in x && "succeedCount" in x && "results" in x && "failure" in x
-}
+})
 
 export function createMatchPartialSuccess(succeedMatchers: matcher_instance[], succeedCount: number, results: any[], failure: MatchFailure | null) : MatchPartialSuccess{
     return {succeedMatchers, succeedCount, results, failure}

@@ -11,7 +11,7 @@
   "type": "module",
   "dependencies": {
     "@types/uuid": "^10.0.0",
-    "generic-handler": "0.1.2",
+    "generic-handler": "file:../GenericProcedure",
     "uuid": "^10.0.0"
   }
 }

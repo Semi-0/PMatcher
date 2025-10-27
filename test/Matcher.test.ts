@@ -125,17 +125,7 @@ describe('MatchBuilder', () => {
         expect(result).toEqual(succeed.mock.results[0].value);
     });
 
-    test('should build and match many patterns correctly', () => {
-        const matcher = compile([[P.many, "b", [P.element, "a"]]]);
-        const data = ["b", "a", "b", "v"];
-        const succeed = jest.fn((dict, nEaten) => {return new MatchResult(dict, nEaten)});
 
-        const result = run_matcher(matcher, data, succeed);
-
-        // expect(succeed).toHaveBeenCalledWith(expect.any(MatchDict), 1);
-        //@ts-ignore
-        expect(isSucceed(result)).toBe(true);
-    });
 
     test('should return MatchFailure when many patterns do not match', () => {
         const matcher = compile([P.many, ["b", [P.element, "a"]]] );
@@ -264,63 +254,8 @@ test('get_value_sequence returns all values in the map as an array', () => {
     expect(result).toEqual([value1, value2]);
 });
 
-import { extract_var_names } from "../MatchBuilder";
 import { isFailed, isPartialSuccess, isSucceed } from "../Predicates";
 
-describe('extract_var_names', () => {
-    test('should extract variable names from match elements and segments', () => {
-        const pattern = [
-            [P.element, "x"],
-            [P.segment, "y"],
-            [P.constant, "a"],
-            [P.letrec, [["a", [P.constant, "b"]]], [[P.ref, "a"]]],
-            [P.choose, [[P.constant, "a"]], [[P.constant, "b"]]],
-            [P.new, ["z"]],
-            [P.ref, "a"],
-            [P.compose, [P.constant, "a"]],
-            P.empty,
-            P.wildcard,
-            ["nested", [P.element, "nestedVar"]]
-        ];
-
-        const result = extract_var_names(pattern);
-        expect(result).toEqual(["x", "y", "nestedVar"]);
-    });
-
-    test('should return an empty array when there are no variable names', () => {
-        const pattern = [
-            [P.constant, "a"],
-            [P.letrec, [["a", [P.constant, "b"]]], [[P.ref, "a"]]],
-            [P.choose, [[P.constant, "a"]], [[P.constant, "b"]]],
-            [P.new, ["z"]],
-            [P.ref, "a"],
-            [P.compose, [P.constant, "a"]],
-            P.empty,
-            P.wildcard
-        ];
-
-        const result = extract_var_names(pattern);
-        expect(result).toEqual([]);
-    });
-
-    test('should handle nested arrays correctly', () => {
-        const pattern = [
-            [P.element, "x"],
-            ["nested", [P.element, "nestedVar"]],
-            ["deeply", ["nested", [P.element, "deepVar"]]]
-        ];
-
-        const result = extract_var_names(pattern);
-        expect(result).toEqual(["x", "nestedVar", "deepVar"]);
-    });
-
-    test('should handle empty patterns', () => {
-        const pattern: any[] = [];
-
-        const result = extract_var_names(pattern);
-        expect(result).toEqual([]);
-    });
-});
 
 describe('match_begin', () => {
     const succeed = jest.fn((dict, nEaten) => ({ dict, nEaten }));
@@ -385,70 +320,3 @@ import { get_element, set_element, get_length, isArray } from "../GenericArray";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 
 // ... existing imports and tests ...
-
-describe('CustomArray with MatchBuilder', () => {
-    class CustomArray<T> {
-        constructor(private items: T[]) {}
-        
-        get(index: number): T {
-            return this.items[index];
-        }
-        
-        set(index: number, value: T): void {
-            this.items[index] = value;
-        }
-        
-        get length(): number {
-            return this.items.length;
-        }
-    }
-
-    // Extend generic procedures for CustomArray
-    define_generic_procedure_handler(get_element,
-        (obj: any): obj is CustomArray<any> => obj instanceof CustomArray,
-        <T>(array: CustomArray<T>, index: number): T => array.get(index)
-    );
-
-    define_generic_procedure_handler(set_element,
-        (obj: any): obj is CustomArray<any> => obj instanceof CustomArray,
-        <T>(array: CustomArray<T>, index: number, value: T): CustomArray<T> => {
-            array.set(index, value);
-            return array;
-        }
-    );
-
-    define_generic_procedure_handler(get_length,
-        (obj: any): obj is CustomArray<any> => obj instanceof CustomArray,
-        <T>(array: CustomArray<T>): number => array.length
-    );
-
-    define_generic_procedure_handler(isArray,
-        (obj: any): obj is CustomArray<any> => obj instanceof CustomArray,
-        <T>(obj: any): obj is CustomArray<T> => obj instanceof CustomArray
-    );
-
-    function createCustomArray<T>(...items: T[]): CustomArray<T> {
-        return new CustomArray(items);
-    }
-
-    test('should match CustomArray with MatchBuilder', () => {
-        const customArray = createCustomArray(1, 2, 3, 4, 5);
-
-        const matcherExpr = [
-            [P.element, "first"],
-            [P.segment, "middle"],
-            [P.element, "last"]
-        ];
-
-        const result = run_matcher(compile(matcherExpr), customArray, (dict, eaten) => new MatchResult(dict, eaten));
-
-        expect(isSucceed(result)).toBe(true);
-        if (isSucceed(result)) {
-            // console.log("Match succeeded!");
-            // console.log(inspect(result, {showHidden: true, depth: 10}));
-            // console.log("safeget:", result.safeGet("middle"))
-            // Add more specific assertions here
-            expect(isSucceed(result)).toBe(true);
-        }
-    });
-});

@@ -6,6 +6,7 @@ import type { MatchFailure } from "./MatchFailure"
 import { define_generic_procedure_handler, construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
 import { MatchResult, is_match_result } from "./MatchResult"
 import { match_args } from "generic-handler/Predicates"
+import { is_any } from "generic-handler/built_in_generics/generic_predicates"
 
 const param = [P.segment, "param"]
 
@@ -73,7 +74,7 @@ export function get_args(func: (...args: any) => any): any[] {
 
 export const apply = construct_simple_generic_procedure("apply", 2, (a: any, b: any) => { throw new Error("Not implemented" + a + b)})
 
-define_generic_procedure_handler(apply, match_args((x: any) => true, is_match_result), (a: (...args: any[]) => any, b: MatchResult) => {
+define_generic_procedure_handler(apply, match_args(is_any, is_match_result), (a: (...args: any[]) => any, b: MatchResult) => {
     return a(...get_args(a).map((arg: any) => b.safeGet(arg)))
 })
 

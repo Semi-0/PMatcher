@@ -4,12 +4,7 @@ export const equal = construct_simple_generic_procedure("equal", 2,
     (A: any, B: any) => A === B
 )
 
-export const copy = construct_simple_generic_procedure("copy", 1,
-    (A: any) => {
-        throw Error("unknown object to copy, A: " + A)
 
-    }
-)
 
 export function guard(predicate: () => boolean, failure: () => any): any {
     if (!predicate()) {
