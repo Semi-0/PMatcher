@@ -8,6 +8,18 @@ A powerful pattern matching library for TypeScript/JavaScript with **backtrackin
 
 - **Lexical Scoping**: The DSL is lexically scoped, enabling recursive pattern definitions with proper variable binding and closure semantics. This is particularly powerful when combined with `match_letrec` for defining recursive patterns.
 
+## Origins
+
+This library is a TypeScript reimplementation of the matcher system
+built in MIT Scheme originally, but extended with lexical scoping
+capabilities. The original matcher system was developed as part of
+the pattern matching infrastructure used in various Scheme implementations.
+
+This implementation is not a line-by-line translation. It adapts the
+core ideas to a modern TypeScript runtime and introduces architectural
+changes, most notably extending the system with lexical scoping support
+for recursive pattern definitions.
+
 ## Installation
 
 To install this library, run:
