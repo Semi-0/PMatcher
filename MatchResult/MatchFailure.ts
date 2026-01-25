@@ -46,7 +46,10 @@ export enum FailedReason{
     IndexOutOfBound = "Index out of bound",
     UnConsumedInput = "Unconsumed input",
     ToContinue = "To continue",
-    ReferenceNotFound = "Reference not found"
+    ReferenceNotFound = "Reference not found",
+    TypeMismatch = "Type mismatch",
+    MissingKey = "Missing key",
+    ValueMismatch = "Value mismatch"
 }
 
 

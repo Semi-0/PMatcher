@@ -11,6 +11,9 @@ import { is_match_env } from "../MatchEnvironment";
 import { default_match_env } from "../MatchEnvironment";
 import { copy } from "./DictValue"
 import { match_args, register_predicate } from "generic-handler/Predicates";
+
+
+// we dont need a match dict here we can just use a generic map
 export class MatchDict {
     dict: Map<string, DictValue>
 

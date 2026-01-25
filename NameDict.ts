@@ -22,5 +22,6 @@ export enum MatcherName {
     ExtractMatcher = "match_extract_matcher",
     Map = "match_map",
     With = "match_with",
-    Transform = "match_transform"
+    Transform = "match_transform",
+    Object = "match_object"
 }

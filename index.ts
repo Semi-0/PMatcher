@@ -1,24 +1,27 @@
-import { MatchBuilder } from './MatchBuilder';
-import type { MatchDict } from './MatchDict/MatchDict';
+// Core exports
+export { MatchBuilder, compile, P, run_matcher, match } from './MatchBuilder';
+export type { MatchDict } from './MatchDict/MatchDict';
+export { get_value } from './MatchDict/DictInterface';
 
-// Create an instance of MatcherBuilder
-const matcher = new MatchBuilder();
+// Combinators
+export { 
+    match_constant,
+    match_element,
+    match_segment,
+    match_wildcard,
+    match_array,
+    match_choose,
+    match_compose,
+    match_begin
+} from './MatchCombinator';
 
-// Setup the matcher with some patterns
-matcher.setConstant('Hello')
-       .setElement('name')
-       .setSegment('details');
+// Object matching (NEW!)
+export { match_object, match_object_partial } from './MatchObject';
 
-// Example data array to match against
-const data = ['Hello', 'John', 'Doe', 'age', '30'];
+// Predicates
+export { isSucceed, isFailed, isPartialSuccess } from './Predicates';
 
-// Define a success callback function
-const onSuccess = (matchDict: MatchDict, nEaten: number) => {
-    console.log(`Matched: ${nEaten} elements`);
-    console.log('Match Dictionary:', matchDict);
-};
-
-// Execute the matcher
-matcher.match(data, onSuccess);
-
-console.log("Matcher setup and run from index.ts using Bun!");
+// Types
+export type { MatchResult } from './MatchResult/MatchResult';
+export type { MatchFailure } from './MatchResult/MatchFailure';
+export type { MatchPartialSuccess } from './MatchResult/PartialSuccess';
