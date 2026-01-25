@@ -1,3 +1,17 @@
+/**
+ * Copyright © 2024–2026 semi-0
+ *
+ * Based on propagator and interpreter ideas originally developed by
+ * Chris Hanson and Gerald Jay Sussman as part of the SDF system
+ * accompanying the book "Software Design for Flexibility".
+ *
+ * This file is part of a substantially modified TypeScript
+ * reimplementation with a different execution, scheduling,
+ * and distribution model.
+ *
+ * Licensed under the GNU General Public License v3.0 or later.
+ */
+
 // Core exports
 export { MatchBuilder, compile, P, run_matcher, match } from './MatchBuilder';
 export type { MatchDict } from './MatchDict/MatchDict';

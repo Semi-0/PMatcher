@@ -1,3 +1,17 @@
+/**
+ * Copyright © 2024–2026 semi-0
+ *
+ * Based on propagator and interpreter ideas originally developed by
+ * Chris Hanson and Gerald Jay Sussman as part of the SDF system
+ * accompanying the book "Software Design for Flexibility".
+ *
+ * This file is part of a substantially modified TypeScript
+ * reimplementation with a different execution, scheduling,
+ * and distribution model.
+ *
+ * Licensed under the GNU General Public License v3.0 or later.
+ */
+
 import type { matcher_callback, matcher_instance } from "./MatchCallback";
 import { match_args } from "generic-handler/Predicates"
 import { MatchDict, get_dict_value_sequence, get_raw_entity } from "./MatchDict/MatchDict";
