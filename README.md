@@ -22,7 +22,53 @@ for recursive pattern definitions.
 
 ## Installation
 
-To install this library, run:
+### Quick Start
+
+The easiest way to set up the PMatcher workspace is using the provided install script:
+
+```bash
+git clone https://github.com/Semi-0/PMatcher.git
+cd PMatcher
+./install.sh
+```
+
+This script will:
+- Clone required workspace dependencies (GenericProcedure)
+- Set up the workspace structure
+- Install all dependencies using `bun`
+- Run tests to verify the installation
+
+### Manual Setup
+
+If you prefer to set up manually:
+
+1. Clone the repository and its dependencies:
+```bash
+git clone https://github.com/Semi-0/PMatcher.git
+git clone https://github.com/Semi-0/GenericProcedure.git
+```
+
+2. Create a workspace `package.json` in the parent directory:
+```json
+{
+  "name": "pmatcher-workspace",
+  "private": true,
+  "workspaces": [
+    "PMatcher",
+    "GenericProcedure"
+  ]
+}
+```
+
+3. Install dependencies:
+```bash
+bun install
+```
+
+### Using as a Package
+
+If you want to use PMatcher as a package in another project:
+
 ```bash
 bun install pmatcher
 ```

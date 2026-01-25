@@ -11,7 +11,7 @@
   "type": "module",
   "dependencies": {
     "@types/uuid": "^10.0.0",
-    "generic-handler": "file:../GenericProcedure",
+    "generic-handler": "workspace:*",
     "uuid": "^10.0.0"
   }
 }
