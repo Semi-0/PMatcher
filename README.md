@@ -4,9 +4,13 @@ A powerful pattern matching library for TypeScript/JavaScript with **backtrackin
 
 ## Key Features
 
-- **Backtracking Support**: The pattern matcher supports backtracking through `P.sequence` and the DSL itself, allowing complex pattern matching with automatic backtracking when a match fails.
+- **Backtracking Support**: The pattern matcher supports backtracking through `P.choose` and the DSL itself, allowing complex pattern matching with automatic backtracking when a match fails.
 
 - **Lexical Scoping**: The DSL is lexically scoped, enabling recursive pattern definitions with proper variable binding and closure semantics. This is particularly powerful when combined with `match_letrec` for defining recursive patterns.
+
+- **Object Matching**: Plain objects in patterns are auto-detected. Use `{ key: pattern }` for full objects, `[P.partial_obj, {...}]` for optional keys. See [docs/OBJECT_MATCHING.md](docs/OBJECT_MATCHING.md).
+
+- **Shorthand API**: `with_rule`, `otherwise`, and `matchWithRules` for combinator-style matching with multiple rules and a fallback.
 
 ## Origins
 
@@ -19,6 +23,11 @@ This implementation is not a line-by-line translation. It adapts the
 core ideas to a modern TypeScript runtime and introduces architectural
 changes, most notably extending the system with lexical scoping support
 for recursive pattern definitions.
+
+## Documentation
+
+- [docs/](docs/) – Additional documentation
+  - [Object Matching](docs/OBJECT_MATCHING.md) – Object patterns, `match_object`, `P.partial_obj`, Shorthand (`with_rule`, `otherwise`, `matchWithRules`)
 
 ## Installation
 
@@ -78,118 +87,115 @@ or
 ```bash
 npm install pmatcher
 ```
- # Using MatchBuilder
 
-The `match_builder` function allows you to build and run custom pattern matchers. Here's a basic example of how to use it:
+## Object Matching
+
+PMatcher supports pattern matching against plain JavaScript objects. Plain objects in patterns are auto-detected as object patterns—no special header needed.
+
+### Match and compile
 
 ```typescript
-// Example usage of match_builder
-import { build , P, run_matcher } from 'pmatcher/MatchBuilder';
-import { MatchDict } from 'pmatcher/MatchDict';
-// Define patterns using the builder function
-const matcher = match_builder(["Hello", ["John",[P.segment, "details"], "Unrelated"]]);
-// Example data array
+import { match, P, isSucceed, get_dict, get_value } from 'pmatcher';
+
+// Plain object pattern: { key: subPattern, ... }
+const result = match(
+  { name: "Alice", age: 30 },
+  { name: [P.constant, "Alice"], age: [P.element, "age"] }
+);
+
+if (isSucceed(result)) {
+  const dict = get_dict(result);
+  get_value("age", dict);  // 30
+}
+```
+
+### P.partial_obj (optional keys)
+
+Use `[P.partial_obj, { ... }]` when keys are optional. At least one pattern key must match; extra fields in the input are allowed.
+
+```typescript
+import { match, P } from 'pmatcher';
+
+match({ name: "John", city: "NYC" }, [P.partial_obj, { name: [P.constant, "John"], age: [P.constant, 30] }]);
+// Success: age absent but partial_obj allows it
+```
+
+### Shorthand: with_rule, otherwise, chain_match
+
+Combinator-style match with multiple rules and a fallback:
+
+```typescript
+import { with_rule, otherwise, match, P } from 'pmatcher';
+
+const result = chain_match(
+  { type: "user", name: "Dave" },
+  [
+    with_rule({ type: [P.constant, "user"], name: [P.element, "n"] }, (get) => get("n")),
+    with_rule({ type: [P.constant, "admin"] }, () => "admin"),
+    otherwise((input) => "unknown")
+  ]
+);
+// result === "Dave"
+```
+
+See [docs/OBJECT_MATCHING.md](docs/OBJECT_MATCHING.md) for full API reference.
+
+## Using MatchBuilder
+
+The `compile` function builds matchers from pattern expressions. Use `match` for one-off matching or `run_matcher` for low-level control:
+
+```typescript
+import { compile, P, run_matcher } from 'pmatcher';
+
+const matcher = compile(["Hello", ["John", [P.segment, "details"], "Unrelated"]]);
 const data = ["Hello", ["John", "age:30", "location:NY", "Unrelated"]];
 
-// Define a success callback
-
-// Run the matcher on the data
-const result = run_matcher(matcher, data, {result: (matchDict, nEaten) => {
-  return {matchDict, nEaten}
-}});
-console.log(result);
+const result = run_matcher(matcher, data, (dict, nEaten) => ({ dict, nEaten }));
+// result.dict has binding "details" => ["age:30", "location:NY"]
 ```
-
-output:
-```
-Matched Dictionary: {
-  "details": ["age:30", "location:NY"]
-}
-Number of elements processed: 2
-```
-
-
-This example demonstrates how to use the `match_builder` and `run_matcher` functions to create a matcher that matches a constant string "Hello" followed by a segment containing details. The `onSuccess` callback is called when the matcher successfully matches the data, and it logs the matched dictionary and the number of elements processed.
 
 ## Using "..." Pattern
 
-The `"..."` pattern is used to match any remaining elements in the data array. Here's an example:
+The `"..."` pattern is used to match any remaining elements in the data array:
+
 ```typescript
-// Example usage of "..." pattern
-import { build, P, run_matcher } from 'pmatcher/MatchBuilder';
-import { MatchDict } from 'pmatcher/MatchDict';
-// Define patterns using the builder function
-const matcher = build(["start","...", [P.element, "e"]]);
-// Example data array
+import { compile, P, run_matcher } from 'pmatcher';
+
+const matcher = compile(["start", "...", [P.element, "e"]]);
 const data = ["start", 1, 2, 3, "end"];
 
-// Define a success callback
-
-// Run the matcher on the data
-const result = run_matcher(matcher, data, {result: (matchDict, nEaten) => {
-  return {matchDict, nEaten}
-}});
-console.log(result);
+const result = run_matcher(matcher, data, (dict, nEaten) => ({ dict, nEaten }));
+// dict["e"] === "end", nEaten === 5
 ```
-output:
-```
-Matched Dictionary: {
-  "e": "end" 
-}
-Number of elements processed: 5
-```
-
 
 ## Matching Nested Array
-```typescript
-// Example usage of matching nested arrays with match element
-import { build, P, run_matcher } from 'pmatcher/MatchBuilder';
-import { MatchDict } from 'pmatcher/MatchDict';
-// Define patterns using the builder function
-const nestedMatcherWithElement = build(["start", [ "subStart", [P.element, "key"], "subEnd"], "end"]);
-// Example data array
-const nestedDataWithElement = ["start", ["subStart", "actualValue", "subEnd"], "end"];
 
-// Define a success callback
-// Run the matcher on the data
-const nestedResultWithElement = run_matcher(nestedMatcherWithElement, nestedDataWithElement, {result: (matchDict, nEaten) => {
-  return {matchDict, nEaten}
-}});
-console.log(nestedResultWithElement);
-```
-output:
-```
-Matched Dictionary: {
-  "key": "actualValue"
-}
-Number of elements processed: 3
+```typescript
+import { compile, P, run_matcher } from 'pmatcher';
+
+const matcher = compile(["start", ["subStart", [P.element, "key"], "subEnd"], "end"]);
+const data = ["start", ["subStart", "actualValue", "subEnd"], "end"];
+
+const result = run_matcher(matcher, data, (dict, nEaten) => ({ dict, nEaten }));
+// dict["key"] === "actualValue", nEaten === 3
 ```
 
 
 
 ## Tail Recursion with match_letrec
 
-The `match_letrec` function allows you to define recursive patterns. Here's an example demonstrating how to handle tail recursive patterns:
+The `match_letrec` function allows you to define recursive patterns:
 
 ```typescript
-// Example usage of match_letrec with tail recursion
-import { build, P, run_matcher } from 'pmatcher/MatchBuilder';
-import { emptyEnvironment, MatchEnvironment } from 'pmatcher/MatchEnvironment';
-// Define recursive patterns using match_letrec
-const matcher = build([P.letrec,
-  [["a", [P.choose, [], [ "1", [P.ref, "b"]]]],
-  ["b", [P.choose, [], [ "2", [P.ref, "a"]]]]],
-  [P.ref, "a"]])
-// Example data array
+import { compile, P, run_matcher } from 'pmatcher';
+
+const matcher = compile([P.letrec,
+  [["a", [P.choose, [], ["1", [P.ref, "b"]]]],
+  ["b", [P.choose, [], ["2", [P.ref, "a"]]]]],
+  [P.ref, "a"]]);
+
 const data = ["1", ["2", ["1", ["2", []]]]];
-
-
-const result = run_matcher(test_matcher, data, (dict, nEaten) => {
-  return {dict, nEaten}
-})
-
-console.log(inspect(result, {showHidden: true, depth: 10}))
-
+const result = run_matcher(matcher, data, (dict, nEaten) => ({ dict, nEaten }));
 ```
 
 
@@ -224,7 +230,7 @@ Here is an example demonstrating how to use lexical scoping and tail recursion t
 
 
 ```typescript
-const test_matcher = build([
+const matcher = compile([
     [P.letrec,
         [["palindrome",
         [P.new, ["x"],
@@ -238,9 +244,9 @@ const test_matcher = build([
     ]])
 
 
-const result = run_matcher(test_matcher, [["a", ["b", ["c" , [], "c" ], "b"], "a"]], (env, nEaten) => {
-    return {env, nEaten}
-})
+const result = run_matcher(matcher, [["a", ["b", ["c", [], "c"], "b"], "a"]], (dict, nEaten) => {
+    return { dict, nEaten };
+});
 
 console.log(inspect(result, {showHidden: true, depth: 10}))
 ```
@@ -270,27 +276,24 @@ The pattern matcher supports backtracking through `P.sequence` and the underlyin
 
 ```typescript
 // Example: Backtracking with P.choose (which uses backtracking internally)
-import { build, P, run_matcher } from 'pmatcher/MatchBuilder';
+import { compile, P, run_matcher } from 'pmatcher';
 
 // This pattern will try each alternative in sequence, backtracking if one fails
-const matcher = build([
+const matcher = compile([
   P.choose,
   ["prefix", "value1"],
   ["prefix", "value2"],
   ["other", "value3"]
 ]);
 
-const data1 = ["prefix", "value1"];
-const result1 = run_matcher(matcher, data1, {result: (dict, nEaten) => ({dict, nEaten})});
-// Will match the first alternative
+const result1 = run_matcher(matcher, ["prefix", "value1"], (dict, nEaten) => ({ dict, nEaten }));
+// Matches the first alternative
 
-const data2 = ["prefix", "value2"];
-const result2 = run_matcher(matcher, data2, {result: (dict, nEaten) => ({dict, nEaten})});
-// Will backtrack from first alternative and match the second
+const result2 = run_matcher(matcher, ["prefix", "value2"], (dict, nEaten) => ({ dict, nEaten }));
+// Backtracks from first and matches the second
 
-const data3 = ["other", "value3"];
-const result3 = run_matcher(matcher, data3, {result: (dict, nEaten) => ({dict, nEaten})});
-// Will backtrack from first two alternatives and match the third
+const result3 = run_matcher(matcher, ["other", "value3"], (dict, nEaten) => ({ dict, nEaten }));
+// Backtracks from first two and matches the third
 ```
 
 The backtracking mechanism works seamlessly with lexical scoping, ensuring that variable bindings are properly managed during backtracking operations.
@@ -317,11 +320,11 @@ In MatchBuilder.ts, we utilize functions from MatchCallback.ts and MatchCombinat
      - `match_array`: Takes an array of matchers and applies them sequentially to the data array.
      - `match_choose`: Takes an array of matchers and tries each one until one succeeds.
 
-   These combinators allow for building complex matching logic by combining simpler matchers from MatchCallback.ts.
+   MatchObject.ts provides `match_object` and `match_object_partial` for object patterns. Plain objects and `[P.partial_obj, {...}]` are compiled via MatchBuilder into these matchers.
 
 3. Usage in MatchBuilder.ts:
-   - `match_builder` function uses these building blocks and combinators to construct a matcher from a pattern array. It interprets the pattern array, converts patterns to matchers using a recursive `loop` function, and combines them using `match_array` or other combinators as needed.
-   - `run_matcher` function takes a matcher and data array, and executes the matcher, handling the match result.
+   - `compile` function uses these building blocks and combinators to construct a matcher from a pattern expression. It interprets patterns via generic procedure handlers and combines them using `match_array`, `match_object`, or other combinators as needed.
+   - `match` compiles a pattern and runs it; `run_matcher` is the low-level API that takes a matcher instance and data.
 
 By leveraging the functions from MatchCallback.ts and MatchCombinator.ts, MatchBuilder.ts provides a flexible and powerful way to define and execute complex matching rules on data arrays.
 */

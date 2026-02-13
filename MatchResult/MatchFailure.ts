@@ -49,7 +49,8 @@ export enum FailedReason{
     ReferenceNotFound = "Reference not found",
     TypeMismatch = "Type mismatch",
     MissingKey = "Missing key",
-    ValueMismatch = "Value mismatch"
+    ValueMismatch = "Value mismatch",
+    NoKeysMatched = "No keys matched"
 }
 
 

@@ -21,12 +21,17 @@ export class MatchResult{
         return get_value(key, this.dictionary)
     }
 
-
-    // apply(callback: (...args: any) => any) : any{
-    //     const vs = get_args(callback).map(arg => this.safeGet(arg))
-    //     return callback(...vs)
-    // }
 }
+
+
+export const safe_get = (result: MatchResult) => (key: string) => {
+        if (is_match_result(result)){
+            return result.safeGet(key)
+        }
+        else{
+            throw new Error("Match failed")
+        }
+    }
 
 export const is_match_result = register_predicate("is_match_result", (x: any): x is MatchResult => {
     return x instanceof MatchResult

@@ -10,6 +10,33 @@
  * and distribution model.
  *
  * Licensed under the GNU General Public License v3.0 or later.
+ *
+ * ## MatchBuilder overview
+ *
+ * This module provides:
+ * - **P** (Pattern symbols): UUIDs used as tags in pattern expressions.
+ * - **compile(pattern)**: Generic procedure that compiles pattern expressions into matcher instances.
+ * - **match(input, matcher_expr)**: High-level API: compiles matcher_expr and runs it against input.
+ * - **run_matcher(matcher, data, succeed)**: Low-level API: runs a matcher instance on data.
+ *
+ * ## Object pattern (plain object)
+ *
+ * Plain objects in patterns are compiled as `match_object`. No special header needed.
+ *
+ * **Pattern form:** `{ key: subPattern, ... }`
+ *
+ * - Any plain object `{ key1: subPattern1, key2: subPattern2, ... }` is auto-detected.
+ * - Each value is a compile-able sub-pattern (array or matcher instance).
+ * - All keys are **required** in the input object.
+ * - Nested objects are supported: `{ user: { name: [P.element, "n"] } }`.
+ *
+ * **Example:**
+ * ```ts
+ * match({ name: "Alice", age: 30 }, { name: [P.element, "n"], age: [P.constant, 30] })
+ * // Success: dict has binding n = "Alice"
+ * ```
+ *
+ * See docs/OBJECT_MATCHING.md for more examples.
  */
 
 import type { matcher_callback, matcher_instance } from "./MatchCallback";
@@ -23,6 +50,7 @@ import {  match_choose, match_letrec, match_reference, match_new_var, match_comp
     match_map,
     match_with,
     match_transform} from "./MatchCombinator";
+import { match_object, match_object_partial } from "./MatchObject";
 import { empty_match_dict } from "./MatchDict/MatchDict";
 import {  isString, isMatcher } from "./utility";
 import  { match_array } from "./MatchCombinator";
@@ -49,11 +77,21 @@ export const compile = construct_simple_generic_procedure("compile", 1,
     }
 )
 
+/**
+ * Pattern (P) symbols for the match DSL.
+ *
+ * @example
+ * // Object pattern - plain objects are auto-detected; no P.obj needed
+ * match(data, { name: [P.element, "name"], age: [P.constant, 30] })
+ *
+ * @example
+ * // Nested object
+ * match(data, { user: { name: [P.element, "n"] } })
+ */
 export const P = { // Stands for Pattern
-    letrec: uuidv4(), 
-    choose: uuidv4(), 
-    new: uuidv4(), 
-    new_obj: uuidv4(),
+    letrec: uuidv4(),
+    choose: uuidv4(),
+    new: uuidv4(),
     element: uuidv4(),
     segment: uuidv4(),
     segment_independently: uuidv4(),
@@ -68,7 +106,9 @@ export const P = { // Stands for Pattern
     extract_matcher: uuidv4(),
     map: uuidv4(),
     with: uuidv4(),
-    transform: uuidv4()
+    transform: uuidv4(),
+    /** Partial object: [P.partial_obj, { key: pattern, ... }]. Keys optional. */
+    partial_obj: uuidv4()
 }
 
 export function translate(array: any[]): any[] {
@@ -169,10 +209,49 @@ export const is_transform = register_predicate("is_transform", (pattern: any): b
     return first_equal_with(pattern, P.transform) && pattern.length === 3
 })
 
-define_generic_procedure_handler(compile, 
+/**
+ * True when pattern is a plain object (not array, not null, not matcher_instance).
+ * Plain objects are compiled as match_object; each value is compiled as a sub-pattern.
+ */
+export const is_plain_object_pattern = register_predicate("is_plain_object_pattern", (pattern: any): boolean => {
+    return typeof pattern === "object" && pattern !== null && !Array.isArray(pattern) && !is_match_instance(pattern)
+})
+
+/**
+ * True when pattern is [P.partial_obj, patternObj] for optional-key object matching.
+ */
+export const is_partial_obj = register_predicate("is_partial_obj", (pattern: any): boolean => {
+    return isPair(pattern) && first(pattern) === P.partial_obj && pattern.length === 2
+        && typeof pattern[1] === "object" && pattern[1] !== null && !Array.isArray(pattern[1])
+})
+
+define_generic_procedure_handler(compile,
+    match_args(is_plain_object_pattern),
+    (pattern: Record<string, any>) => {
+        const compiled: Record<string, matcher_instance> = {}
+        for (const key of Object.keys(pattern)) {
+            compiled[key] = compile(pattern[key])
+        }
+        return match_object(compiled)
+    }
+)
+
+define_generic_procedure_handler(compile,
     match_args(is_array),
     (pattern: any[]) => {
         return match_array(pattern.map((item: any) => compile(item)))
+    }
+)
+
+define_generic_procedure_handler(compile,
+    match_args(is_partial_obj),
+    (pattern: any[]) => {
+        const patternObj = pattern[1] as Record<string, any>
+        const compiled: Record<string, matcher_instance> = {}
+        for (const key of Object.keys(patternObj)) {
+            compiled[key] = compile(patternObj[key])
+        }
+        return match_object_partial(compiled)
     }
 )
 
@@ -396,7 +475,7 @@ export function run_matcher(matcher: matcher_instance, data: any, succeed: (dict
  * @returns An object containing the match dictionary and the number of elements consumed if successful,
  *          or a MatchFailure object if the match fails.
  */
-export function match(input: any, matcher_expr: any[]): any | MatchResult | MatchPartialSuccess | MatchFailure {
+export function match(input: any, matcher_expr: any): any | MatchResult | MatchPartialSuccess | MatchFailure {
     const m = compile(matcher_expr);
     const result = run_matcher(m, input, (dict, e) => { return new MatchResult(dict, e) });
     // const result = internal_match(m, input, empty_match_dict(), default_match_env(), (dict, e) => { return new MatchResult(dict, e) });

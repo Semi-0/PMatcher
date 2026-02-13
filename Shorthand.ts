@@ -1,54 +1,48 @@
 import { isSucceed } from "./Predicates"
-import { match } from "./MatchBuilder"
+import { match  as _match} from "./MatchBuilder"
 import { apply } from "./MatchResult/MatchGenericProcs"
 import { get_pair_expr, get_pair_exec } from "./MatchBuilder"
 import { match_pair } from "./MatchBuilder"
+import type { MatchDict } from "./MatchDict/MatchDict"
+import { safe_get } from "./MatchResult/MatchResult"
 interface MatchBuilder {
     input: any
-    match_pairs: any[]
     else(exec: (...args: any[]) => any): any
     exhausted(): any[]
     match(expr: any[], exec: (...args: any[]) => any): MatchBuilder
 }
 
-export function match_builder(input: any, match_pairs: any[]): MatchBuilder {
-    function matching(){
-        for (const pair of match_pairs){
-            const result = match(input, get_pair_expr(pair))
-            if (isSucceed(result)){
-                return apply(get_pair_exec(pair), result)
-            }
-        }
-        return false 
+export const with_rule = (expr: any[], exec: (get: (key: string) => any) => any) => (input: any) => {
+    const result = _match(input, expr)
+    if (isSucceed(result)){
+        return exec(safe_get(result))
+    }
+    else{
+        return undefined
+    }
+}
+
+const OTHERWISE_SENTINEL = Symbol("otherwise")
+
+export const otherwise = (exec: (...args: any[]) => any) => {
+    const combinator = (input: any) => exec(input)
+    ;(combinator as any)[OTHERWISE_SENTINEL] = true
+    return combinator
+}
+
+export const is_otherwise = (combinator: (input: any) => any) => {
+    return !!(combinator && (combinator as any)[OTHERWISE_SENTINEL])
+}
+
+export const match = (input: any, combinators: ((input: any) => any)[]) => {
+    if (!is_otherwise(combinators[combinators.length - 1])){
+        throw new Error("Match Nonexhaustive: Last matcher combinator is not otherwise")
     }
 
-    const self = {
-        input,
-        match_pairs,
-        else(exec: (...args: any[]) => any): any[] {
-            const result = matching()
-            if (result){
-                return result
-            }
-            else{
-                return exec(input)
-            }
-        },
-        exhausted() {
-            const result = matching()
-            if (result){
-                return result
-            }
-            else{
-                throw new Error("No match found")
-            }
-        },
-        match(expr: any[], exec: (...args: any[]) => any): MatchBuilder {
-            const copy = match_pairs.slice()
-            copy.push(match_pair(expr, exec))
-            return match_builder(input, copy)
+    for (const combinator of combinators){
+        const result = combinator(input)
+        if (result){
+            return result
         }
     }
-
-    return self
 }

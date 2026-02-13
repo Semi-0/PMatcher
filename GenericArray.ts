@@ -20,18 +20,19 @@ export const isArray = construct_simple_generic_procedure("isArray", 1,
     <T>(obj: any): obj is T[] => Array.isArray(obj)
 )
 
-export const push = <T>(array: T[], item: T): T[] => 
-    set_element(array, get_length(array), item)
+export const push = construct_simple_generic_procedure("push", 2, <T>(array: T[], item: T): T[] => 
+    set_element(array, get_length(array), item))
 
-export const slice = <T>(array: T[], start: number, end: number = get_length(array)): T[] => {
+export const slice = construct_simple_generic_procedure("slice", 3, <T>(array: T[], start: number, end: number = get_length(array)): T[] => {
     let result: T[] = [];
     for (let i = start; i < end && i < get_length(array); i++) {
-        result = push(result, get_element(array, i));
+            result = push(result, get_element(array, i));
+        }
+        return result;
     }
-    return result;
-}
+)
 
-export const filter = <T>(array: T[], predicate: (item: T) => boolean): T[] => {
+export const filter = construct_simple_generic_procedure("filter", 2, <T>(array: T[], predicate: (item: T) => boolean): T[] => {
     let result: T[] = [];
     for (let i = 0; i < get_length(array); i++) {
         const item = get_element(array, i);
@@ -40,23 +41,23 @@ export const filter = <T>(array: T[], predicate: (item: T) => boolean): T[] => {
         }
     }
     return result;
-}
+})
 
-export const map = <T, U>(array: T[], mapper: (item: T) => U): U[] => {
+export const map = construct_simple_generic_procedure("map", 2, <T, U>(array: T[], mapper: (item: T) => U): U[] => {
     let result: U[] = [];
     for (let i = 0; i < get_length(array); i++) {
         result = push(result, mapper(get_element(array, i)));
     }
     return result;
-}
+})
 
-export const reduce = <T, U>(array: T[], reducer: (acc: U, item: T) => U, initial: U): U => {
+export const reduce = construct_simple_generic_procedure("reduce", 3, <T, U>(array: T[], reducer: (acc: U, item: T) => U, initial: U): U => {
     let acc = initial;
     for (let i = 0; i < get_length(array); i++) {
         acc = reducer(acc, get_element(array, i));
     }
     return acc;
-}
+})
 
 export const first = <T>(array: T[]): T => get_element(array, 0)
 

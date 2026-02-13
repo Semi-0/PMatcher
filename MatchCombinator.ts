@@ -239,9 +239,7 @@ export function match_compose(matchers: matcher_instance[]) : matcher_instance{
             }
         }
         
-        
         const loop = (data_list: any[], matchers: matcher_instance[], dictionary: MatchDict, eaten: number): any => {
- 
             if (isPair(matchers)){
                 const matcher = first(matchers)
                 const result = internal_match(matcher, data_list, dictionary, match_env, (new_dict: MatchDict, nEaten: number) => {
@@ -284,7 +282,16 @@ export function match_array(all_matchers: matcher_instance[]) : matcher_instance
             return succeed(dictionary, 0)
         }
         else{
-            const result = internal_match(compose_matcher, first(data), dictionary, match_env, (dict: MatchDict, nEaten: number) => {return new MatchResult(dict, nEaten)})
+            const result = internal_match(
+                compose_matcher, 
+                first(data), 
+                dictionary, 
+                match_env, 
+                (dict: MatchDict, nEaten: number) => {
+                    return new MatchResult(dict, nEaten)
+                }
+            )
+
        
             if (isSucceed(result)){
                 const dict = get_dict(result)

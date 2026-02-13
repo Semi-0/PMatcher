@@ -13,7 +13,8 @@
  */
 
 // Core exports
-export { MatchBuilder, compile, P, run_matcher, match } from './MatchBuilder';
+export { compile, P, run_matcher, match } from './MatchBuilder';
+export { with_rule, otherwise, match as chain_match } from './Shorthand';
 export type { MatchDict } from './MatchDict/MatchDict';
 export { get_value } from './MatchDict/DictInterface';
 
@@ -37,5 +38,6 @@ export { isSucceed, isFailed, isPartialSuccess } from './Predicates';
 
 // Types
 export type { MatchResult } from './MatchResult/MatchResult';
+export { get_dict, get_eaten } from './MatchResult/MatchResult';
 export type { MatchFailure } from './MatchResult/MatchFailure';
 export type { MatchPartialSuccess } from './MatchResult/PartialSuccess';

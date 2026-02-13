@@ -101,8 +101,9 @@ export function match_object(pattern_obj: Record<string, matcher_instance>): mat
 }
 
 /**
- * Matches an object with optional keys (any subset of keys can be present)
- * 
+ * Matches an object with optional keys (any subset of keys can be present).
+ * At least one pattern key must exist and match in the input; otherwise fails with NoKeysMatched.
+ *
  * @param pattern_obj - An object where keys are property names and values are matchers
  * @returns A matcher instance that matches objects with optional keys
  */
@@ -135,8 +136,10 @@ export function match_object_partial(pattern_obj: Record<string, matcher_instanc
             );
         }
 
-        // Match only the keys that exist in both pattern and data
+        // Match only the keys that exist in both pattern and data.
+        // At least one pattern key must exist and match in the input; otherwise fail.
         let currentDict = dictionary;
+        let matchedAny = false;
         const keys = Object.keys(pattern_obj);
 
         for (const key of keys) {
@@ -159,6 +162,7 @@ export function match_object_partial(pattern_obj: Record<string, matcher_instanc
 
             if (isSucceed(result)) {
                 currentDict = result;
+                matchedAny = true;
             } else {
                 return createMatchFailure(
                     MatcherName.Object,
@@ -169,7 +173,15 @@ export function match_object_partial(pattern_obj: Record<string, matcher_instanc
             }
         }
 
-        // All existing keys matched successfully
+        if (!matchedAny) {
+            return createMatchFailure(
+                MatcherName.Object,
+                FailedReason.NoKeysMatched,
+                obj,
+                null
+            );
+        }
+
         return succeed(currentDict, 1);
     };
 
