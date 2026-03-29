@@ -13,5 +13,13 @@
     "@types/uuid": "^10.0.0",
     "generic-handler": "workspace:*",
     "uuid": "^10.0.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./*": "./*.ts",
+    "./MatchDict/*": "./MatchDict/*.ts",
+    "./MatchResult/*": "./MatchResult/*.ts",
+    "./new_match": "./new_match/index.ts",
+    "./new_match/*": "./new_match/*.ts"
   }
 }

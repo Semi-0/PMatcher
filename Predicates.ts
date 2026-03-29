@@ -4,8 +4,14 @@ import { define_generic_procedure_handler, construct_simple_generic_procedure } 
 import { is_match_failure } from "./MatchResult/MatchFailure";
 import { is_match_partial_success } from "./MatchResult/PartialSuccess";
 import { is_match_dict, MatchDict } from "./MatchDict/MatchDict";
+import { NewMatchDictMap } from "./MatchDict/NewMatchDict";
 import { is_match_result, MatchResult } from "./MatchResult/MatchResult";
 import { match_args, register_predicate } from "generic-handler/Predicates";
+
+const is_new_match_dict_map = register_predicate(
+    "is_new_match_dict_map",
+    (x: any): x is NewMatchDictMap => x instanceof NewMatchDictMap
+);
 
 export const isFailed = construct_simple_generic_procedure("failed", 1, (x: any) => {
     if (typeof x === "boolean") {
@@ -45,6 +51,11 @@ define_generic_procedure_handler(isSucceed,
 define_generic_procedure_handler(isSucceed,
     match_args(is_match_dict),
     (x: MatchDict) => true
+)
+
+define_generic_procedure_handler(isSucceed,
+    match_args(is_new_match_dict_map),
+    (_x: NewMatchDictMap) => true
 )
 
 define_generic_procedure_handler(isSucceed,
