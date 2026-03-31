@@ -2,6 +2,8 @@
 ![diagram](./assets/LOGOS.png)
 
 
+丕瑪契者，型文與爪哇文之強力格物配合專語也。兼具迴溯之術、詞域定界之能、合一機樞，更內建微資論推演之機，以宣解之法明辨序列與物象，並藉通法延展其能。
+
 
 PMatcher is a powerful pattern matching library for TypeScript/JavaScript with **backtracking support** and **lexical scoping**.
 
