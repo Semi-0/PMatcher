@@ -1,8 +1,9 @@
-# pmatcher
 
 ![diagram](./assets/LOGOS.png)
 
-A powerful pattern matching library for TypeScript/JavaScript with **backtracking support** and **lexical scoping**.
+
+
+PMatcher is a powerful pattern matching library for TypeScript/JavaScript with **backtracking support** and **lexical scoping**.
 
 ## Key Features
 
