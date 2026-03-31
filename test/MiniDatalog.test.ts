@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test"
-import { V, naive_datalog, semi_naive_datalog, query, ask, type Rule, type Fact } from "../new_match/MiniDatalog"
+import { V, Eq, Neq, Or, And, naive_datalog, semi_naive_datalog, query, ask, type Rule, type Fact } from "../new_match/MiniDatalog"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -437,6 +437,8 @@ describe("edges on path between two nodes", () => {
             ["edge", "a", "b"],
             ["edge", "b", "c"],
             ["edge", "c", "d"],
+            ["edge", "a", "f"],
+            ["edge", "f", "e"],
         ]
         const result = ask(edges_on_path_rules("a", "d"), edb, ["on_path", V("X"), V("Y")])
         const edges = result.map(f => [f[1], f[2]])
@@ -548,6 +550,7 @@ describe("edges on path between two nodes", () => {
     })
 
     test("cycle that does not reach target is excluded", () => {
+
         // a→b→c→b is a cycle that never reaches d; only a→d should be on_path.
         const edb: Fact[] = [
             ["edge", "a", "b"],
