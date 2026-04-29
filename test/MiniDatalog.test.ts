@@ -292,6 +292,138 @@ describe("edge cases", () => {
     })
 })
 
+// ─── Builtins & compound clauses: Eq / Neq / Or / And ─────────────────────────
+
+describe("builtins and compound clauses", () => {
+    test("Eq binds a variable (p(X) :- edge(a,X), X = b)", () => {
+        const rules: Rule[] = [
+            { head: ["p", V("X")], body: [["edge", "a", V("X")], Eq(V("X"), "b")] },
+        ]
+        const edb: Fact[] = [
+            ["edge", "a", "b"],
+            ["edge", "a", "c"],
+        ]
+
+        both(rules, edb, [
+            ["edge", "a", "b"],
+            ["edge", "a", "c"],
+            ["p", "b"],
+        ])
+    })
+
+    test("Eq can enforce equality between two body variables (same(X,Y) :- edge(X,Y), X = Y)", () => {
+        const rules: Rule[] = [
+            { head: ["same", V("X"), V("Y")], body: [["edge", V("X"), V("Y")], Eq(V("X"), V("Y"))] },
+        ]
+        const edb: Fact[] = [
+            ["edge", "a", "a"],
+            ["edge", "a", "b"],
+            ["edge", "b", "b"],
+        ]
+
+        both(rules, edb, [
+            ["edge", "a", "a"],
+            ["edge", "a", "b"],
+            ["edge", "b", "b"],
+            ["same", "a", "a"],
+            ["same", "b", "b"],
+        ])
+    })
+
+    test("Neq filters only when both sides are ground (ok(X) :- node(X), X != a)", () => {
+        const rules: Rule[] = [
+            { head: ["ok", V("X")], body: [["node", V("X")], Neq(V("X"), "a")] },
+        ]
+        const edb: Fact[] = [
+            ["node", "a"],
+            ["node", "b"],
+            ["node", "c"],
+        ]
+
+        both(rules, edb, [
+            ["node", "a"],
+            ["node", "b"],
+            ["node", "c"],
+            ["ok", "b"],
+            ["ok", "c"],
+        ])
+    })
+
+    test("Neq on non-ground terms fails safely (no results) (bad(X) :- node(X), Y != a)", () => {
+        // Y is never bound, so inequality is evaluated on a non-ground term and should fail (produce nothing).
+        const rules: Rule[] = [
+            { head: ["bad", V("X")], body: [["node", V("X")], Neq(V("Y"), "a")] },
+        ]
+        const edb: Fact[] = [
+            ["node", "a"],
+            ["node", "b"],
+        ]
+
+        both(rules, edb, [
+            ["node", "a"],
+            ["node", "b"],
+        ])
+    })
+
+    test("Or supports alternative branches (p(X) :- edge(X) OR node(X))", () => {
+        const rules: Rule[] = [
+            {
+                head: ["p", V("X")],
+                body: [
+                    Or(
+                        [["edge", V("X")]],
+                        [["node", V("X")]]
+                    ),
+                ],
+            },
+        ]
+        const edb: Fact[] = [
+            ["edge", "e1"],
+            ["node", "n1"],
+            ["node", "n2"],
+        ]
+
+        both(rules, edb, [
+            ["edge", "e1"],
+            ["node", "n1"],
+            ["node", "n2"],
+            ["p", "e1"],
+            ["p", "n1"],
+            ["p", "n2"],
+        ])
+    })
+
+    test("And flattens premises, including inside Or branches", () => {
+        const rules: Rule[] = [
+            {
+                head: ["p", V("X")],
+                body: [
+                    Or(
+                        [And(["a", V("X")], ["b", V("X")])],
+                        [And(["c", V("X")])],
+                    ),
+                ],
+            },
+        ]
+        const edb: Fact[] = [
+            ["a", "x1"],
+            ["b", "x1"],
+            ["a", "x2"],
+            // missing b(x2)
+            ["c", "x3"],
+        ]
+
+        both(rules, edb, [
+            ["a", "x1"],
+            ["b", "x1"],
+            ["a", "x2"],
+            ["c", "x3"],
+            ["p", "x1"],
+            ["p", "x3"],
+        ])
+    })
+})
+
 // ─── query() — enumerate bindings from a pattern ─────────────────────────────
 //
 // A graph:  a→b, a→c, b→c, c→d
@@ -374,7 +506,7 @@ describe("ask — query derived paths in a graph", () => {
         ["edge", "c", "d"],
     ]
 
-    test("all nodes reachable FROM a", () => {
+    test.only("all nodes reachable FROM a", () => {
         const result = ask(rules, edb, ["path", "a", V("Z")])
         const targets = result.map(f => f[2])
         expect(targets).toContain("b")

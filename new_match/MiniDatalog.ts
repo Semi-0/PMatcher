@@ -76,8 +76,19 @@ export interface OrClause  { or:  BodyAtom[][] }
  */
 export interface AndClause { and: BodyAtom[] }
 
+/**
+ * Constraint atom: a named, non-relation constraint over terms.
+ * The initial built-in protocol supports finite-domain membership via
+ * `Constraint("fd/member", term, values)`.
+ */
+export interface ConstraintClause {
+    tag: "constraint"
+    name: string
+    args: readonly any[]
+}
+
 /** A body atom: regular fact atom, built-in constraint, or compound clause. */
-export type BodyAtom = Atom | BuiltinEq | BuiltinNeq | OrClause | AndClause
+export type BodyAtom = Atom | BuiltinEq | BuiltinNeq | OrClause | AndClause | ConstraintClause
 
 /** A Datalog rule: a head atom and zero or more body atoms. */
 export interface Rule {
@@ -140,6 +151,12 @@ export const Or = (...branches: BodyAtom[][]): OrClause => ({ or: branches })
  */
 export const And = (...clauses: BodyAtom[]): AndClause => ({ and: clauses })
 
+export const Constraint = (name: string, ...args: any[]): ConstraintClause => ({
+    tag: "constraint",
+    name,
+    args,
+})
+
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
 /** True when no pattern variable appears anywhere in `x`. */
@@ -164,7 +181,7 @@ const add_if_new = (set: Fact[], fact: Fact): boolean => {
  * Apply the substitution `dict` to `atom`; return a ground Fact or `false`
  * when the atom still contains unbound variables.
  */
-const ground = (atom: Atom, dict: UnifyDict): Fact | false => {
+export const ground = (atom: Atom, dict: UnifyDict): Fact | false => {
     const result = match_dict_substitute(dict)(atom)
     return is_ground(result) ? (result as Fact) : false
 }
@@ -192,12 +209,32 @@ const is_or  = (a: BodyAtom): a is OrClause =>
 const is_and = (a: BodyAtom): a is AndClause =>
     a !== null && !Array.isArray(a) && typeof a === "object" && "and" in a
 
+const is_constraint = (a: BodyAtom): a is ConstraintClause =>
+    a !== null && !Array.isArray(a) && typeof a === "object" && (a as any).tag === "constraint"
+
+const solve_constraint = (constraint: ConstraintClause, dict: UnifyDict): UnifyDict[] => {
+    if (constraint.name === "fd/member" || constraint.name === "fd-member" || constraint.name === "one-of") {
+        const [term, values] = constraint.args
+        const domain = Array.isArray(values) ? values : []
+        const results: UnifyDict[] = []
+        const substituted = match_dict_substitute(dict)(term)
+        for (const value of domain) {
+            const next = unify_internal(substituted, value, dict, d => d)
+            if (next !== false && next !== undefined) results.push(next as UnifyDict)
+        }
+        return results
+    }
+
+    throw new Error(`unknown Datalog constraint: ${constraint.name}`)
+}
+
 // ─── Normalization (for semi-naive) ──────────────────────────────────────────
 //
-// Semi-naive evaluation needs to know which body positions are database lookups
-// (eligible for the delta optimisation) vs. pure constraints or compound
-// clauses.  Normalization eliminates `and`/`or` so every body is flat and
-// contains only regular atoms and `=`/`!=` builtins.
+// Semi-naive evaluation needs to know which body positions are *relation
+// literals* (predicate calls matched against stored facts — eligible for the
+// delta optimisation) vs. pure constraints or compound clauses.
+// Normalization eliminates `and`/`or` so every body is flat and contains only
+// relation literals and `=`/`!=` builtins.
 //
 // `or` is expanded into multiple rules with the same head.
 // `and` is simply flattened into the enclosing body.
@@ -229,14 +266,14 @@ const expand_body = (body: BodyAtom[]): BodyAtom[][] => {
 }
 
 /** Expand all rules so no body contains `or` or `and`. */
-const normalize_rules = (rules: Rule[]): Rule[] =>
+export const normalize_rules = (rules: Rule[]): Rule[] =>
     rules.flatMap(rule =>
         expand_body(rule.body).map(body => ({ head: rule.head, body }))
     )
 
-/** Count regular (database-lookup) atoms in a normalized body. */
-const count_db_atoms = (body: BodyAtom[]): number =>
-    body.filter(a => !is_eq(a) && !is_neq(a)).length
+/** Count relation literals (predicate calls) in a normalized body; excludes built-ins and constraints. */
+const count_relation_literals = (body: BodyAtom[]): number =>
+    body.filter(a => !is_eq(a) && !is_neq(a) && !is_constraint(a)).length
 
 // ─── Naive evaluation ─────────────────────────────────────────────────────────
 
@@ -295,7 +332,13 @@ const resolve = (
         return resolve(head, [...first.and, ...rest], facts, dict)
     }
 
-    // ── Regular database atom ─────────────────────────────────────────────────
+    // ── Named constraint ──────────────────────────────────────────────────────
+    if (is_constraint(first)) {
+        return solve_constraint(first, dict)
+            .flatMap(nextDict => resolve(head, rest, facts, nextDict))
+    }
+
+    // ── Relation literal (predicate call against stored facts) ───────────────
     const results: Fact[] = []
     for (const fact of facts) {
         const new_dict = unify_premise(first as Atom, fact, dict)
@@ -337,26 +380,28 @@ export const naive_datalog = (rules: Rule[], facts: Fact[]): Fact[] => {
 // ensuring at least one body literal is resolved against *new* (delta) facts.
 //
 // Rules are first normalised (or/and expanded) so every body is flat.
-// For a normalised body, delta_pos indexes only over *database* atoms;
-// = and != builtins are evaluated inline without consuming a delta slot.
+// For a normalised body, `delta_relation_index` ranges only over *relation
+// literals*; `=` / `!=` are evaluated inline without consuming a delta slot.
 //
 // Termination: each round can only add facts not yet in `all_facts`, so the
 // number of new facts strictly decreases each round.
 
 /**
- * Resolve a normalised body (no `or`/`and`) where the `delta_pos`-th
- * database atom must match a delta fact; all others draw from `all_facts`.
+ * Resolve a normalised body (no `or`/`and`) where the
+ * `delta_relation_index`-th *relation literal* must match a delta fact; all
+ * others draw from `all_facts`.
  *
- * `db_pos` tracks which database atom we are currently processing.
+ * `relation_literal_index` is how many relation literals have been processed
+ * so far (built-ins do not advance it).
  */
 const resolve_semi_naive = (
     head: Atom,
     premises: BodyAtom[],
     all_facts: Fact[],
     delta: Fact[],
-    delta_pos: number,
+    delta_relation_index: number,
     dict: UnifyDict,
-    db_pos: number
+    relation_literal_index: number
 ): Fact[] => {
     if (premises.length === 0) {
         const f = ground(head, dict)
@@ -369,7 +414,7 @@ const resolve_semi_naive = (
         const t2 = match_dict_substitute(dict)(first[2])
         const new_dict = unify_internal(t1, t2, dict, d => d)
         if (new_dict !== false && new_dict !== undefined)
-            return resolve_semi_naive(head, rest, all_facts, delta, delta_pos, new_dict as UnifyDict, db_pos)
+            return resolve_semi_naive(head, rest, all_facts, delta, delta_relation_index, new_dict as UnifyDict, relation_literal_index)
         return []
     }
 
@@ -378,17 +423,34 @@ const resolve_semi_naive = (
         const t2 = match_dict_substitute(dict)(first[2])
         if (!is_ground(t1) || !is_ground(t2)) return []
         const eq = unify_internal(t1, t2, empty_dict(), d => d)
-        if (eq === false) return resolve_semi_naive(head, rest, all_facts, delta, delta_pos, dict, db_pos)
+        if (eq === false) return resolve_semi_naive(head, rest, all_facts, delta, delta_relation_index, dict, relation_literal_index)
         return []
     }
 
-    // Regular database atom — use delta pool at the designated position
-    const pool = db_pos === delta_pos ? delta : all_facts
+    if (is_constraint(first)) {
+        return solve_constraint(first, dict)
+            .flatMap(nextDict =>
+                resolve_semi_naive(
+                    head,
+                    rest,
+                    all_facts,
+                    delta,
+                    delta_relation_index,
+                    nextDict,
+                    relation_literal_index
+                )
+            )
+    }
+
+    // Relation literal — use delta only at the designated index
+    const pool = relation_literal_index === delta_relation_index ? delta : all_facts
     const results: Fact[] = []
+  
+
     for (const fact of pool) {
         const new_dict = unify_premise(first as Atom, fact, dict)
         if (new_dict !== false)
-            results.push(...resolve_semi_naive(head, rest, all_facts, delta, delta_pos, new_dict, db_pos + 1))
+            results.push(...resolve_semi_naive(head, rest, all_facts, delta, delta_relation_index, new_dict, relation_literal_index + 1))
     }
     return results
 }
@@ -410,18 +472,18 @@ const semi_naive_step = (
         new_facts.some(e => fact_equal(e, f))
 
     for (const rule of normalized) {
-        const n_db = count_db_atoms(rule.body)
+        const num_relation_literals = count_relation_literals(rule.body)
 
-        if (n_db === 0) {
+        if (num_relation_literals === 0) {
             // Fact-rule or builtin-only rule: evaluate unconditionally
             for (const f of resolve(rule.head, rule.body, [], empty_dict()))
                 if (!is_known(f)) new_facts.push(f)
             continue
         }
 
-        for (let delta_pos = 0; delta_pos < n_db; delta_pos++) {
+        for (let delta_relation_index = 0; delta_relation_index < num_relation_literals; delta_relation_index++) {
             const derived = resolve_semi_naive(
-                rule.head, rule.body, all_facts, delta, delta_pos, empty_dict(), 0
+                rule.head, rule.body, all_facts, delta, delta_relation_index, empty_dict(), 0
             )
             for (const f of derived)
                 if (!is_known(f)) new_facts.push(f)
@@ -444,9 +506,9 @@ export const semi_naive_datalog = (rules: Rule[], facts: Fact[]): Fact[] => {
     const normalized = normalize_rules(rules)
     let all_facts = [...facts]
 
-    // Seed rules whose body has no database atoms (fact-rules, builtin-only).
+    // Seed rules whose body has no relation literals (fact-rules, builtin-only).
     for (const rule of normalized) {
-        if (count_db_atoms(rule.body) === 0) {
+        if (count_relation_literals(rule.body) === 0) {
             for (const f of resolve(rule.head, rule.body, [], empty_dict()))
                 add_if_new(all_facts, f)
         }

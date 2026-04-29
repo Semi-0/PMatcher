@@ -261,8 +261,12 @@ export const unify_constant_terms =
         const rest_a = rest(terms_a)
         const rest_b = rest(terms_b)
         return (dict: UnifyDict, succeed: UnifySucceed, failure: UnifyFailure) => {
-            if (equal(first_a, first_b)) return succeed(dict, failure, rest_a, rest_b)
-            return failure()
+            if (equal(first_a, first_b)){
+                return succeed(dict, failure, rest_a, rest_b)
+            }
+            else {
+                return failure()
+            }
         }
     }
 
@@ -295,8 +299,12 @@ export const unify_list_terms =
                     null_a: any[],
                     null_b: any[]
                 ) => {
-                    if (!isEmpty(null_a) || !isEmpty(null_b)) return _failure()
-                    return succeed(_dict, _failure, rest_a, rest_b)
+                    if (!isEmpty(null_a) || !isEmpty(null_b)){
+                        return _failure()
+                    }
+                    else {
+                        return succeed(_dict, _failure, rest_a, rest_b)
+                    }
                 },
                 failure
             )
@@ -358,16 +366,18 @@ export const maybe_substitute = (var_first: any[], terms: any[]): UnifyDispatche
             return succeed(dict, failure, rest_a, rest_b)
         }
         // Case 2: variable already bound — unify its value against term
-        if (match_has_bindings(variable, dict)) {
+        else if (match_has_bindings(variable, dict)) {
             return unify_dispatch(
                 [match_get_value(variable, dict), ...rest_a],
                 terms
             )(dict, succeed, failure)
         }
+        else {
         // Case 3: attempt fresh substitution
-        const new_dict = do_substitute(variable, term, dict)
-        if (new_dict !== false) return succeed(new_dict, failure, rest_a, rest_b)
-        return failure()
+            const new_dict = do_substitute(variable, term, dict)
+            if (new_dict !== false) return succeed(new_dict, failure, rest_a, rest_b)
+            return failure()
+        }
     }
 
 /** Any term that is NOT a segment variable.  Mirrors element? from unify.scm. */
